@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
-const DemandesList = () => {
+const DemandesList = ({ onRefresh, refreshTrigger }) => {
   const { token } = useAuth();
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,7 +9,7 @@ const DemandesList = () => {
 
   useEffect(() => {
     loadDemandes();
-  }, [token]);
+  }, [token, refreshTrigger]);
 
   const loadDemandes = async () => {
     try {
@@ -23,6 +23,10 @@ const DemandesList = () => {
       if (response.ok) {
         const data = await response.json();
         setDemandes(data);
+        // Notifier le parent que les données ont été chargées
+        if (onRefresh) {
+          onRefresh(data);
+        }
       } else {
         setError("Erreur lors du chargement des demandes");
       }

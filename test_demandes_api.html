@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Demandes - eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Demandes - eConsulat</h1>
+    
+    <div class="container">
+        <h2>🔑 Authentification</h2>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="citizen@econsulat.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Mot de passe:</label>
+            <input type="password" id="password" value="citizen123">
+        </div>
+        <button onclick="login()">Se connecter</button>
+        <button onclick="logout()">Se déconnecter</button>
+        <div id="authStatus"></div>
+    </div>
+
+    <div class="grid">
+        <div class="container">
+            <h2>📋 Mes Demandes</h2>
+            <button onclick="getMyDemandes()">Récupérer mes demandes</button>
+            <div id="myDemandesResult"></div>
+        </div>
+
+        <div class="container">
+            <h2>➕ Nouvelle Demande</h2>
+            <div class="form-group">
+                <label for="civilite">Civilité:</label>
+                <select id="civilite">
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="pays">Pays:</label>
+                <select id="pays">
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="documentType">Type de document:</label>
+                <select id="documentType">
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
+            <button onclick="loadReferenceData()">Charger les données de référence</button>
+            <button onclick="createTestDemande()">Créer une demande de test</button>
+            <div id="createDemandeResult"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Données de Référence</h2>
+        <button onclick="getCivilites()">Civilités</button>
+        <button onclick="getPays()">Pays</button>
+        <button onclick="getDocumentTypes()">Types de documents</button>
+        <div id="referenceDataResult"></div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        let user = JSON.parse(localStorage.getItem('user') || 'null');
+
+        function updateAuthStatus() {
+            const statusDiv = document.getElementById('authStatus');
+            if (token && user) {
+                statusDiv.innerHTML = `<div class="success">✅ Connecté en tant que ${user.email} (${user.role})</div>`;
+            } else {
+                statusDiv.innerHTML = `<div class="error">❌ Non connecté</div>`;
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.token;
+                    user = data.user;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('user', JSON.stringify(user));
+                    updateAuthStatus();
+                    showMessage('authStatus', 'success', 'Connexion réussie!');
+                } else {
+                    const error = await response.text();
+                    showMessage('authStatus', 'error', `Erreur de connexion: ${error}`);
+                }
+            } catch (error) {
+                showMessage('authStatus', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        function logout() {
+            token = null;
+            user = null;
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            updateAuthStatus();
+            showMessage('authStatus', 'info', 'Déconnexion réussie');
+        }
+
+        async function getMyDemandes() {
+            if (!token) {
+                showMessage('myDemandesResult', 'error', 'Veuillez vous connecter d\'abord');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showMessage('myDemandesResult', 'success', `✅ ${data.length} demande(s) trouvée(s)`);
+                    document.getElementById('myDemandesResult').innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const error = await response.text();
+                    showMessage('myDemandesResult', 'error', `Erreur: ${error}`);
+                }
+            } catch (error) {
+                showMessage('myDemandesResult', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function loadReferenceData() {
+            await Promise.all([
+                getCivilites(),
+                getPays(),
+                getDocumentTypes()
+            ]);
+        }
+
+        async function getCivilites() {
+            try {
+                const response = await fetch('http://localhost:8080/api/civilites');
+                if (response.ok) {
+                    const data = await response.json();
+                    const select = document.getElementById('civilite');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    data.forEach(civilite => {
+                        select.innerHTML += `<option value="${civilite.id}">${civilite.libelle}</option>`;
+                    });
+                    showMessage('referenceDataResult', 'success', `✅ ${data.length} civilité(s) chargée(s)`);
+                } else {
+                    showMessage('referenceDataResult', 'error', 'Erreur lors du chargement des civilités');
+                }
+            } catch (error) {
+                showMessage('referenceDataResult', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function getPays() {
+            try {
+                const response = await fetch('http://localhost:8080/api/pays');
+                if (response.ok) {
+                    const data = await response.json();
+                    const select = document.getElementById('pays');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    data.forEach(pays => {
+                        select.innerHTML += `<option value="${pays.id}">${pays.nom}</option>`;
+                    });
+                    showMessage('referenceDataResult', 'success', `✅ ${data.length} pays chargé(s)`);
+                } else {
+                    showMessage('referenceDataResult', 'error', 'Erreur lors du chargement des pays');
+                }
+            } catch (error) {
+                showMessage('referenceDataResult', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function getDocumentTypes() {
+            try {
+                const response = await fetch('http://localhost:8080/api/document-types');
+                if (response.ok) {
+                    const data = await response.json();
+                    const select = document.getElementById('documentType');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    data.forEach(type => {
+                        select.innerHTML += `<option value="${type.id}">${type.libelle}</option>`;
+                    });
+                    showMessage('referenceDataResult', 'success', `✅ ${data.length} type(s) de document chargé(s)`);
+                } else {
+                    showMessage('referenceDataResult', 'error', 'Erreur lors du chargement des types de documents');
+                }
+            } catch (error) {
+                showMessage('referenceDataResult', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        async function createTestDemande() {
+            if (!token) {
+                showMessage('createDemandeResult', 'error', 'Veuillez vous connecter d\'abord');
+                return;
+            }
+
+            const civiliteId = document.getElementById('civilite').value;
+            const paysId = document.getElementById('pays').value;
+            const documentTypeId = document.getElementById('documentType').value;
+
+            if (!civiliteId || !paysId || !documentTypeId) {
+                showMessage('createDemandeResult', 'error', 'Veuillez sélectionner toutes les valeurs');
+                return;
+            }
+
+            const testDemande = {
+                civiliteId: parseInt(civiliteId),
+                firstName: "Jean",
+                lastName: "Dupont",
+                birthDate: "1990-01-01",
+                birthPlace: "Paris",
+                nationality: "Française",
+                paysId: parseInt(paysId),
+                address: "123 Rue de la Paix",
+                city: "Paris",
+                postalCode: "75001",
+                phone: "0123456789",
+                email: "jean.dupont@test.com",
+                fatherFirstName: "Pierre",
+                fatherLastName: "Dupont",
+                fatherBirthPlace: "Lyon",
+                motherFirstName: "Marie",
+                motherLastName: "Martin",
+                motherBirthPlace: "Marseille",
+                documentTypeId: parseInt(documentTypeId),
+                documentFiles: ["test-document.pdf"]
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showMessage('createDemandeResult', 'success', '✅ Demande créée avec succès!');
+                    document.getElementById('createDemandeResult').innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const error = await response.text();
+                    showMessage('createDemandeResult', 'error', `Erreur: ${error}`);
+                }
+            } catch (error) {
+                showMessage('createDemandeResult', 'error', `Erreur: ${error.message}`);
+            }
+        }
+
+        function showMessage(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        // Initialisation
+        updateAuthStatus();
+    </script>
+</body>
+</html> 

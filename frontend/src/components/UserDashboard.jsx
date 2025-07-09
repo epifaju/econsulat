@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useDemandes } from "../hooks/useDemandes";
 import {
   DocumentTextIcon,
   ClockIcon,
@@ -18,9 +19,8 @@ import DemandesList from "./DemandesList";
 
 const UserDashboard = () => {
   const { user, token } = useAuth();
-  const [citizens, setCitizens] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { demandes, loading, error, refreshDemandes, addDemande } =
+    useDemandes();
   const [notification, setNotification] = useState(null);
   const [showNewDemandeForm, setShowNewDemandeForm] = useState(false);
 
@@ -30,41 +30,6 @@ const UserDashboard = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(
-        "http://localhost:8080/api/citizens/my-requests",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setCitizens(data);
-      } else {
-        setError("Erreur lors du chargement des données");
-        showNotification(
-          "error",
-          "Erreur",
-          "Impossible de charger les données"
-        );
-      }
-    } catch (err) {
-      setError("Erreur de connexion");
-      showNotification("error", "Erreur", "Problème de connexion au serveur");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message });
@@ -78,39 +43,48 @@ const UserDashboard = () => {
       "Succès",
       "Votre demande a été soumise avec succès"
     );
-    // Recharger les données si nécessaire
+    // Ajouter la nouvelle demande à la liste et rafraîchir
+    addDemande(demande);
+    refreshDemandes();
   };
 
   const handleNewDemandeClose = () => {
     setShowNewDemandeForm(false);
   };
 
+  const handleRefreshData = () => {
+    refreshDemandes();
+    showNotification("info", "Info", "Données actualisées");
+  };
+
   // Calcul des statistiques
   const stats = {
-    totalRequests: citizens.length,
-    pendingRequests: citizens.filter((c) => c.status === "PENDING").length,
-    approvedRequests: citizens.filter((c) => c.status === "APPROVED").length,
-    rejectedRequests: citizens.filter((c) => c.status === "REJECTED").length,
+    totalRequests: demandes.length,
+    pendingRequests: demandes.filter((d) => d.status === "PENDING").length,
+    approvedRequests: demandes.filter((d) => d.status === "APPROVED").length,
+    rejectedRequests: demandes.filter((d) => d.status === "REJECTED").length,
   };
 
   // Filtrage et recherche
-  const filteredCitizens = citizens.filter((citizen) => {
+  const filteredDemandes = demandes.filter((demande) => {
     const matchesSearch =
       searchTerm === "" ||
-      citizen.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      citizen.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      citizen.documentType.toLowerCase().includes(searchTerm.toLowerCase());
+      demande.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      demande.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (demande.documentTypeDisplay || demande.documentType)
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
     const matchesFilters = Object.keys(filters).every((key) => {
       if (!filters[key]) return true;
-      return citizen[key] === filters[key];
+      return demande[key] === filters[key];
     });
 
     return matchesSearch && matchesFilters;
   });
 
   // Tri
-  const sortedCitizens = [...filteredCitizens].sort((a, b) => {
+  const sortedDemandes = [...filteredDemandes].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
     const aValue = a[sortConfig.key];
@@ -124,7 +98,7 @@ const UserDashboard = () => {
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentCitizens = sortedCitizens.slice(
+  const currentDemandes = sortedDemandes.slice(
     indexOfFirstItem,
     indexOfLastItem
   );
@@ -304,13 +278,34 @@ const UserDashboard = () => {
           <div className="card-header">
             <div className="flex items-center justify-between">
               <h2 className="card-title">Mes Demandes</h2>
-              <button
-                className="btn-primary"
-                onClick={() => setShowNewDemandeForm(true)}
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Nouvelle demande
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  className="btn-secondary"
+                  onClick={handleRefreshData}
+                  title="Actualiser les données"
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
+                <button
+                  className="btn-primary"
+                  onClick={() => setShowNewDemandeForm(true)}
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Nouvelle demande
+                </button>
+              </div>
             </div>
           </div>
 
@@ -377,34 +372,40 @@ const UserDashboard = () => {
                 </tr>
               </thead>
               <tbody className="table-body">
-                {currentCitizens.map((citizen) => (
-                  <tr key={citizen.id} className="table-row">
+                {currentDemandes.map((demande) => (
+                  <tr key={demande.id} className="table-row">
                     <td className="table-cell">
                       <div>
                         <div className="font-medium text-gray-900">
-                          {citizen.firstName} {citizen.lastName}
+                          {demande.firstName} {demande.lastName}
                         </div>
                         <div className="text-gray-500">
-                          {citizen.birthPlace}
+                          Demande #{demande.id}
                         </div>
                       </div>
                     </td>
                     <td className="table-cell">
                       <span className="badge badge-user">
-                        {citizen.documentType}
+                        {demande.documentTypeDisplay || demande.documentType}
                       </span>
                     </td>
                     <td className="table-cell">
-                      {getStatusBadge(citizen.status)}
+                      {getStatusBadge(demande.status)}
                     </td>
                     <td className="table-cell">
-                      {new Date(citizen.createdAt).toLocaleDateString("fr-FR")}
+                      {new Date(demande.createdAt).toLocaleDateString("fr-FR", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </td>
                     <td className="table-cell">
                       <div className="flex space-x-2">
-                        {citizen.status === "APPROVED" && (
+                        {demande.status === "APPROVED" && (
                           <button
-                            onClick={() => handleGenerateDocument(citizen.id)}
+                            onClick={() => handleGenerateDocument(demande.id)}
                             className="btn-success btn-sm"
                             title="Télécharger document"
                           >
@@ -426,17 +427,17 @@ const UserDashboard = () => {
           </div>
 
           {/* Pagination */}
-          {filteredCitizens.length > 0 && (
+          {filteredDemandes.length > 0 && (
             <Pagination
               currentPage={currentPage}
-              totalPages={Math.ceil(filteredCitizens.length / itemsPerPage)}
+              totalPages={Math.ceil(filteredDemandes.length / itemsPerPage)}
               onPageChange={setCurrentPage}
               itemsPerPage={itemsPerPage}
-              totalItems={filteredCitizens.length}
+              totalItems={filteredDemandes.length}
             />
           )}
 
-          {filteredCitizens.length === 0 && (
+          {filteredDemandes.length === 0 && (
             <div className="text-center py-8">
               <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto" />
               <p className="mt-2 text-gray-500">Aucune demande trouvée</p>
