@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "AGENT")
                         .requestMatchers("/api/passport/**").hasRole("ADMIN")
                         .requestMatchers("/api/citizens/my-requests").hasAnyRole("CITIZEN", "USER")
                         .anyRequest().authenticated())

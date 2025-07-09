@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interface Admin eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .result {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            background-color: #f8f9fa;
+        }
+        .tab.active {
+            background-color: white;
+            border-color: #ddd;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Interface Admin eConsulat</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="showTab('auth')">Authentification</div>
+        <div class="tab" onclick="showTab('stats')">Statistiques</div>
+        <div class="tab" onclick="showTab('demandes')">Demandes</div>
+        <div class="tab" onclick="showTab('users')">Utilisateurs</div>
+        <div class="tab" onclick="showTab('documents')">Types de Documents</div>
+        <div class="tab" onclick="showTab('generation')">Génération Documents</div>
+    </div>
+
+    <!-- Authentification -->
+    <div id="auth" class="tab-content active">
+        <div class="container">
+            <h2>Authentification</h2>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="admin@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <button onclick="login()">Se connecter</button>
+            <button onclick="logout()">Se déconnecter</button>
+            <div id="authResult"></div>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div id="stats" class="tab-content">
+        <div class="container">
+            <h2>Statistiques</h2>
+            <button onclick="getStats()">Récupérer les statistiques</button>
+            <div id="statsResult"></div>
+        </div>
+    </div>
+
+    <!-- Demandes -->
+    <div id="demandes" class="tab-content">
+        <div class="container">
+            <h2>Gestion des Demandes</h2>
+            <div class="form-group">
+                <label>Page:</label>
+                <input type="number" id="demandePage" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>Taille:</label>
+                <input type="number" id="demandeSize" value="5" min="1" max="50">
+            </div>
+            <div class="form-group">
+                <label>Recherche:</label>
+                <input type="text" id="demandeSearch" placeholder="Nom du demandeur">
+            </div>
+            <div class="form-group">
+                <label>Statut:</label>
+                <select id="demandeStatus">
+                    <option value="">Tous</option>
+                    <option value="PENDING">En attente</option>
+                    <option value="APPROVED">Approuvé</option>
+                    <option value="REJECTED">Rejeté</option>
+                    <option value="COMPLETED">Terminé</option>
+                </select>
+            </div>
+            <button onclick="getDemandes()">Récupérer les demandes</button>
+            <button onclick="searchDemandes()">Rechercher</button>
+            <div id="demandesResult"></div>
+        </div>
+    </div>
+
+    <!-- Utilisateurs -->
+    <div id="users" class="tab-content">
+        <div class="container">
+            <h2>Gestion des Utilisateurs</h2>
+            <div class="form-group">
+                <label>Page:</label>
+                <input type="number" id="userPage" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label>Taille:</label>
+                <input type="number" id="userSize" value="10" min="1" max="50">
+            </div>
+            <div class="form-group">
+                <label>Recherche:</label>
+                <input type="text" id="userSearch" placeholder="Nom, prénom ou email">
+            </div>
+            <button onclick="getUsers()">Récupérer les utilisateurs</button>
+            <button onclick="searchUsers()">Rechercher</button>
+            <div id="usersResult"></div>
+        </div>
+    </div>
+
+    <!-- Types de Documents -->
+    <div id="documents" class="tab-content">
+        <div class="container">
+            <h2>Types de Documents</h2>
+            <button onclick="getDocumentTypes()">Récupérer les types</button>
+            <div class="form-group">
+                <label>Recherche:</label>
+                <input type="text" id="docTypeSearch" placeholder="Nom du type">
+            </div>
+            <button onclick="searchDocumentTypes()">Rechercher</button>
+            <div id="docTypesResult"></div>
+        </div>
+    </div>
+
+    <!-- Génération de Documents -->
+    <div id="generation" class="tab-content">
+        <div class="container">
+            <h2>Génération de Documents</h2>
+            <div class="form-group">
+                <label>ID de la demande:</label>
+                <input type="number" id="demandeId" placeholder="ID de la demande">
+            </div>
+            <div class="form-group">
+                <label>ID du type de document:</label>
+                <input type="number" id="documentTypeId" placeholder="ID du type de document">
+            </div>
+            <button onclick="generateDocument()">Générer un document</button>
+            <div id="generationResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('adminToken');
+
+        function showTab(tabName) {
+            // Masquer tous les contenus
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Afficher le contenu sélectionné
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = isError ? 'error' : 'success';
+            div.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            
+            element.appendChild(div);
+        }
+
+        async function makeRequest(url, options = {}) {
+            try {
+                if (token) {
+                    options.headers = {
+                        ...options.headers,
+                        'Authorization': `Bearer ${token}`
+                    };
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.message || 'Erreur inconnue'}`);
+                }
+
+                return data;
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function login() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                const data = await makeRequest('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                token = data.token;
+                localStorage.setItem('adminToken', token);
+                showResult('authResult', `Connexion réussie! Token: ${token.substring(0, 50)}...`);
+            } catch (error) {
+                showResult('authResult', `Erreur de connexion: ${error.message}`, true);
+            }
+        }
+
+        function logout() {
+            token = null;
+            localStorage.removeItem('adminToken');
+            showResult('authResult', 'Déconnexion réussie');
+        }
+
+        async function getStats() {
+            try {
+                const data = await makeRequest('http://localhost:8080/api/admin/stats');
+                showResult('statsResult', data);
+            } catch (error) {
+                showResult('statsResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function getDemandes() {
+            try {
+                const page = document.getElementById('demandePage').value;
+                const size = document.getElementById('demandeSize').value;
+                const status = document.getElementById('demandeStatus').value;
+
+                let url = `http://localhost:8080/api/admin/demandes?page=${page}&size=${size}`;
+                if (status) {
+                    url = `http://localhost:8080/api/admin/demandes/status/${status}?page=${page}&size=${size}`;
+                }
+
+                const data = await makeRequest(url);
+                showResult('demandesResult', data);
+            } catch (error) {
+                showResult('demandesResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function searchDemandes() {
+            try {
+                const page = document.getElementById('demandePage').value;
+                const size = document.getElementById('demandeSize').value;
+                const search = document.getElementById('demandeSearch').value;
+
+                if (!search) {
+                    showResult('demandesResult', 'Veuillez saisir un terme de recherche', true);
+                    return;
+                }
+
+                const url = `http://localhost:8080/api/admin/demandes/search?q=${encodeURIComponent(search)}&page=${page}&size=${size}`;
+                const data = await makeRequest(url);
+                showResult('demandesResult', data);
+            } catch (error) {
+                showResult('demandesResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function getUsers() {
+            try {
+                const page = document.getElementById('userPage').value;
+                const size = document.getElementById('userSize').value;
+
+                const url = `http://localhost:8080/api/admin/users?page=${page}&size=${size}`;
+                const data = await makeRequest(url);
+                showResult('usersResult', data);
+            } catch (error) {
+                showResult('usersResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function searchUsers() {
+            try {
+                const page = document.getElementById('userPage').value;
+                const size = document.getElementById('userSize').value;
+                const search = document.getElementById('userSearch').value;
+
+                if (!search) {
+                    showResult('usersResult', 'Veuillez saisir un terme de recherche', true);
+                    return;
+                }
+
+                const url = `http://localhost:8080/api/admin/users/search?q=${encodeURIComponent(search)}&page=${page}&size=${size}`;
+                const data = await makeRequest(url);
+                showResult('usersResult', data);
+            } catch (error) {
+                showResult('usersResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function getDocumentTypes() {
+            try {
+                const data = await makeRequest('http://localhost:8080/api/admin/document-types');
+                showResult('docTypesResult', data);
+            } catch (error) {
+                showResult('docTypesResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function searchDocumentTypes() {
+            try {
+                const search = document.getElementById('docTypeSearch').value;
+
+                if (!search) {
+                    showResult('docTypesResult', 'Veuillez saisir un terme de recherche', true);
+                    return;
+                }
+
+                const url = `http://localhost:8080/api/admin/document-types/search?q=${encodeURIComponent(search)}`;
+                const data = await makeRequest(url);
+                showResult('docTypesResult', data);
+            } catch (error) {
+                showResult('docTypesResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function generateDocument() {
+            try {
+                const demandeId = document.getElementById('demandeId').value;
+                const documentTypeId = document.getElementById('documentTypeId').value;
+
+                if (!demandeId || !documentTypeId) {
+                    showResult('generationResult', 'Veuillez saisir l\'ID de la demande et du type de document', true);
+                    return;
+                }
+
+                const url = `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`;
+                const data = await makeRequest(url, { method: 'POST' });
+                showResult('generationResult', `Document généré avec succès: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                showResult('generationResult', `Erreur: ${error.message}`, true);
+            }
+        }
+
+        // Vérifier si un token existe au chargement
+        if (token) {
+            document.getElementById('authResult').innerHTML = '<div class="success">Token trouvé en cache</div>';
+        }
+    </script>
+</body>
+</html> 

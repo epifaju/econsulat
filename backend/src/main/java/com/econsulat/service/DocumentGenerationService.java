@@ -1,0 +1,257 @@
+package com.econsulat.service;
+
+import com.econsulat.model.Demande;
+import com.econsulat.model.DocumentType;
+import com.econsulat.model.GeneratedDocument;
+import com.econsulat.model.User;
+import com.econsulat.repository.DemandeRepository;
+import com.econsulat.repository.DocumentTypeRepository;
+import com.econsulat.repository.GeneratedDocumentRepository;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+public class DocumentGenerationService {
+
+    @Autowired
+    private DemandeRepository demandeRepository;
+
+    @Autowired
+    private DocumentTypeRepository documentTypeRepository;
+
+    @Autowired
+    private GeneratedDocumentRepository generatedDocumentRepository;
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
+
+    @Value("${app.documents.dir:documents}")
+    private String documentsDir;
+
+    public GeneratedDocument generateDocument(Long demandeId, Long documentTypeId, User currentUser) {
+        Demande demande = demandeRepository.findById(demandeId)
+                .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
+
+        DocumentType documentType = documentTypeRepository.findById(documentTypeId)
+                .orElseThrow(() -> new RuntimeException("Type de document non trouvé"));
+
+        // Vérifier si le document a déjà été généré
+        GeneratedDocument existingDoc = generatedDocumentRepository
+                .findByDemandeAndDocumentType(demandeId, documentTypeId)
+                .orElse(null);
+
+        if (existingDoc != null) {
+            return existingDoc;
+        }
+
+        try {
+            // Créer le dossier de documents s'il n'existe pas
+            Path documentsPath = Paths.get(documentsDir);
+            if (!Files.exists(documentsPath)) {
+                Files.createDirectories(documentsPath);
+            }
+
+            // Générer le nom du fichier
+            String fileName = generateFileName(demande, documentType);
+            String filePath = documentsPath.resolve(fileName).toString();
+
+            // Générer le document
+            generateDocumentFromTemplate(demande, documentType, filePath);
+
+            // Créer l'enregistrement en base
+            GeneratedDocument generatedDocument = new GeneratedDocument(
+                    demande, documentType, fileName, filePath, currentUser);
+
+            // Définir la date d'expiration (30 jours)
+            generatedDocument.setExpiresAt(LocalDateTime.now().plusDays(30));
+
+            return generatedDocumentRepository.save(generatedDocument);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la génération du document: " + e.getMessage(), e);
+        }
+    }
+
+    private String generateFileName(Demande demande, DocumentType documentType) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String userInfo = demande.getFirstName() + "_" + demande.getLastName();
+        String docType = documentType.getLibelle().replaceAll("[^a-zA-Z0-9]", "_");
+
+        return String.format("%s_%s_%s_%s.pdf",
+                docType, userInfo, timestamp, UUID.randomUUID().toString().substring(0, 8));
+    }
+
+    private void generateDocumentFromTemplate(Demande demande, DocumentType documentType, String outputPath)
+            throws IOException {
+
+        // Charger le template Word
+        String templatePath = documentType.getTemplatePath();
+        if (templatePath == null || templatePath.isEmpty()) {
+            // Utiliser un template par défaut
+            templatePath = "templates/default_template.docx";
+        }
+
+        try (InputStream is = new FileInputStream(templatePath);
+                XWPFDocument document = new XWPFDocument(is)) {
+
+            // Remplacer les placeholders dans le document
+            replacePlaceholders(document, demande);
+
+            // Ajouter le filigrane
+            addWatermark(document);
+
+            // Sauvegarder le document
+            try (FileOutputStream out = new FileOutputStream(outputPath)) {
+                document.write(out);
+            }
+
+        } catch (FileNotFoundException e) {
+            // Si le template n'existe pas, créer un document simple
+            createSimpleDocument(demande, documentType, outputPath);
+        }
+    }
+
+    private void replacePlaceholders(XWPFDocument document, Demande demande) {
+        Map<String, String> placeholders = createPlaceholdersMap(demande);
+
+        for (XWPFParagraph paragraph : document.getParagraphs()) {
+            String text = paragraph.getText();
+            for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+                text = text.replace("{{" + entry.getKey() + "}}", entry.getValue());
+            }
+            if (!text.equals(paragraph.getText())) {
+                // Supprimer tous les runs existants
+                for (int i = paragraph.getRuns().size() - 1; i >= 0; i--) {
+                    paragraph.removeRun(i);
+                }
+                // Ajouter le nouveau texte
+                XWPFRun run = paragraph.createRun();
+                run.setText(text);
+            }
+        }
+    }
+
+    private Map<String, String> createPlaceholdersMap(Demande demande) {
+        Map<String, String> placeholders = new HashMap<>();
+
+        // Informations personnelles
+        placeholders.put("FIRST_NAME", demande.getFirstName());
+        placeholders.put("LAST_NAME", demande.getLastName());
+        placeholders.put("BIRTH_DATE", demande.getBirthDate().toString());
+        placeholders.put("BIRTH_PLACE", demande.getBirthPlace());
+        placeholders.put("BIRTH_COUNTRY", demande.getBirthCountry().getLibelle());
+
+        // Adresse
+        placeholders.put("ADDRESS",
+                demande.getAdresse().getStreetNumber() + " " + demande.getAdresse().getStreetName());
+        placeholders.put("CITY", demande.getAdresse().getCity());
+        placeholders.put("POSTAL_CODE", demande.getAdresse().getPostalCode());
+        placeholders.put("COUNTRY", demande.getAdresse().getCountry().getLibelle());
+
+        // Filiation - Père
+        placeholders.put("FATHER_FIRST_NAME", demande.getFatherFirstName());
+        placeholders.put("FATHER_LAST_NAME", demande.getFatherLastName());
+        placeholders.put("FATHER_BIRTH_DATE", demande.getFatherBirthDate().toString());
+        placeholders.put("FATHER_BIRTH_PLACE", demande.getFatherBirthPlace());
+        placeholders.put("FATHER_BIRTH_COUNTRY", demande.getFatherBirthCountry().getLibelle());
+
+        // Filiation - Mère
+        placeholders.put("MOTHER_FIRST_NAME", demande.getMotherFirstName());
+        placeholders.put("MOTHER_LAST_NAME", demande.getMotherLastName());
+        placeholders.put("MOTHER_BIRTH_DATE", demande.getMotherBirthDate().toString());
+        placeholders.put("MOTHER_BIRTH_PLACE", demande.getMotherBirthPlace());
+        placeholders.put("MOTHER_BIRTH_COUNTRY", demande.getMotherBirthCountry().getLibelle());
+
+        // Date de génération
+        placeholders.put("GENERATION_DATE", LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        placeholders.put("GENERATION_TIME", LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+
+        return placeholders;
+    }
+
+    private void addWatermark(XWPFDocument document) {
+        // Ajouter un filigrane visible
+        for (XWPFParagraph paragraph : document.getParagraphs()) {
+            if (paragraph.getText().isEmpty()) {
+                XWPFRun run = paragraph.createRun();
+                run.setText("Document émis par le eConsulat - République de Guinée-Bissau");
+                run.setColor("808080"); // Gris
+                run.setFontSize(10);
+                run.setItalic(true);
+                break;
+            }
+        }
+    }
+
+    private void createSimpleDocument(Demande demande, DocumentType documentType, String outputPath)
+            throws IOException {
+
+        try (XWPFDocument document = new XWPFDocument()) {
+
+            // Titre
+            XWPFParagraph title = document.createParagraph();
+            XWPFRun titleRun = title.createRun();
+            titleRun.setText(documentType.getLibelle());
+            titleRun.setBold(true);
+            titleRun.setFontSize(16);
+
+            // Informations du demandeur
+            XWPFParagraph info = document.createParagraph();
+            XWPFRun infoRun = info.createRun();
+            infoRun.setText("Demandeur: " + demande.getFirstName() + " " + demande.getLastName());
+            infoRun.setFontSize(12);
+
+            // Date de naissance
+            XWPFParagraph birth = document.createParagraph();
+            XWPFRun birthRun = birth.createRun();
+            birthRun.setText("Date de naissance: " + demande.getBirthDate());
+            birthRun.setFontSize(12);
+
+            // Lieu de naissance
+            XWPFParagraph birthPlace = document.createParagraph();
+            XWPFRun birthPlaceRun = birthPlace.createRun();
+            birthPlaceRun.setText("Lieu de naissance: " + demande.getBirthPlace() + ", " +
+                    demande.getBirthCountry().getLibelle());
+            birthPlaceRun.setFontSize(12);
+
+            // Filigrane
+            addWatermark(document);
+
+            // Sauvegarder
+            try (FileOutputStream out = new FileOutputStream(outputPath)) {
+                document.write(out);
+            }
+        }
+    }
+
+    public byte[] downloadDocument(Long documentId) throws IOException {
+        GeneratedDocument doc = generatedDocumentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document non trouvé"));
+
+        Path filePath = Paths.get(doc.getFilePath());
+        if (!Files.exists(filePath)) {
+            throw new RuntimeException("Fichier non trouvé");
+        }
+
+        // Marquer comme téléchargé
+        doc.setStatus("DOWNLOADED");
+        doc.setDownloadedAt(LocalDateTime.now());
+        generatedDocumentRepository.save(doc);
+
+        return Files.readAllBytes(filePath);
+    }
+}

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Encodage Pays - eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .country-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        .country-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .country-item:hover {
+            background-color: #e9ecef;
+        }
+        .problematic {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔤 Test d'Encodage des Pays - eConsulat</h1>
+    
+    <div class="container">
+        <h2>🧪 Test de l'API des Pays</h2>
+        <button onclick="testPaysAPI()">Tester l'API des pays</button>
+        <button onclick="testSpecificCountries()">Tester les pays problématiques</button>
+        <button onclick="testAllCountries()">Tester tous les pays</button>
+        <div id="apiResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Liste des Pays (API)</h2>
+        <div id="countriesList" class="country-list"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Analyse d'Encodage</h2>
+        <div id="encodingAnalysis"></div>
+    </div>
+
+    <script>
+        const problematicCountries = [
+            'Nouvelle-Calédonie',
+            'Guinée-Bissau', 
+            'Sénégal',
+            'Côte d\'Ivoire',
+            'São Tomé-et-Principe',
+            'Émirats arabes unis',
+            'Timor oriental',
+            'Papouasie-Nouvelle-Guinée'
+        ];
+
+        async function testPaysAPI() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<div class="test-result warning">🔄 Test en cours...</div>';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/pays');
+                
+                if (response.ok) {
+                    const countries = await response.json();
+                    resultDiv.innerHTML = `<div class="test-result success">✅ API accessible - ${countries.length} pays récupérés</div>`;
+                    
+                    // Afficher la liste des pays
+                    displayCountries(countries);
+                    
+                    // Analyser l'encodage
+                    analyzeEncoding(countries);
+                } else {
+                    resultDiv.innerHTML = `<div class="test-result error">❌ Erreur API: ${response.status} ${response.statusText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+
+        async function testSpecificCountries() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<div class="test-result warning">🔄 Test des pays problématiques...</div>';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/pays');
+                
+                if (response.ok) {
+                    const countries = await response.json();
+                    const problematic = countries.filter(country => 
+                        problematicCountries.some(problematic => 
+                            country.libelle.includes(problematic) || 
+                            problematic.includes(country.libelle)
+                        )
+                    );
+                    
+                    if (problematic.length > 0) {
+                        resultDiv.innerHTML = `<div class="test-result warning">⚠️ ${problematic.length} pays problématiques détectés</div>`;
+                        displayProblematicCountries(problematic);
+                    } else {
+                        resultDiv.innerHTML = `<div class="test-result success">✅ Aucun pays problématique détecté</div>`;
+                    }
+                } else {
+                    resultDiv.innerHTML = `<div class="test-result error">❌ Erreur API: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testAllCountries() {
+            const resultDiv = document.getElementById('apiResult');
+            resultDiv.innerHTML = '<div class="test-result warning">🔄 Test complet de tous les pays...</div>';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/pays');
+                
+                if (response.ok) {
+                    const countries = await response.json();
+                    const analysis = analyzeAllCountries(countries);
+                    
+                    resultDiv.innerHTML = `
+                        <div class="test-result success">
+                            ✅ Test complet terminé<br>
+                            📊 Total: ${countries.length} pays<br>
+                            ✅ Corrects: ${analysis.correct}<br>
+                            ⚠️ Problématiques: ${analysis.problematic}<br>
+                            🔤 Avec accents: ${analysis.withAccents}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="test-result error">❌ Erreur API: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="test-result error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        function displayCountries(countries) {
+            const listDiv = document.getElementById('countriesList');
+            listDiv.innerHTML = countries.map(country => 
+                `<div class="country-item">${country.id}: ${country.libelle}</div>`
+            ).join('');
+        }
+
+        function displayProblematicCountries(problematic) {
+            const listDiv = document.getElementById('countriesList');
+            listDiv.innerHTML = problematic.map(country => 
+                `<div class="country-item problematic">⚠️ ${country.id}: ${country.libelle}</div>`
+            ).join('');
+        }
+
+        function analyzeEncoding(countries) {
+            const analysisDiv = document.getElementById('encodingAnalysis');
+            const problematic = countries.filter(country => 
+                country.libelle.includes('Ã©') || 
+                country.libelle.includes('Ã¨') || 
+                country.libelle.includes('Ã ')
+            );
+            
+            if (problematic.length > 0) {
+                analysisDiv.innerHTML = `
+                    <div class="test-result error">
+                        ❌ Problèmes d'encodage détectés:<br>
+                        <pre>${problematic.map(c => `${c.id}: ${c.libelle}`).join('\n')}</pre>
+                    </div>
+                `;
+            } else {
+                analysisDiv.innerHTML = `
+                    <div class="test-result success">
+                        ✅ Aucun problème d'encodage détecté<br>
+                        Tous les pays semblent correctement encodés en UTF-8
+                    </div>
+                `;
+            }
+        }
+
+        function analyzeAllCountries(countries) {
+            const withAccents = countries.filter(c => 
+                /[àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ]/.test(c.libelle)
+            ).length;
+            
+            const problematic = countries.filter(c => 
+                c.libelle.includes('Ã©') || 
+                c.libelle.includes('Ã¨') || 
+                c.libelle.includes('Ã ')
+            ).length;
+            
+            const correct = countries.length - problematic;
+            
+            return { correct, problematic, withAccents };
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            setTimeout(testPaysAPI, 1000);
+        };
+    </script>
+</body>
+</html> 

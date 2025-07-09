@@ -1,28 +1,81 @@
 package com.econsulat.dto;
 
 import com.econsulat.model.User;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
-@Data
 public class UserRequest {
-
-    @NotBlank(message = "Le prénom est requis")
     private String firstName;
-
-    @NotBlank(message = "Le nom est requis")
     private String lastName;
-
-    @Email(message = "L'adresse email doit être valide")
-    @NotBlank(message = "L'adresse email est requise")
     private String email;
+    private String password;
+    private String role;
+    private Boolean emailVerified;
 
-    private String password; // Optionnel pour la mise à jour
+    public UserRequest() {
+    }
 
-    @NotNull(message = "Le rôle est requis")
-    private User.Role role;
+    public UserRequest(String firstName, String lastName, String email, String password, String role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+        this.emailVerified = false;
+    }
 
-    private Boolean emailVerified = false;
+    // Getters et Setters
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public Boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(Boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public User.Role getRoleEnum() {
+        try {
+            return User.Role.valueOf(role.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return User.Role.USER;
+        }
+    }
 }

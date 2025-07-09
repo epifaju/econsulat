@@ -51,6 +51,18 @@ public class UserService implements UserDetailsService {
         return userRepository.save(user);
     }
 
+    public User createUser(com.econsulat.dto.UserRequest userRequest) {
+        User user = new User();
+        user.setFirstName(userRequest.getFirstName());
+        user.setLastName(userRequest.getLastName());
+        user.setEmail(userRequest.getEmail());
+        user.setPassword(userRequest.getPassword());
+        user.setRole(userRequest.getRoleEnum());
+        user.setEmailVerified(userRequest.getEmailVerified() != null ? userRequest.getEmailVerified() : false);
+
+        return createUser(user);
+    }
+
     public User updateUser(Long id, User userDetails) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -62,6 +74,26 @@ public class UserService implements UserDetailsService {
 
         if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+        }
+
+        return userRepository.save(user);
+    }
+
+    public User updateUser(Long id, com.econsulat.dto.UserRequest userRequest) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFirstName(userRequest.getFirstName());
+        user.setLastName(userRequest.getLastName());
+        user.setEmail(userRequest.getEmail());
+        user.setRole(userRequest.getRoleEnum());
+
+        if (userRequest.getEmailVerified() != null) {
+            user.setEmailVerified(userRequest.getEmailVerified());
+        }
+
+        if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(userRequest.getPassword()));
         }
 
         return userRepository.save(user);
