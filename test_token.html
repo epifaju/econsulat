@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Token JWT</title>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Test Token JWT</h1>
+    
+    <div>
+        <h3>Token stocké :</h3>
+        <pre id="token-display"></pre>
+    </div>
+    
+    <div>
+        <h3>Test de requête :</h3>
+        <button onclick="testRequest()">Tester la requête /api/citizens</button>
+        <pre id="result"></pre>
+    </div>
+
+    <script>
+        // Afficher le token stocké
+        function displayToken() {
+            const token = localStorage.getItem('token');
+            document.getElementById('token-display').textContent = token || 'Aucun token trouvé';
+        }
+
+        // Configuration axios avec intercepteur
+        const api = axios.create({
+            baseURL: 'http://localhost:8080'
+        });
+
+        api.interceptors.request.use((config) => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+                console.log('Token ajouté:', token.substring(0, 20) + '...');
+            } else {
+                console.log('Aucun token trouvé');
+            }
+            console.log('Headers:', config.headers);
+            return config;
+        });
+
+        // Test de requête
+        async function testRequest() {
+            try {
+                const response = await api.get('/api/citizens');
+                document.getElementById('result').textContent = 'SUCCÈS: ' + JSON.stringify(response.data, null, 2);
+            } catch (error) {
+                document.getElementById('result').textContent = 'ERREUR: ' + error.response?.status + ' - ' + error.response?.data;
+            }
+        }
+
+        // Afficher le token au chargement
+        displayToken();
+    </script>
+</body>
+</html> 

@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération Document Passeport avec Placeholders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .citizen-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            background: white;
+        }
+        .citizen-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        .citizen-item:hover {
+            background-color: #f8f9fa;
+        }
+        .citizen-item.selected {
+            background-color: #e3f2fd;
+            border-left: 4px solid #007bff;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-approved { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+        .status-completed { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Génération Document Passeport avec Placeholders</h1>
+        <p class="info result">Ce test vérifie la génération de documents avec les placeholders {{Prénom}}, {{Nom de famille}}, etc.</p>
+        
+        <div class="test-section">
+            <h3>🔐 1. Authentification</h3>
+            <div class="form-group">
+                <label>Nom d'utilisateur:</label>
+                <input type="text" id="username" value="admin">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <button onclick="login()" class="btn-success">Se connecter</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>👥 2. Liste des citoyens</h3>
+            <button onclick="getCitizens()">Récupérer la liste des citoyens</button>
+            <div id="citizensResult"></div>
+            <div id="citizensList" class="citizen-list" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📄 3. Génération de documents</h3>
+            <div class="form-group">
+                <label>Citoyen sélectionné:</label>
+                <input type="text" id="selectedCitizen" placeholder="Sélectionnez un citoyen dans la liste ci-dessus" readonly>
+            </div>
+            <div class="form-group">
+                <label>Type de document:</label>
+                <select id="documentType">
+                    <option value="word">Document Word (.docx)</option>
+                    <option value="pdf">Document PDF (.pdf)</option>
+                </select>
+            </div>
+            <button onclick="generateDocument()" class="btn-warning">Générer le document</button>
+            <div id="generateResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📥 4. Téléchargement de document</h3>
+            <div class="form-group">
+                <label>Nom du fichier:</label>
+                <input type="text" id="filename" placeholder="Nom du fichier généré">
+            </div>
+            <button onclick="downloadDocument()">Télécharger le document</button>
+            <div id="downloadResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 5. Informations sur les placeholders</h3>
+            <div class="info result">
+                <h4>Placeholders supportés dans le template:</h4>
+                <ul>
+                    <li><strong>{{Prénom}}</strong> → Prénom du citoyen</li>
+                    <li><strong>{{Nom de famille}}</strong> → Nom de famille du citoyen</li>
+                    <li><strong>{{Date de naissance}}</strong> → Date de naissance (format dd/MM/yyyy)</li>
+                    <li><strong>{{Local de nascimento}}</strong> → Lieu de naissance</li>
+                    <li><strong>{{Lieu de naissance}}</strong> → Lieu de naissance (alias)</li>
+                </ul>
+                <p><strong>Note:</strong> Le template doit contenir ces placeholders exactement comme indiqué.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let token = '';
+        let citizens = [];
+        let selectedCitizenId = null;
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    resultDiv.innerHTML = `<div class="result success">✅ Connexion réussie! Token: ${token.substring(0, 20)}...</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Connexion échouée'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function getCitizens() {
+            const resultDiv = document.getElementById('citizensResult');
+            const citizensListDiv = document.getElementById('citizensList');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/citizens`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    citizens = data;
+                    resultDiv.innerHTML = `<div class="result success">✅ ${data.length} citoyens trouvés</div>`;
+                    
+                    // Afficher la liste des citoyens
+                    citizensListDiv.innerHTML = data.map(citizen => `
+                        <div class="citizen-item" onclick="selectCitizen(${citizen.id})">
+                            <strong>ID: ${citizen.id}</strong> - ${citizen.firstName} ${citizen.lastName}<br>
+                            <small>📅 ${new Date(citizen.birthDate).toLocaleDateString('fr-FR')} | 
+                            📍 ${citizen.birthPlace} | 
+                            📄 ${citizen.documentType}</small><br>
+                            <span class="status-badge status-${citizen.status.toLowerCase()}">${citizen.status}</span>
+                        </div>
+                    `).join('');
+                    citizensListDiv.style.display = 'block';
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Impossible de récupérer les citoyens'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        function selectCitizen(citizenId) {
+            selectedCitizenId = citizenId;
+            const citizen = citizens.find(c => c.id === citizenId);
+            document.getElementById('selectedCitizen').value = `ID: ${citizen.id} - ${citizen.firstName} ${citizen.lastName}`;
+            
+            // Mettre à jour la sélection visuelle
+            document.querySelectorAll('.citizen-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.citizen-item').classList.add('selected');
+        }
+
+        async function generateDocument() {
+            const resultDiv = document.getElementById('generateResult');
+            const documentType = document.getElementById('documentType').value;
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            if (!selectedCitizenId) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez sélectionner un citoyen</div>`;
+                return;
+            }
+
+            try {
+                const endpoint = documentType === 'pdf' 
+                    ? `/api/passport/generate/${selectedCitizenId}/pdf`
+                    : `/api/passport/generate/${selectedCitizenId}`;
+                
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Document ${documentType.toUpperCase()} généré avec succès!<br>Fichier: ${data.filename}<br>Message: ${data.message}</div>`;
+                    // Remplir automatiquement le champ filename pour le téléchargement
+                    document.getElementById('filename').value = data.filename;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Impossible de générer le document'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function downloadDocument() {
+            const filename = document.getElementById('filename').value;
+            const resultDiv = document.getElementById('downloadResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            if (!filename) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez spécifier un nom de fichier</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/passport/download/${filename}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    resultDiv.innerHTML = `<div class="result success">✅ Document téléchargé avec succès!</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: Impossible de télécharger le document</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

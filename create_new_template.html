@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un nouveau template Word</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .template-content {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Créer un nouveau template Word valide</h1>
+        <p>Ce script vous aide à créer un nouveau template Word pour remplacer le fichier corrompu.</p>
+        
+        <div class="instructions">
+            <h3>📋 Instructions</h3>
+            <div class="step">
+                <strong>Étape 1:</strong> Cliquez sur "Copier le contenu du template"
+            </div>
+            <div class="step">
+                <strong>Étape 2:</strong> Ouvrez Microsoft Word
+            </div>
+            <div class="step">
+                <strong>Étape 3:</strong> Créez un nouveau document
+            </div>
+            <div class="step">
+                <strong>Étape 4:</strong> Collez le contenu copié
+            </div>
+            <div class="step">
+                <strong>Étape 5:</strong> Sauvegardez au format .docx
+            </div>
+            <div class="step">
+                <strong>Étape 6:</strong> Renommez en "FORMULARIO DE PEDIDO DE PASSAPORTE.docx"
+            </div>
+            <div class="step">
+                <strong>Étape 7:</strong> Copiez dans backend/src/main/resources/
+            </div>
+        </div>
+
+        <h3>📄 Contenu du template</h3>
+        <div class="template-content" id="templateContent">
+FORMULARIO DE PEDIDO DE PASSAPORTE
+
+Dados pessoais:
+Nome: {{Prénom}}
+Apelido: {{Nom de famille}}
+Data de nascimento: {{Date de naissance}}
+Local de nascimento: {{Local de nascimento}}
+
+Informações adicionais:
+Data de pedido: _________________
+Assinatura: _____________________
+
+Observações:
+_________________________________
+_________________________________
+_________________________________
+
+Este documento foi gerado automaticamente pelo sistema eConsulat.
+        </div>
+
+        <button onclick="copyTemplateContent()">📋 Copier le contenu du template</button>
+        <button onclick="downloadTemplate()">💾 Télécharger le template</button>
+        
+        <div id="result"></div>
+
+        <div class="instructions">
+            <h3>🔧 Après avoir créé le nouveau template</h3>
+            <div class="step">
+                1. Arrêtez l'application (Ctrl+C dans le terminal)
+            </div>
+            <div class="step">
+                2. Copiez le nouveau fichier dans backend/src/main/resources/
+            </div>
+            <div class="step">
+                3. Redémarrez l'application avec ./start.sh
+            </div>
+            <div class="step">
+                4. Testez la génération de document
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyTemplateContent() {
+            const content = document.getElementById('templateContent').textContent;
+            navigator.clipboard.writeText(content).then(function() {
+                document.getElementById('result').innerHTML = '<div class="success">✅ Contenu copié dans le presse-papiers !</div>';
+            }).catch(function(err) {
+                document.getElementById('result').innerHTML = '<div class="success">✅ Contenu sélectionné. Utilisez Ctrl+C pour copier.</div>';
+                // Fallback: select the text
+                const range = document.createRange();
+                range.selectNodeContents(document.getElementById('templateContent'));
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            });
+        }
+
+        function downloadTemplate() {
+            const content = document.getElementById('templateContent').textContent;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'template_passeport.txt';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            
+            document.getElementById('result').innerHTML = '<div class="success">✅ Template téléchargé ! Ouvrez le fichier .txt et copiez le contenu dans Word.</div>';
+        }
+    </script>
+</body>
+</html> 

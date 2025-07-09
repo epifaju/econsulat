@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération Document Passeport</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Génération Document Passeport</h1>
+    
+    <div class="test-section">
+        <h3>1. Authentification</h3>
+        <input type="text" id="username" placeholder="Nom d'utilisateur" value="admin">
+        <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+        <button onclick="login()">Se connecter</button>
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Liste des citoyens</h3>
+        <button onclick="getCitizens()">Récupérer la liste des citoyens</button>
+        <div id="citizensResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Génération de document de passeport</h3>
+        <input type="number" id="citizenId" placeholder="ID du citoyen">
+        <button onclick="generatePassport()">Générer document de passeport</button>
+        <div id="generateResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Téléchargement de document</h3>
+        <input type="text" id="filename" placeholder="Nom du fichier">
+        <button onclick="downloadDocument()">Télécharger le document</button>
+        <div id="downloadResult"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let token = '';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    resultDiv.innerHTML = `<div class="result success">✅ Connexion réussie! Token: ${token.substring(0, 20)}...</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Connexion échouée'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function getCitizens() {
+            const resultDiv = document.getElementById('citizensResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/citizens`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const citizensList = data.map(citizen => 
+                        `<div>ID: ${citizen.id} - ${citizen.firstName} ${citizen.lastName} (${citizen.documentType})</div>`
+                    ).join('');
+                    resultDiv.innerHTML = `<div class="result success">✅ ${data.length} citoyens trouvés:<br>${citizensList}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Impossible de récupérer les citoyens'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function generatePassport() {
+            const citizenId = document.getElementById('citizenId').value;
+            const resultDiv = document.getElementById('generateResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            if (!citizenId) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez spécifier un ID de citoyen</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/passport/generate/${citizenId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Document généré avec succès!<br>Fichier: ${data.filename}<br>Message: ${data.message}</div>`;
+                    // Remplir automatiquement le champ filename pour le téléchargement
+                    document.getElementById('filename').value = data.filename;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Impossible de générer le document'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function downloadDocument() {
+            const filename = document.getElementById('filename').value;
+            const resultDiv = document.getElementById('downloadResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            if (!filename) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez spécifier un nom de fichier</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/passport/download/${filename}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    resultDiv.innerHTML = `<div class="result success">✅ Document téléchargé avec succès!</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: Impossible de télécharger le document</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

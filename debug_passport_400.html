@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Erreur 400 - Génération Passeport</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .test-section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: 500;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .citizen-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Erreur 400 - Génération Passeport</h1>
+        <p class="info result">Ce diagnostic va identifier la cause de l'erreur 400 lors de la génération de documents de passeport.</p>
+        
+        <div class="test-section">
+            <h3>🔐 1. Authentification</h3>
+            <div class="form-group">
+                <label>Nom d'utilisateur:</label>
+                <input type="text" id="username" value="admin">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <button onclick="login()" class="btn-success">Se connecter</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>👥 2. Récupération des citoyens</h3>
+            <button onclick="getCitizens()">Récupérer la liste des citoyens</button>
+            <div id="citizensResult"></div>
+            <div id="citizensList"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 3. Diagnostic des données citoyen</h3>
+            <div class="form-group">
+                <label>ID du citoyen à tester:</label>
+                <input type="number" id="citizenId" placeholder="Entrez l'ID d'un citoyen">
+            </div>
+            <button onclick="diagnoseCitizen()" class="btn-danger">Diagnostiquer le citoyen</button>
+            <div id="diagnoseResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📄 4. Test de génération avec diagnostic</h3>
+            <button onclick="testGenerationWithDebug()" class="btn-danger">Tester la génération avec debug</button>
+            <div id="generationResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 5. Vérification du template</h3>
+            <button onclick="checkTemplate()">Vérifier l'existence du template</button>
+            <div id="templateResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📁 6. Vérification des permissions</h3>
+            <button onclick="checkPermissions()">Vérifier les permissions d'écriture</button>
+            <div id="permissionsResult"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let token = '';
+        let citizens = [];
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    resultDiv.innerHTML = `<div class="result success">✅ Connexion réussie! Token: ${token.substring(0, 20)}...</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Connexion échouée'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function getCitizens() {
+            const resultDiv = document.getElementById('citizensResult');
+            const citizensListDiv = document.getElementById('citizensList');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/citizens`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    citizens = data;
+                    resultDiv.innerHTML = `<div class="result success">✅ ${data.length} citoyens trouvés</div>`;
+                    
+                    // Afficher la liste des citoyens
+                    citizensListDiv.innerHTML = data.map(citizen => `
+                        <div class="citizen-info">
+                            <strong>ID: ${citizen.id}</strong><br>
+                            Prénom: ${citizen.firstName || 'NULL'}<br>
+                            Nom: ${citizen.lastName || 'NULL'}<br>
+                            Date de naissance: ${citizen.birthDate || 'NULL'}<br>
+                            Lieu de naissance: ${citizen.birthPlace || 'NULL'}<br>
+                            Statut: ${citizen.status || 'NULL'}<br>
+                            Type de document: ${citizen.documentType || 'NULL'}
+                        </div>
+                    `).join('');
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Impossible de récupérer les citoyens'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function diagnoseCitizen() {
+            const citizenId = document.getElementById('citizenId').value;
+            const resultDiv = document.getElementById('diagnoseResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            if (!citizenId) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez spécifier un ID de citoyen</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/citizens/${citizenId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const citizen = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <strong>✅ Citoyen trouvé:</strong>
+                            
+                            ID: ${citizen.id}
+                            Prénom: ${citizen.firstName || 'NULL'}
+                            Nom: ${citizen.lastName || 'NULL'}
+                            Date de naissance: ${citizen.birthDate || 'NULL'}
+                            Lieu de naissance: ${citizen.birthPlace || 'NULL'}
+                            Statut: ${citizen.status || 'NULL'}
+                            Type de document: ${citizen.documentType || 'NULL'}
+                            
+                            <strong>Diagnostic des données:</strong>
+                            ${!citizen.firstName ? '❌ Prénom manquant' : '✅ Prénom OK'}
+                            ${!citizen.lastName ? '❌ Nom manquant' : '✅ Nom OK'}
+                            ${!citizen.birthDate ? '❌ Date de naissance manquante' : '✅ Date de naissance OK'}
+                            ${!citizen.birthPlace ? '❌ Lieu de naissance manquant' : '✅ Lieu de naissance OK'}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Citoyen non trouvé (ID: ${citizenId})</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function testGenerationWithDebug() {
+            const citizenId = document.getElementById('citizenId').value;
+            const resultDiv = document.getElementById('generationResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            if (!citizenId) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez spécifier un ID de citoyen</div>`;
+                return;
+            }
+
+            try {
+                console.log(`Tentative de génération pour le citoyen ${citizenId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/passport/generate/${citizenId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log(`Réponse reçue: ${response.status} ${response.statusText}`);
+                
+                let responseText = '';
+                try {
+                    const data = await response.json();
+                    responseText = JSON.stringify(data, null, 2);
+                } catch (e) {
+                    responseText = await response.text();
+                }
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Génération réussie!<br><br>Réponse complète:<br>${responseText}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur ${response.status}: ${response.statusText}<br><br>Réponse complète:<br>${responseText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}<br><br>Stack trace:<br>${error.stack}</div>`;
+            }
+        }
+
+        async function checkTemplate() {
+            const resultDiv = document.getElementById('templateResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                // Test simple pour voir si le service répond
+                const response = await fetch(`${API_BASE}/api/passport/generate/999999`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.status === 404) {
+                    resultDiv.innerHTML = `<div class="result warning">⚠️ Service accessible, mais citoyen non trouvé (normal pour ID 999999)</div>`;
+                } else if (response.status === 400) {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur 400 détectée: ${data.message || 'Erreur inconnue'}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result success">✅ Service accessible, statut: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function checkPermissions() {
+            const resultDiv = document.getElementById('permissionsResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                // Test de création d'un fichier temporaire
+                const response = await fetch(`${API_BASE}/api/passport/generate/1`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Permissions OK - Document généré: ${data.filename}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Problème de permissions ou autre erreur: ${data.message || 'Erreur inconnue'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

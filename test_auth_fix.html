@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Correction Authentification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Correction Authentification</h1>
+        <p class="info result">Test de la correction de l'erreur 403 sur les endpoints /api/passport/</p>
+        
+        <div>
+            <h3>1. Authentification</h3>
+            <input type="text" id="username" placeholder="Nom d'utilisateur" value="admin">
+            <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+            <button onclick="login()">Se connecter</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div>
+            <h3>2. Test Endpoint Passport</h3>
+            <input type="number" id="citizenId" placeholder="ID du citoyen" value="1">
+            <button onclick="testPassportEndpoint()">Tester /api/passport/generate/{id}</button>
+            <button onclick="testPassportPdfEndpoint()">Tester /api/passport/generate/{id}/pdf</button>
+            <div id="testResult"></div>
+        </div>
+
+        <div>
+            <h3>3. Informations de débogage</h3>
+            <div id="debugInfo" class="info result">
+                <strong>Problème identifié:</strong><br>
+                - L'annotation @EnableMethodSecurity n'était pas activée<br>
+                - Les endpoints /api/passport/** n'étaient pas autorisés dans SecurityConfig<br>
+                <br>
+                <strong>Corrections apportées:</strong><br>
+                - Ajout de @EnableMethodSecurity dans SecurityConfig<br>
+                - Ajout de .requestMatchers("/api/passport/**").hasRole("ADMIN")<br>
+                - Import de EnableMethodSecurity
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let token = '';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    resultDiv.innerHTML = `<div class="result success">✅ Connexion réussie! Token: ${token.substring(0, 20)}...</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur: ${data.message || 'Connexion échouée'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function testPassportEndpoint() {
+            const citizenId = document.getElementById('citizenId').value;
+            const resultDiv = document.getElementById('testResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/passport/generate/${citizenId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Endpoint Word OK!<br>Fichier: ${data.filename}<br>Message: ${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur ${response.status}: ${data.message || 'Erreur inconnue'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function testPassportPdfEndpoint() {
+            const citizenId = document.getElementById('citizenId').value;
+            const resultDiv = document.getElementById('testResult');
+
+            if (!token) {
+                resultDiv.innerHTML = `<div class="result error">❌ Veuillez d'abord vous connecter</div>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/passport/generate/${citizenId}/pdf`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Endpoint PDF OK!<br>Fichier: ${data.filename}<br>Message: ${data.message}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">❌ Erreur ${response.status}: ${data.message || 'Erreur inconnue'}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

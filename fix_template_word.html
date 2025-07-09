@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correction Template Word - Erreur Array Length</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        .section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #c82333;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        .btn-info {
+            background-color: #17a2b8;
+        }
+        .btn-info:hover {
+            background-color: #138496;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: 500;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .solution-box {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .solution-box h4 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correction Template Word - Erreur "Cannot read the array length"</h1>
+        <p class="info result">Ce script vous aide à diagnostiquer et corriger l'erreur liée au template Word corrompu.</p>
+        
+        <div class="section">
+            <h3>🚨 Problème identifié</h3>
+            <div class="result error">
+                Erreur: "Cannot read the array length because "<local3>" is null"
+                
+                Cette erreur indique que le fichier Word template est corrompu ou dans un format non supporté par Apache POI.
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🔍 Diagnostic du template</h3>
+            <button onclick="testTemplateGeneration()" class="btn-info">Tester la génération de template</button>
+            <div id="templateTestResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>✅ Solutions recommandées</h3>
+            
+            <div class="solution-box">
+                <h4>Solution 1: Vérifier le format du fichier</h4>
+                <div class="step">
+                    <strong>Étape 1:</strong> Vérifiez que le fichier est bien un .docx (pas .doc)
+                </div>
+                <div class="step">
+                    <strong>Étape 2:</strong> Ouvrez le fichier dans Word et sauvegardez-le au format .docx
+                </div>
+                <div class="step">
+                    <strong>Étape 3:</strong> Remplacez le fichier dans backend/src/main/resources/
+                </div>
+            </div>
+
+            <div class="solution-box">
+                <h4>Solution 2: Créer un nouveau template</h4>
+                <div class="step">
+                    <strong>Étape 1:</strong> Créez un nouveau document Word (.docx)
+                </div>
+                <div class="step">
+                    <strong>Étape 2:</strong> Ajoutez les placeholders: {{Prénom}}, {{Nom de famille}}, {{Date de naissance}}, {{Local de nascimento}}
+                </div>
+                <div class="step">
+                    <strong>Étape 3:</strong> Sauvegardez sous le nom "FORMULARIO DE PEDIDO DE PASSAPORTE.docx"
+                </div>
+                <div class="step">
+                    <strong>Étape 4:</strong> Copiez dans backend/src/main/resources/
+                </div>
+            </div>
+
+            <div class="solution-box">
+                <h4>Solution 3: Template de secours</h4>
+                <button onclick="createBackupTemplate()" class="btn-success">Créer un template de secours</button>
+                <div id="backupTemplateResult"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 Test après correction</h3>
+            <button onclick="testAfterFix()" class="btn-success">Tester après correction</button>
+            <div id="testAfterFixResult"></div>
+        </div>
+
+        <div class="section">
+            <h3>📋 Instructions détaillées</h3>
+            <div class="result info">
+                <strong>Pour corriger le problème :</strong>
+                
+                1. Ouvrez Microsoft Word
+                2. Créez un nouveau document
+                3. Ajoutez le contenu suivant :
+                
+                Nom: {{Prénom}}
+                Apelido: {{Nom de famille}}
+                Data de nascimento: {{Date de naissance}}
+                Local de nascimento: {{Local de nascimento}}
+                
+                4. Sauvegardez au format .docx
+                5. Copiez le fichier dans backend/src/main/resources/
+                6. Redémarrez l'application
+                7. Testez la génération
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let token = '';
+
+        async function login() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    token = data.token;
+                    return true;
+                }
+            } catch (error) {
+                console.error('Erreur de connexion:', error);
+            }
+            return false;
+        }
+
+        async function testTemplateGeneration() {
+            const resultDiv = document.getElementById('templateTestResult');
+            resultDiv.innerHTML = '<div class="result warning">🔍 Test en cours...</div>';
+
+            try {
+                // Se connecter d'abord
+                const loggedIn = await login();
+                if (!loggedIn) {
+                    resultDiv.innerHTML = '<div class="result error">❌ Impossible de se connecter</div>';
+                    return;
+                }
+
+                // Tester avec un citoyen existant
+                const response = await fetch(`${API_BASE}/api/passport/generate/1`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">✅ Template OK! Document généré: ${data.filename}</div>`;
+                } else {
+                    let errorMessage = data.message || 'Erreur inconnue';
+                    if (errorMessage.includes('Cannot read the array length')) {
+                        resultDiv.innerHTML = `<div class="result error">❌ Template corrompu détecté: ${errorMessage}</div>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="result error">❌ Autre erreur: ${errorMessage}</div>`;
+                    }
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+
+        async function createBackupTemplate() {
+            const resultDiv = document.getElementById('backupTemplateResult');
+            resultDiv.innerHTML = '<div class="result warning">📝 Création du template de secours...</div>';
+
+            try {
+                // Créer un template simple en HTML qui peut être converti
+                const templateContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Template Passeport</title>
+                        <meta charset="UTF-8">
+                    </head>
+                    <body>
+                        <h1>FORMULARIO DE PEDIDO DE PASSAPORTE</h1>
+                        <table border="1" cellpadding="5" cellspacing="0">
+                            <tr>
+                                <td><strong>Nome:</strong></td>
+                                <td>{{Prénom}}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Apelido:</strong></td>
+                                <td>{{Nom de famille}}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Data de nascimento:</strong></td>
+                                <td>{{Date de naissance}}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Local de nascimento:</strong></td>
+                                <td>{{Local de nascimento}}</td>
+                            </tr>
+                        </table>
+                    </body>
+                    </html>
+                `;
+
+                // Créer un blob et télécharger
+                const blob = new Blob([templateContent], { type: 'text/html' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'template_passeport_backup.html';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+
+                resultDiv.innerHTML = `<div class="result success">
+                    ✅ Template de secours créé!
+                    
+                    Instructions:
+                    1. Ouvrez le fichier template_passeport_backup.html
+                    2. Copiez le contenu
+                    3. Créez un nouveau document Word
+                    4. Collez le contenu
+                    5. Sauvegardez au format .docx
+                    6. Renommez en "FORMULARIO DE PEDIDO DE PASSAPORTE.docx"
+                    7. Copiez dans backend/src/main/resources/
+                </div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur lors de la création: ${error.message}</div>`;
+            }
+        }
+
+        async function testAfterFix() {
+            const resultDiv = document.getElementById('testAfterFixResult');
+            resultDiv.innerHTML = '<div class="result warning">🧪 Test après correction...</div>';
+
+            try {
+                const loggedIn = await login();
+                if (!loggedIn) {
+                    resultDiv.innerHTML = '<div class="result error">❌ Impossible de se connecter</div>';
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/api/passport/generate/1`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `<div class="result success">
+                        ✅ Correction réussie!
+                        
+                        Document généré: ${data.filename}
+                        Message: ${data.message}
+                        
+                        Le template fonctionne maintenant correctement.
+                    </div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="result error">
+                        ❌ Problème persistant: ${data.message}
+                        
+                        Vérifiez que:
+                        1. Le nouveau template est bien copié
+                        2. L'application a été redémarrée
+                        3. Le fichier est au format .docx
+                    </div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Erreur réseau: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 
