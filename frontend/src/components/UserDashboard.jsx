@@ -13,6 +13,8 @@ import StatsCard from "./StatsCard";
 import SearchAndFilters from "./SearchAndFilters";
 import Pagination from "./Pagination";
 import Notification from "./Notification";
+import NewDemandeForm from "./NewDemandeForm";
+import DemandesList from "./DemandesList";
 
 const UserDashboard = () => {
   const { user, token } = useAuth();
@@ -20,6 +22,7 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [showNewDemandeForm, setShowNewDemandeForm] = useState(false);
 
   // États pour la pagination et filtres
   const [currentPage, setCurrentPage] = useState(1);
@@ -66,6 +69,20 @@ const UserDashboard = () => {
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message });
     setTimeout(() => setNotification(null), 5000);
+  };
+
+  const handleNewDemandeSuccess = (demande) => {
+    setShowNewDemandeForm(false);
+    showNotification(
+      "success",
+      "Succès",
+      "Votre demande a été soumise avec succès"
+    );
+    // Recharger les données si nécessaire
+  };
+
+  const handleNewDemandeClose = () => {
+    setShowNewDemandeForm(false);
   };
 
   // Calcul des statistiques
@@ -287,7 +304,10 @@ const UserDashboard = () => {
           <div className="card-header">
             <div className="flex items-center justify-between">
               <h2 className="card-title">Mes Demandes</h2>
-              <button className="btn-primary">
+              <button
+                className="btn-primary"
+                onClick={() => setShowNewDemandeForm(true)}
+              >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Nouvelle demande
               </button>
@@ -420,7 +440,10 @@ const UserDashboard = () => {
             <div className="text-center py-8">
               <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto" />
               <p className="mt-2 text-gray-500">Aucune demande trouvée</p>
-              <button className="btn-primary mt-4">
+              <button
+                className="btn-primary mt-4"
+                onClick={() => setShowNewDemandeForm(true)}
+              >
                 <PlusIcon className="h-4 w-4 mr-2" />
                 Créer votre première demande
               </button>
@@ -428,6 +451,24 @@ const UserDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Modal Nouvelle Demande */}
+      {showNewDemandeForm && (
+        <NewDemandeForm
+          onClose={handleNewDemandeClose}
+          onSuccess={handleNewDemandeSuccess}
+        />
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <Notification
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </div>
   );
 };
