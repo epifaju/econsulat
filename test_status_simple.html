@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple - Mise à jour statut</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Simple - Mise à jour statut</h1>
+    
+    <div>
+        <label>Token JWT:</label><br>
+        <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiJ9...">
+    </div>
+    
+    <div>
+        <label>ID Demande:</label><br>
+        <input type="text" id="demandeId" value="2">
+    </div>
+    
+    <div>
+        <label>Nouveau statut:</label><br>
+        <select id="status">
+            <option value="PENDING">En attente</option>
+            <option value="APPROVED">Approuvé</option>
+            <option value="REJECTED">Rejeté</option>
+            <option value="COMPLETED">Terminé</option>
+        </select>
+    </div>
+    
+    <button onclick="testStatusUpdate()">🔄 Tester mise à jour statut</button>
+    <button onclick="testGetDemandes()">📋 Récupérer demandes</button>
+    <button onclick="clearLog()">🗑️ Effacer</button>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            logDiv.innerHTML += `[${timestamp}] ${icon} ${message}<br>`;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        async function testGetDemandes() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            try {
+                log('📡 Récupération des demandes...');
+                const response = await fetch('http://localhost:8080/api/admin/demandes?page=0&size=5', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ ${data.content.length} demandes récupérées`, 'success');
+                    data.content.forEach(d => {
+                        log(`   ID: ${d.id} - ${d.firstName} ${d.lastName} - ${d.status}`);
+                    });
+                } else {
+                    log(`❌ Erreur: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erreur réseau: ${error.message}`, 'error');
+            }
+        }
+
+        async function testStatusUpdate() {
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const status = document.getElementById('status').value;
+
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            if (!demandeId) {
+                log('❌ ID demande requis', 'error');
+                return;
+            }
+
+            try {
+                log(`🔄 Mise à jour: demande ${demandeId} -> ${status}`);
+                
+                const url = `http://localhost:8080/api/admin/demandes/${demandeId}/status?status=${status}`;
+                log(`📡 URL: ${url}`);
+
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Status: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Statut mis à jour avec succès`, 'success');
+                    log(`   Nouveau statut: ${data.status}`);
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erreur ${response.status}: ${errorText}`, 'error');
+                    
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        log(`   Message: ${errorData.message || 'Aucun message'}`, 'error');
+                    } catch (e) {
+                        log(`   Réponse brute: ${errorText}`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Erreur réseau: ${error.message}`, 'error');
+            }
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            log('🧪 Test de mise à jour de statut initialisé');
+            log('ℹ️ Assurez-vous que le backend (port 8080) est démarré');
+        };
+    </script>
+</body>
+</html> 

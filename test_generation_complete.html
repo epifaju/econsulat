@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Complet - Génération Document</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        button:hover { background-color: #0056b3; }
+        .log { 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            white-space: pre-wrap; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        .status { 
+            padding: 5px 10px; 
+            border-radius: 3px; 
+            font-weight: bold; 
+        }
+        .status.success { background-color: #28a745; color: white; }
+        .status.error { background-color: #dc3545; color: white; }
+        .status.warning { background-color: #ffc107; color: black; }
+        .status.info { background-color: #17a2b8; color: white; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Complet - Génération de Document</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Instructions</h3>
+        <p>Ce test vérifie tous les aspects de la génération de document :</p>
+        <ol>
+            <li>Connexion au backend</li>
+            <li>Authentification</li>
+            <li>Récupération des demandes</li>
+            <li>Génération de document</li>
+            <li>Téléchargement</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Configuration</h3>
+        <label>Token JWT (optionnel - sera demandé si nécessaire):</label>
+        <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiJ9...">
+        <br>
+        <label>ID de la demande (optionnel):</label>
+        <input type="text" id="demandeId" placeholder="1" value="1">
+        <br>
+        <label>ID du type de document (optionnel):</label>
+        <input type="text" id="documentTypeId" placeholder="1" value="1">
+    </div>
+
+    <div class="test-section">
+        <h3>🚀 Tests</h3>
+        <button onclick="runAllTests()">🧪 Lancer tous les tests</button>
+        <button onclick="testConnection()">🔌 Test Connexion</button>
+        <button onclick="testAuth()">🔐 Test Authentification</button>
+        <button onclick="testDemandes()">📋 Test Demandes</button>
+        <button onclick="testGeneration()">📄 Test Génération</button>
+        <button onclick="clearLog()">🗑️ Effacer les logs</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Résultats</h3>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Logs détaillés</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let testResults = {
+            connection: false,
+            auth: false,
+            demandes: false,
+            generation: false
+        };
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logDiv.textContent += `[${timestamp}] ${statusClass} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function updateResults() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            
+            Object.entries(testResults).forEach(([test, passed]) => {
+                const status = passed ? 'success' : 'error';
+                const icon = passed ? '✅' : '❌';
+                const text = passed ? 'RÉUSSI' : 'ÉCHOUÉ';
+                
+                resultsDiv.innerHTML += `
+                    <div class="status ${status}">
+                        ${icon} ${test.toUpperCase()}: ${text}
+                    </div>
+                `;
+            });
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+            testResults = {
+                connection: false,
+                auth: false,
+                demandes: false,
+                generation: false
+            };
+            updateResults();
+        }
+
+        async function testConnection() {
+            log('=== Test de connexion au backend ===');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 403) {
+                    log('✅ Connexion OK - Authentification requise (normal)', 'success');
+                    testResults.connection = true;
+                } else if (response.ok) {
+                    log('✅ Connexion OK - Authentifié', 'success');
+                    testResults.connection = true;
+                } else {
+                    log(`❌ Erreur de connexion: ${response.status}`, 'error');
+                    testResults.connection = false;
+                }
+            } catch (error) {
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+                testResults.connection = false;
+            }
+            
+            updateResults();
+        }
+
+        async function testAuth() {
+            log('=== Test d\'authentification ===');
+            
+            let token = document.getElementById('token').value;
+            if (!token) {
+                token = prompt('Entrez votre token JWT:');
+                if (!token) {
+                    log('❌ Aucun token fourni', 'error');
+                    testResults.auth = false;
+                    updateResults();
+                    return;
+                }
+                document.getElementById('token').value = token;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Authentification réussie', 'success');
+                    log(`Données reçues: ${data.content ? data.content.length : 0} demandes`);
+                    testResults.auth = true;
+                } else {
+                    log(`❌ Erreur d'authentification: ${response.status}`, 'error');
+                    testResults.auth = false;
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                testResults.auth = false;
+            }
+            
+            updateResults();
+        }
+
+        async function testDemandes() {
+            log('=== Test récupération des demandes ===');
+            
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('❌ Token requis pour ce test', 'error');
+                testResults.demandes = false;
+                updateResults();
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes?page=0&size=5', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demandes récupérées avec succès', 'success');
+                    log(`Total: ${data.totalElements} demandes`);
+                    log(`Page actuelle: ${data.content.length} demandes`);
+                    
+                    if (data.content.length > 0) {
+                        const firstDemande = data.content[0];
+                        log(`Première demande: ID=${firstDemande.id}, Nom=${firstDemande.firstName} ${firstDemande.lastName}`);
+                        document.getElementById('demandeId').value = firstDemande.id;
+                    }
+                    
+                    testResults.demandes = true;
+                } else {
+                    log(`❌ Erreur: ${response.status}`, 'error');
+                    testResults.demandes = false;
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                testResults.demandes = false;
+            }
+            
+            updateResults();
+        }
+
+        async function testGeneration() {
+            log('=== Test génération de document ===');
+            
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            
+            if (!token) {
+                log('❌ Token requis pour ce test', 'error');
+                testResults.generation = false;
+                updateResults();
+                return;
+            }
+            
+            if (!demandeId || !documentTypeId) {
+                log('❌ ID de demande et type de document requis', 'error');
+                testResults.generation = false;
+                updateResults();
+                return;
+            }
+            
+            try {
+                log(`Génération pour demande ${demandeId}, type ${documentTypeId}...`);
+                
+                const response = await fetch(
+                    `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                
+                log(`Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const document = await response.json();
+                    log('✅ Document généré avec succès', 'success');
+                    log(`Document ID: ${document.id}`);
+                    log(`Nom du fichier: ${document.fileName}`);
+                    log(`Chemin: ${document.filePath}`);
+                    
+                    // Test du téléchargement
+                    log('Test du téléchargement...');
+                    const downloadResponse = await fetch(
+                        `http://localhost:8080/api/admin/documents/download/${document.id}`,
+                        {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }
+                    );
+                    
+                    if (downloadResponse.ok) {
+                        const blob = await downloadResponse.blob();
+                        log(`✅ Téléchargement OK - Taille: ${blob.size} bytes`, 'success');
+                        
+                        // Créer le lien de téléchargement
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = document.fileName;
+                        a.textContent = '📥 Télécharger le document généré';
+                        a.style.display = 'block';
+                        a.style.margin = '10px 0';
+                        a.style.padding = '10px';
+                        a.style.backgroundColor = '#28a745';
+                        a.style.color = 'white';
+                        a.style.textDecoration = 'none';
+                        a.style.borderRadius = '5px';
+                        document.body.appendChild(a);
+                        
+                        testResults.generation = true;
+                    } else {
+                        log(`❌ Erreur téléchargement: ${downloadResponse.status}`, 'error');
+                        testResults.generation = false;
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Erreur génération: ${response.status}`, 'error');
+                    if (errorData.message) {
+                        log(`Message: ${errorData.message}`, 'error');
+                    }
+                    testResults.generation = false;
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                testResults.generation = false;
+            }
+            
+            updateResults();
+        }
+
+        async function runAllTests() {
+            log('🚀 Lancement de tous les tests...');
+            clearLog();
+            
+            await testConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAuth();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testDemandes();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testGeneration();
+            
+            log('🏁 Tous les tests terminés');
+            
+            const allPassed = Object.values(testResults).every(result => result);
+            if (allPassed) {
+                log('🎉 Tous les tests sont passés avec succès !', 'success');
+            } else {
+                log('⚠️ Certains tests ont échoué. Vérifiez les logs ci-dessus.', 'warning');
+            }
+        }
+
+        // Initialisation
+        window.onload = function() {
+            log('🧪 Test de génération de document initialisé');
+            log('ℹ️ Assurez-vous que le backend (port 8080) et le frontend (port 5173) sont démarrés');
+        };
+    </script>
+</body>
+</html> 

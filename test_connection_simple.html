@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion Simple</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .info { background-color: #d1ecf1; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Connexion Backend</h1>
+    
+    <button onclick="testConnection()">Tester la connexion</button>
+    <button onclick="testCORS()">Tester CORS</button>
+    <button onclick="testAuth()">Tester Authentification</button>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        function log(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent += message + '\n';
+            console.log(message);
+        }
+
+        async function testConnection() {
+            log('=== Test de connexion de base ===');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Status: ${response.status}`);
+                log(`Status Text: ${response.statusText}`);
+                log(`Headers: ${JSON.stringify([...response.headers.entries()])}`);
+                
+                if (response.status === 403) {
+                    log('✅ Connexion OK - Authentification requise (normal)');
+                } else if (response.ok) {
+                    log('✅ Connexion OK - Authentifié');
+                } else {
+                    log(`❌ Erreur: ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de connexion: ${error.message}`);
+                log(`Type d'erreur: ${error.name}`);
+            }
+        }
+
+        async function testCORS() {
+            log('\n=== Test CORS ===');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'http://localhost:5173',
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Content-Type,Authorization'
+                    }
+                });
+                
+                log(`CORS Status: ${response.status}`);
+                log(`CORS Headers: ${JSON.stringify([...response.headers.entries()])}`);
+                
+                if (response.status === 200) {
+                    log('✅ CORS configuré correctement');
+                } else {
+                    log('❌ Problème CORS');
+                }
+            } catch (error) {
+                log(`❌ Erreur CORS: ${error.message}`);
+            }
+        }
+
+        async function testAuth() {
+            log('\n=== Test avec token ===');
+            
+            const token = prompt('Entrez un token JWT (optionnel):');
+            if (!token) {
+                log('Aucun token fourni');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Auth Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Authentification réussie');
+                    log(`Données reçues: ${JSON.stringify(data).substring(0, 200)}...`);
+                } else {
+                    log(`❌ Erreur d'authentification: ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        // Test automatique au chargement
+        window.onload = function() {
+            log('Page chargée - Tests disponibles');
+        };
+    </script>
+</body>
+</html> 

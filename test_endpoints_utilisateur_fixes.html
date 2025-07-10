@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoints Utilisateur - Génération Documents</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #333;
+            margin-top: 0;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .demande-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .demande-item h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .demande-item p {
+            margin: 5px 0;
+            color: #666;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .action-buttons {
+            margin-top: 10px;
+        }
+        .action-buttons button {
+            width: auto;
+            margin-right: 10px;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+        .btn-primary { background: #007bff; }
+        .btn-success { background: #28a745; }
+        .btn-info { background: #17a2b8; }
+        .logs {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Endpoints Utilisateur - Génération Documents</h1>
+        <p>Cette page teste les nouveaux endpoints utilisateur pour la génération et téléchargement de documents.</p>
+
+        <!-- Section Authentification -->
+        <div class="section">
+            <h2>🔐 Authentification</h2>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="user@econsulat.com" placeholder="user@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" value="user123" placeholder="user123">
+            </div>
+            <button onclick="login()">Se connecter</button>
+            <div id="authResult"></div>
+        </div>
+
+        <!-- Section Liste des demandes -->
+        <div class="section">
+            <h2>📋 Mes Demandes</h2>
+            <button onclick="loadMyDemandes()">Charger mes demandes</button>
+            <div id="demandesResult"></div>
+        </div>
+
+        <!-- Section Consultation détaillée -->
+        <div class="section">
+            <h2>🔍 Consultation Détails</h2>
+            <div class="form-group">
+                <label for="demandeId">ID de la demande:</label>
+                <input type="number" id="demandeId" placeholder="1">
+            </div>
+            <button onclick="consultDemande()">Consulter les détails</button>
+            <div id="consultResult"></div>
+        </div>
+
+        <!-- Section Génération de document -->
+        <div class="section">
+            <h2>📄 Génération de Document</h2>
+            <div class="form-group">
+                <label for="generateDemandeId">ID de la demande:</label>
+                <input type="number" id="generateDemandeId" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label for="documentTypeId">Type de document:</label>
+                <select id="documentTypeId">
+                    <option value="1">Passeport</option>
+                    <option value="2">Acte de naissance</option>
+                    <option value="3">Certificat de mariage</option>
+                    <option value="4">Carte d'identité</option>
+                </select>
+            </div>
+            <button onclick="generateDocument()">Générer document</button>
+            <div id="generateResult"></div>
+        </div>
+
+        <!-- Section Téléchargement -->
+        <div class="section">
+            <h2>⬇️ Téléchargement de Document</h2>
+            <div class="form-group">
+                <label for="downloadDocumentId">ID du document:</label>
+                <input type="number" id="downloadDocumentId" placeholder="1">
+            </div>
+            <button onclick="downloadDocument()">Télécharger document</button>
+            <div id="downloadResult"></div>
+        </div>
+
+        <!-- Section Logs -->
+        <div class="section">
+            <h2>📝 Logs</h2>
+            <div id="logs" class="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+        let token = localStorage.getItem('token');
+
+        function log(message) {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+            log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('authResult', 'error', 'Veuillez remplir tous les champs');
+                return;
+            }
+
+            try {
+                log(`Tentative de connexion pour: ${email}`);
+                
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    localStorage.setItem('token', token);
+                    showResult('authResult', 'success', `✅ Connexion réussie!\nToken: ${token.substring(0, 50)}...`);
+                    log(`Connexion réussie pour: ${email}`);
+                } else {
+                    showResult('authResult', 'error', `❌ Erreur de connexion: ${data.message || 'Identifiants invalides'}`);
+                    log(`Échec de connexion: ${data.message}`);
+                }
+            } catch (error) {
+                showResult('authResult', 'error', `❌ Erreur réseau: ${error.message}`);
+                log(`Erreur réseau: ${error.message}`);
+            }
+        }
+
+        async function loadMyDemandes() {
+            if (!token) {
+                showResult('demandesResult', 'error', '❌ Veuillez d\'abord vous connecter');
+                return;
+            }
+
+            try {
+                log('Chargement des demandes utilisateur...');
+                
+                const response = await fetch(`${API_BASE}/api/demandes/my`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const demandesHtml = data.map(demande => `
+                        <div class="demande-item">
+                            <h4>Demande #${demande.id} - ${demande.firstName} ${demande.lastName}</h4>
+                            <p><strong>Type:</strong> ${demande.documentType}</p>
+                            <p><strong>Statut:</strong> <span class="status-badge status-${demande.status.toLowerCase()}">${demande.status}</span></p>
+                            <p><strong>Date:</strong> ${new Date(demande.createdAt).toLocaleDateString('fr-FR')}</p>
+                            <div class="action-buttons">
+                                <button class="btn-info" onclick="consultDemandeById(${demande.id})">Consulter</button>
+                                ${demande.status === 'APPROVED' ? 
+                                    `<button class="btn-success" onclick="generateDocumentForDemande(${demande.id})">Générer Document</button>` : 
+                                    '<span style="color: #666; font-style: italic;">Document générable uniquement si approuvé</span>'
+                                }
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    showResult('demandesResult', 'success', `✅ ${data.length} demande(s) trouvée(s):\n${demandesHtml}`);
+                    log(`Chargement réussi: ${data.length} demande(s)`);
+                } else {
+                    showResult('demandesResult', 'error', `❌ Erreur: ${data.message || 'Impossible de charger les demandes'}`);
+                    log(`Erreur chargement: ${data.message}`);
+                }
+            } catch (error) {
+                showResult('demandesResult', 'error', `❌ Erreur réseau: ${error.message}`);
+                log(`Erreur réseau: ${error.message}`);
+            }
+        }
+
+        async function consultDemande() {
+            const demandeId = document.getElementById('demandeId').value;
+            
+            if (!token) {
+                showResult('consultResult', 'error', '❌ Veuillez d\'abord vous connecter');
+                return;
+            }
+
+            if (!demandeId) {
+                showResult('consultResult', 'error', '❌ Veuillez spécifier un ID de demande');
+                return;
+            }
+
+            await consultDemandeById(demandeId);
+        }
+
+        async function consultDemandeById(demandeId) {
+            try {
+                log(`Consultation de la demande #${demandeId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/demandes/${demandeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const details = `
+                        <h4>Détails de la demande #${data.id}</h4>
+                        <p><strong>Nom:</strong> ${data.firstName} ${data.lastName}</p>
+                        <p><strong>Date de naissance:</strong> ${data.birthDate}</p>
+                        <p><strong>Lieu de naissance:</strong> ${data.birthPlace}</p>
+                        <p><strong>Type de document:</strong> ${data.documentType}</p>
+                        <p><strong>Statut:</strong> <span class="status-badge status-${data.status.toLowerCase()}">${data.status}</span></p>
+                        <p><strong>Date de création:</strong> ${new Date(data.createdAt).toLocaleString('fr-FR')}</p>
+                    `;
+                    
+                    showResult('consultResult', 'success', `✅ Consultation réussie:\n${details}`);
+                    log(`Consultation réussie pour la demande #${demandeId}`);
+                } else {
+                    showResult('consultResult', 'error', `❌ Erreur: ${data.message || 'Demande non trouvée'}`);
+                    log(`Erreur consultation: ${data.message}`);
+                }
+            } catch (error) {
+                showResult('consultResult', 'error', `❌ Erreur réseau: ${error.message}`);
+                log(`Erreur réseau: ${error.message}`);
+            }
+        }
+
+        async function generateDocument() {
+            const demandeId = document.getElementById('generateDemandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            
+            if (!token) {
+                showResult('generateResult', 'error', '❌ Veuillez d\'abord vous connecter');
+                return;
+            }
+
+            if (!demandeId) {
+                showResult('generateResult', 'error', '❌ Veuillez spécifier un ID de demande');
+                return;
+            }
+
+            await generateDocumentForDemande(demandeId, documentTypeId);
+        }
+
+        async function generateDocumentForDemande(demandeId, documentTypeId = 1) {
+            try {
+                log(`Génération de document pour la demande #${demandeId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/user/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('generateResult', 'success', `✅ Document généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}\nStatut: ${data.status}`);
+                    log(`Génération réussie: Document #${data.id}`);
+                    
+                    // Remplir automatiquement le champ de téléchargement
+                    document.getElementById('downloadDocumentId').value = data.id;
+                } else {
+                    showResult('generateResult', 'error', `❌ Erreur: ${data.error || data.message || 'Impossible de générer le document'}`);
+                    log(`Erreur génération: ${data.error || data.message}`);
+                }
+            } catch (error) {
+                showResult('generateResult', 'error', `❌ Erreur réseau: ${error.message}`);
+                log(`Erreur réseau: ${error.message}`);
+            }
+        }
+
+        async function downloadDocument() {
+            const documentId = document.getElementById('downloadDocumentId').value;
+            
+            if (!token) {
+                showResult('downloadResult', 'error', '❌ Veuillez d\'abord vous connecter');
+                return;
+            }
+
+            if (!documentId) {
+                showResult('downloadResult', 'error', '❌ Veuillez spécifier un ID de document');
+                return;
+            }
+
+            try {
+                log(`Téléchargement du document #${documentId}...`);
+                
+                const response = await fetch(`${API_BASE}/api/user/documents/download/${documentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `document_${documentId}.docx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showResult('downloadResult', 'success', `✅ Document téléchargé avec succès!\nTaille: ${(blob.size / 1024).toFixed(2)} KB`);
+                    log(`Téléchargement réussi: Document #${documentId}`);
+                } else {
+                    const errorData = await response.text();
+                    showResult('downloadResult', 'error', `❌ Erreur ${response.status}: ${errorData || 'Document non trouvé'}`);
+                    log(`Erreur téléchargement: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                showResult('downloadResult', 'error', `❌ Erreur réseau: ${error.message}`);
+                log(`Erreur réseau: ${error.message}`);
+            }
+        }
+
+        // Initialisation
+        if (token) {
+            log('Token trouvé dans le localStorage');
+            showResult('authResult', 'info', 'Token déjà présent dans le localStorage');
+        } else {
+            log('Aucun token trouvé - connexion requise');
+        }
+    </script>
+</body>
+</html> 

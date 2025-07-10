@@ -1,6 +1,7 @@
 package com.econsulat.controller;
 
 import com.econsulat.dto.DemandeAdminResponse;
+import com.econsulat.dto.DemandeStatusResponse;
 import com.econsulat.dto.UserAdminResponse;
 import com.econsulat.model.Demande;
 import com.econsulat.model.User;
@@ -74,12 +75,22 @@ public class AdminController {
     }
 
     @PutMapping("/demandes/{id}/status")
-    public ResponseEntity<Demande> updateDemandeStatus(
+    public ResponseEntity<DemandeStatusResponse> updateDemandeStatus(
             @PathVariable Long id,
             @RequestParam String status) {
 
         Demande demande = adminService.updateDemandeStatus(id, status);
-        return ResponseEntity.ok(demande);
+
+        DemandeStatusResponse response = new DemandeStatusResponse(
+                demande.getId(),
+                demande.getFirstName(),
+                demande.getLastName(),
+                demande.getDocumentType().getDisplayName(),
+                demande.getStatus().name(),
+                demande.getUpdatedAt(),
+                "Statut mis à jour avec succès");
+
+        return ResponseEntity.ok(response);
     }
 
     // Gestion des utilisateurs

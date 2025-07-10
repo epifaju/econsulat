@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rapide Génération</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .info { background-color: #d1ecf1; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Test Rapide - Génération Document</h1>
+    
+    <div>
+        <label>Token JWT:</label><br>
+        <input type="text" id="token" style="width: 100%; margin: 5px 0;" placeholder="eyJhbGciOiJIUzI1NiJ9..."><br>
+        <button onclick="testGeneration()">Tester Génération</button>
+    </div>
+    
+    <div id="result" class="result"></div>
+
+    <script>
+        async function testGeneration() {
+            const token = document.getElementById('token').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!token) {
+                resultDiv.textContent = '❌ Veuillez entrer un token';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.textContent = '🔄 Test en cours...';
+            resultDiv.className = 'result info';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/documents/generate?demandeId=1&documentTypeId=1', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const document = await response.json();
+                    resultDiv.textContent = `✅ Succès! Document généré: ${document.fileName}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorData = await response.json().catch(() => null);
+                    const message = errorData?.message || `Erreur ${response.status}`;
+                    resultDiv.textContent = `❌ Erreur: ${message}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ Erreur réseau: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 

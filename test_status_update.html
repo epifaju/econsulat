@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mise à Jour Statut</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        button:hover { background-color: #0056b3; }
+        .log { 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            white-space: pre-wrap; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        input[type="text"], select { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-approved { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+        .status-completed { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Mise à Jour Statut des Demandes</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Instructions</h3>
+        <p>Ce test vérifie la fonctionnalité de mise à jour du statut des demandes :</p>
+        <ol>
+            <li>Récupération des demandes</li>
+            <li>Mise à jour du statut d'une demande</li>
+            <li>Vérification de la mise à jour</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Configuration</h3>
+        <label>Token JWT:</label>
+        <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiJ9...">
+        <br>
+        <label>ID de la demande:</label>
+        <input type="text" id="demandeId" placeholder="1" value="1">
+        <br>
+        <label>Nouveau statut:</label>
+        <select id="newStatus">
+            <option value="PENDING">En attente</option>
+            <option value="APPROVED">Approuvé</option>
+            <option value="REJECTED">Rejeté</option>
+            <option value="COMPLETED">Terminé</option>
+        </select>
+    </div>
+
+    <div class="test-section">
+        <h3>🚀 Tests</h3>
+        <button onclick="testGetDemandes()">📋 Récupérer les demandes</button>
+        <button onclick="testUpdateStatus()">🔄 Tester mise à jour statut</button>
+        <button onclick="testAll()">🧪 Test complet</button>
+        <button onclick="clearLog()">🗑️ Effacer les logs</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Demandes disponibles</h3>
+        <div id="demandesList"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Logs</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logDiv.textContent += `[${timestamp}] ${statusClass} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+            document.getElementById('demandesList').innerHTML = '';
+        }
+
+        function getStatusBadge(status) {
+            const statusConfig = {
+                'PENDING': { class: 'status-pending', label: 'En attente' },
+                'APPROVED': { class: 'status-approved', label: 'Approuvé' },
+                'REJECTED': { class: 'status-rejected', label: 'Rejeté' },
+                'COMPLETED': { class: 'status-completed', label: 'Terminé' }
+            };
+            const config = statusConfig[status] || statusConfig['PENDING'];
+            return `<span class="status-badge ${config.class}">${config.label}</span>`;
+        }
+
+        async function testGetDemandes() {
+            log('=== Test récupération des demandes ===');
+            
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('❌ Token requis pour ce test', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes?page=0&size=10', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demandes récupérées avec succès', 'success');
+                    log(`Total: ${data.totalElements} demandes`);
+                    log(`Page actuelle: ${data.content.length} demandes`);
+                    
+                    // Afficher les demandes
+                    const demandesListDiv = document.getElementById('demandesList');
+                    demandesListDiv.innerHTML = '<h4>Demandes disponibles:</h4>';
+                    
+                    data.content.forEach((demande, index) => {
+                        const statusBadge = getStatusBadge(demande.status);
+                        demandesListDiv.innerHTML += `
+                            <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                <strong>ID: ${demande.id}</strong> - ${demande.firstName} ${demande.lastName}<br>
+                                Type: ${demande.documentType}<br>
+                                Statut: ${statusBadge}<br>
+                                <button onclick="selectDemande(${demande.id})" style="margin-top: 5px;">Sélectionner</button>
+                            </div>
+                        `;
+                    });
+                    
+                    // Sélectionner la première demande par défaut
+                    if (data.content.length > 0) {
+                        document.getElementById('demandeId').value = data.content[0].id;
+                    }
+                    
+                } else {
+                    log(`❌ Erreur: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        function selectDemande(id) {
+            document.getElementById('demandeId').value = id;
+            log(`✅ Demande ${id} sélectionnée`, 'success');
+        }
+
+        async function testUpdateStatus() {
+            log('=== Test mise à jour du statut ===');
+            
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            
+            if (!token) {
+                log('❌ Token requis pour ce test', 'error');
+                return;
+            }
+            
+            if (!demandeId) {
+                log('❌ ID de demande requis', 'error');
+                return;
+            }
+            
+            try {
+                log(`Mise à jour: demande ${demandeId} -> ${newStatus}`);
+                
+                const response = await fetch(
+                    `http://localhost:8080/api/admin/demandes/${demandeId}/status?status=${newStatus}`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                
+                log(`Status: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const updatedDemande = await response.json();
+                    log('✅ Statut mis à jour avec succès', 'success');
+                    log(`Nouveau statut: ${updatedDemande.status}`);
+                    
+                    // Vérifier la mise à jour
+                    log('Vérification de la mise à jour...');
+                    await testGetDemandes();
+                    
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Erreur mise à jour: ${response.status}`, 'error');
+                    if (errorData.message) {
+                        log(`Message: ${errorData.message}`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAll() {
+            log('🚀 Test complet de mise à jour de statut...');
+            clearLog();
+            
+            await testGetDemandes();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testUpdateStatus();
+            
+            log('🏁 Test complet terminé');
+        }
+
+        // Initialisation
+        window.onload = function() {
+            log('🧪 Test de mise à jour de statut initialisé');
+            log('ℹ️ Assurez-vous que le backend (port 8080) est démarré');
+        };
+    </script>
+</body>
+</html> 

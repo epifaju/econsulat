@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoints Utilisateur</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        input { width: 100%; padding: 8px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; }
+        .log { background: #f8f9fa; padding: 10px; margin: 10px 0; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Endpoints Utilisateur</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Instructions</h3>
+        <p>Ce test vérifie que les nouveaux endpoints utilisateur fonctionnent correctement.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Token Utilisateur</h3>
+        <input type="text" id="token" placeholder="Collez votre token JWT utilisateur ici...">
+        <button onclick="testEndpoints()">🧪 Tester les endpoints</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Résultats</h3>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Logs</h3>
+        <div id="logs" class="log"></div>
+        <button onclick="clearLogs()">🗑️ Effacer</button>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logs.innerHTML += `[${timestamp}] <span style="color: ${color}">${message}</span>\n`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testEndpoints() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                log('❌ Token manquant', 'error');
+                return;
+            }
+
+            const results = document.getElementById('results');
+            results.innerHTML = '<h4>Tests en cours...</h4>';
+
+            log('🚀 Début des tests des endpoints utilisateur', 'info');
+
+            // Test 1: Récupération des demandes utilisateur
+            log('📋 Test 1: Récupération des demandes utilisateur', 'info');
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const demandes = await response.json();
+                    log(`✅ Test 1 réussi: ${demandes.length} demande(s) récupérée(s)`, 'success');
+                    
+                    if (demandes.length > 0) {
+                        const demande = demandes[0];
+                        log(`📄 Première demande: ID=${demande.id}, Statut=${demande.status}`, 'info');
+                        
+                        // Test 2: Consultation des détails
+                        log('👁️ Test 2: Consultation des détails', 'info');
+                        try {
+                            const detailResponse = await fetch(`http://localhost:8080/api/demandes/${demande.id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (detailResponse.ok) {
+                                const detailDemande = await detailResponse.json();
+                                log(`✅ Test 2 réussi: Détails de la demande ${demande.id} récupérés`, 'success');
+                                
+                                // Test 3: Génération de document (si approuvé)
+                                if (demande.status === 'APPROVED') {
+                                    log('📄 Test 3: Génération de document', 'info');
+                                    try {
+                                        const generateResponse = await fetch(`http://localhost:8080/api/demandes/${demande.id}/generate-document`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'Authorization': `Bearer ${token}`,
+                                                'Content-Type': 'application/json'
+                                            }
+                                        });
+
+                                        if (generateResponse.ok) {
+                                            const generateData = await generateResponse.json();
+                                            log(`✅ Test 3 réussi: Document généré (ID: ${generateData.documentId})`, 'success');
+                                            
+                                            // Test 4: Téléchargement du document
+                                            log('📥 Test 4: Téléchargement du document', 'info');
+                                            try {
+                                                const downloadResponse = await fetch(`http://localhost:8080/api/demandes/${demande.id}/download-document`, {
+                                                    headers: {
+                                                        'Authorization': `Bearer ${token}`
+                                                    }
+                                                });
+
+                                                if (downloadResponse.ok) {
+                                                    log('✅ Test 4 réussi: Document téléchargé', 'success');
+                                                } else {
+                                                    log(`❌ Test 4 échoué: ${downloadResponse.status}`, 'error');
+                                                }
+                                            } catch (error) {
+                                                log(`❌ Test 4 erreur: ${error.message}`, 'error');
+                                            }
+                                        } else {
+                                            const errorData = await generateResponse.json();
+                                            log(`❌ Test 3 échoué: ${errorData.error || generateResponse.status}`, 'error');
+                                        }
+                                    } catch (error) {
+                                        log(`❌ Test 3 erreur: ${error.message}`, 'error');
+                                    }
+                                } else {
+                                    log(`⚠️ Test 3 ignoré: Demande non approuvée (statut: ${demande.status})`, 'info');
+                                }
+                            } else {
+                                log(`❌ Test 2 échoué: ${detailResponse.status}`, 'error');
+                            }
+                        } catch (error) {
+                            log(`❌ Test 2 erreur: ${error.message}`, 'error');
+                        }
+                    } else {
+                        log('⚠️ Aucune demande trouvée pour les tests suivants', 'info');
+                    }
+                } else {
+                    log(`❌ Test 1 échoué: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Test 1 erreur: ${error.message}`, 'error');
+            }
+
+            log('🏁 Tests terminés', 'info');
+            results.innerHTML = '<h4>✅ Tests terminés - Vérifiez les logs ci-dessous</h4>';
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Test des endpoints utilisateur initialisé', 'info');
+        });
+    </script>
+</body>
+</html> 

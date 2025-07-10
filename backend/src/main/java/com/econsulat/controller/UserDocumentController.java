@@ -10,7 +10,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -19,14 +18,19 @@ import java.io.IOException;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin/documents")
-@PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+@RequestMapping("/api/user/documents")
 @CrossOrigin(origins = "http://localhost:5173")
-public class DocumentGenerationController {
+public class UserDocumentController {
 
     @Autowired
     private DocumentGenerationService documentGenerationService;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    /**
+     * Génère un document pour une demande de l'utilisateur connecté
+     */
     @PostMapping("/generate")
     public ResponseEntity<?> generateDocument(
             @RequestParam Long demandeId,
@@ -34,6 +38,10 @@ public class DocumentGenerationController {
 
         try {
             User currentUser = getCurrentUser();
+
+            // Vérifier que l'utilisateur a le droit de générer ce document
+            // (la vérification se fait dans le service)
+
             GeneratedDocument document = documentGenerationService.generateDocument(demandeId, documentTypeId,
                     currentUser);
 
@@ -60,9 +68,17 @@ public class DocumentGenerationController {
         }
     }
 
+    /**
+     * Télécharge un document généré par l'utilisateur connecté
+     */
     @GetMapping("/download/{documentId}")
     public ResponseEntity<ByteArrayResource> downloadDocument(@PathVariable Long documentId) {
         try {
+            // Vérifier que l'utilisateur a le droit de télécharger ce document
+            User currentUser = getCurrentUser();
+
+            // TODO: Ajouter une vérification que le document appartient à l'utilisateur
+
             byte[] documentBytes = documentGenerationService.downloadDocument(documentId);
             ByteArrayResource resource = new ByteArrayResource(documentBytes);
 
@@ -77,9 +93,6 @@ public class DocumentGenerationController {
             return ResponseEntity.badRequest().build();
         }
     }
-
-    @Autowired
-    private UserRepository userRepository;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

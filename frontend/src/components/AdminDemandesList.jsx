@@ -61,28 +61,40 @@ const AdminDemandesList = ({ token, onNotification }) => {
 
   const handleStatusChange = async (demandeId, newStatus) => {
     try {
+      console.log(
+        `Mise à jour du statut: demande ${demandeId} -> ${newStatus}`
+      );
+
       const response = await fetch(
         `http://localhost:8080/api/admin/demandes/${demandeId}/status?status=${newStatus}`,
         {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
+
+      console.log(`Réponse status: ${response.status} ${response.statusText}`);
 
       if (response.ok) {
         onNotification("success", "Succès", "Statut mis à jour avec succès");
         fetchDemandes();
       } else {
-        onNotification(
-          "error",
-          "Erreur",
-          "Impossible de mettre à jour le statut"
-        );
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData?.message || "Impossible de mettre à jour le statut";
+        console.error("Erreur mise à jour statut:", errorData);
+        onNotification("error", "Erreur", errorMessage);
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la mise à jour");
+      console.error("Erreur lors de la mise à jour du statut:", err);
+      onNotification(
+        "error",
+        "Erreur",
+        "Problème de connexion lors de la mise à jour"
+      );
     }
   };
 
@@ -99,12 +111,12 @@ const AdminDemandesList = ({ token, onNotification }) => {
       );
 
       if (response.ok) {
-        const document = await response.json();
+        const generatedDocument = await response.json();
         onNotification("success", "Succès", "Document généré avec succès");
 
         // Télécharger le document
         const downloadResponse = await fetch(
-          `http://localhost:8080/api/admin/documents/download/${document.id}`,
+          `http://localhost:8080/api/admin/documents/download/${generatedDocument.id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -117,17 +129,31 @@ const AdminDemandesList = ({ token, onNotification }) => {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = document.fileName;
+          a.download = generatedDocument.fileName;
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
+        } else {
+          onNotification(
+            "error",
+            "Erreur",
+            "Impossible de télécharger le document généré"
+          );
         }
       } else {
-        onNotification("error", "Erreur", "Impossible de générer le document");
+        const errorData = await response.json().catch(() => null);
+        const errorMessage =
+          errorData?.message || "Impossible de générer le document";
+        onNotification("error", "Erreur", errorMessage);
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la génération");
+      console.error("Erreur lors de la génération:", err);
+      onNotification(
+        "error",
+        "Erreur",
+        "Problème de connexion lors de la génération"
+      );
     }
   };
 

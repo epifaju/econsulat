@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Final - Actions Utilisateur</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        input { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        .log { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            white-space: pre-wrap; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        .demande-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .status-approved { color: #28a745; font-weight: bold; }
+        .status-pending { color: #ffc107; font-weight: bold; }
+        .status-rejected { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Final - Actions Utilisateur</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Instructions</h3>
+        <p>Ce test vérifie les nouvelles fonctionnalités de consultation et de génération de document pour les utilisateurs.</p>
+        <ol>
+            <li>Collez votre token JWT utilisateur</li>
+            <li>Récupérez vos demandes</li>
+            <li>Testez la consultation des détails</li>
+            <li>Testez la génération de document (si approuvé)</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Authentification</h3>
+        <label>Token JWT Utilisateur:</label>
+        <input type="text" id="token" placeholder="Collez votre token JWT ici...">
+        <button onclick="testAuth()">🔍 Tester l'authentification</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📋 Récupération des demandes</h3>
+        <button onclick="fetchDemandes()" id="fetchBtn">📋 Récupérer mes demandes</button>
+        <div id="demandesResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>👁️ Consultation des détails</h3>
+        <div id="consultationSection" style="display: none;">
+            <label>ID de la demande à consulter:</label>
+            <input type="number" id="consultationId" placeholder="Entrez l'ID de la demande">
+            <button onclick="consultDemande()">👁️ Consulter les détails</button>
+            <div id="consultationResult"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>📄 Génération de document</h3>
+        <div id="generationSection" style="display: none;">
+            <label>ID de la demande pour générer le document:</label>
+            <input type="number" id="generationId" placeholder="Entrez l'ID de la demande approuvée">
+            <button onclick="generateDocument()" id="generateBtn">📄 Générer document</button>
+            <div id="generationResult"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Logs</h3>
+        <div id="logs" class="log"></div>
+        <button onclick="clearLogs()">🗑️ Effacer les logs</button>
+    </div>
+
+    <script>
+        let currentDemandes = [];
+        let currentToken = '';
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#007bff';
+            logs.innerHTML += `[${timestamp}] <span style="color: ${color}">${message}</span>\n`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        function testAuth() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                log('❌ Token manquant', 'error');
+                return;
+            }
+
+            currentToken = token;
+            log('🔍 Test d\'authentification...', 'info');
+
+            fetch('http://localhost:8080/api/demandes/my', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    log('✅ Authentification réussie', 'success');
+                    document.getElementById('authResult').innerHTML = '<div class="success">✅ Authentification réussie</div>';
+                    document.getElementById('fetchBtn').disabled = false;
+                } else {
+                    log(`❌ Authentification échouée: ${response.status}`, 'error');
+                    document.getElementById('authResult').innerHTML = '<div class="error">❌ Authentification échouée</div>';
+                }
+            })
+            .catch(error => {
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+                document.getElementById('authResult').innerHTML = '<div class="error">❌ Erreur de connexion</div>';
+            });
+        }
+
+        function fetchDemandes() {
+            if (!currentToken) {
+                log('❌ Token manquant', 'error');
+                return;
+            }
+
+            log('📋 Récupération des demandes...', 'info');
+
+            fetch('http://localhost:8080/api/demandes/my', {
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(demandes => {
+                currentDemandes = demandes;
+                log(`✅ ${demandes.length} demande(s) récupérée(s)`, 'success');
+                
+                const resultDiv = document.getElementById('demandesResult');
+                if (demandes.length === 0) {
+                    resultDiv.innerHTML = '<div class="info">Aucune demande trouvée</div>';
+                } else {
+                    let html = '<h4>Mes demandes:</h4>';
+                    demandes.forEach(demande => {
+                        const statusClass = demande.status === 'APPROVED' ? 'status-approved' : 
+                                          demande.status === 'PENDING' ? 'status-pending' : 'status-rejected';
+                        html += `
+                            <div class="demande-card">
+                                <strong>ID: ${demande.id}</strong> - ${demande.documentTypeDisplay}<br>
+                                <span class="${statusClass}">Statut: ${demande.statusDisplay}</span><br>
+                                Demandeur: ${demande.firstName} ${demande.lastName}<br>
+                                Créé le: ${new Date(demande.createdAt).toLocaleDateString()}
+                            </div>
+                        `;
+                    });
+                    resultDiv.innerHTML = html;
+                    
+                    // Afficher les sections de test
+                    document.getElementById('consultationSection').style.display = 'block';
+                    document.getElementById('generationSection').style.display = 'block';
+                }
+            })
+            .catch(error => {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                document.getElementById('demandesResult').innerHTML = '<div class="error">❌ Erreur lors de la récupération</div>';
+            });
+        }
+
+        function consultDemande() {
+            const demandeId = document.getElementById('consultationId').value;
+            if (!demandeId) {
+                log('❌ ID de demande manquant', 'error');
+                return;
+            }
+
+            log(`👁️ Consultation de la demande ${demandeId}...`, 'info');
+
+            fetch(`http://localhost:8080/api/demandes/${demandeId}`, {
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            })
+            .then(demande => {
+                log('✅ Détails de la demande récupérés', 'success');
+                const resultDiv = document.getElementById('consultationResult');
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h4>Détails de la demande ${demande.id}:</h4>
+                        <p><strong>Type:</strong> ${demande.documentTypeDisplay}</p>
+                        <p><strong>Statut:</strong> ${demande.statusDisplay}</p>
+                        <p><strong>Demandeur:</strong> ${demande.firstName} ${demande.lastName}</p>
+                        <p><strong>Date de naissance:</strong> ${demande.birthDate}</p>
+                        <p><strong>Lieu de naissance:</strong> ${demande.birthPlace}, ${demande.birthCountry}</p>
+                        <p><strong>Adresse:</strong> ${demande.adresse?.streetNumber} ${demande.adresse?.streetName}, ${demande.adresse?.city}</p>
+                        <p><strong>Père:</strong> ${demande.fatherFirstName} ${demande.fatherLastName}</p>
+                        <p><strong>Mère:</strong> ${demande.motherFirstName} ${demande.motherLastName}</p>
+                        <p><strong>Créé le:</strong> ${new Date(demande.createdAt).toLocaleString()}</p>
+                        <p><strong>Mis à jour le:</strong> ${new Date(demande.updatedAt).toLocaleString()}</p>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                document.getElementById('consultationResult').innerHTML = '<div class="error">❌ Erreur lors de la consultation</div>';
+            });
+        }
+
+        function generateDocument() {
+            const demandeId = document.getElementById('generationId').value;
+            if (!demandeId) {
+                log('❌ ID de demande manquant', 'error');
+                return;
+            }
+
+            const generateBtn = document.getElementById('generateBtn');
+            generateBtn.disabled = true;
+            generateBtn.textContent = '⏳ Génération...';
+
+            log(`📄 Génération du document pour la demande ${demandeId}...`, 'info');
+
+            fetch(`http://localhost:8080/api/demandes/${demandeId}/generate-document`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    log('✅ Document généré avec succès', 'success');
+                    log(`📄 Nom du fichier: ${data.fileName}`, 'info');
+                    
+                    // Télécharger le document
+                    return fetch(`http://localhost:8080/api/demandes/${demandeId}/download-document`, {
+                        headers: {
+                            'Authorization': `Bearer ${currentToken}`
+                        }
+                    });
+                } else {
+                    throw new Error(data.error || 'Erreur lors de la génération');
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    throw new Error(`Erreur de téléchargement: ${response.status}`);
+                }
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `document_${demandeId}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                log('✅ Document téléchargé avec succès', 'success');
+                document.getElementById('generationResult').innerHTML = '<div class="success">✅ Document généré et téléchargé avec succès!</div>';
+            })
+            .catch(error => {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                document.getElementById('generationResult').innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            })
+            .finally(() => {
+                generateBtn.disabled = false;
+                generateBtn.textContent = '📄 Générer document';
+            });
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Test des actions utilisateur initialisé', 'info');
+            document.getElementById('fetchBtn').disabled = true;
+        });
+    </script>
+</body>
+</html> 

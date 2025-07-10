@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Final - Génération Document</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        button:hover { background-color: #0056b3; }
+        .result { 
+            margin-top: 10px; 
+            padding: 10px; 
+            border-radius: 3px; 
+            white-space: pre-wrap; 
+            font-family: monospace;
+        }
+        input, textarea { 
+            width: 100%; 
+            margin: 5px 0; 
+            padding: 8px; 
+            border: 1px solid #ddd; 
+            border-radius: 3px; 
+        }
+        .step { 
+            background-color: #f8f9fa; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-left: 4px solid #007bff; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Final - Génération de Document</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Instructions</h3>
+        <div class="step">
+            <strong>Étape 1:</strong> Connectez-vous à l'interface admin (http://localhost:5173)
+        </div>
+        <div class="step">
+            <strong>Étape 2:</strong> Ouvrez les outils de développement (F12) → onglet Application/Storage → Local Storage
+        </div>
+        <div class="step">
+            <strong>Étape 3:</strong> Copiez la valeur de la clé "token" et collez-la ci-dessous
+        </div>
+        <div class="step">
+            <strong>Étape 4:</strong> Cliquez sur "Tester la génération"
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Token d'authentification</h3>
+        <textarea id="token" rows="3" placeholder="eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBlY29uc3VsYXQuY29tIiwiaWF0IjoxNzUyMTcxMzA1LCJleHAiOjE3NTIyNTc3MDV9.7OprNj6px3jii5QJ_oJsFCwtGXV0hIKt8_cdgVR1nBg"></textarea>
+    </div>
+
+    <div class="test-section">
+        <h3>⚙️ Paramètres de test</h3>
+        <label>ID de la demande:</label>
+        <input type="number" id="demandeId" value="1" min="1">
+        
+        <label>ID du type de document:</label>
+        <input type="number" id="documentTypeId" value="1" min="1">
+    </div>
+
+    <div class="test-section">
+        <h3>🚀 Test de génération</h3>
+        <button onclick="testGeneration()">Tester la génération</button>
+        <button onclick="testDownload()">Tester le téléchargement</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>📊 Logs détaillés</h3>
+        <div id="logs" class="result info" style="max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.textContent += `[${timestamp}] ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        async function testGeneration() {
+            const token = document.getElementById('token').value.trim();
+            const demandeId = document.getElementById('demandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!token) {
+                resultDiv.textContent = '❌ Veuillez entrer un token d\'authentification';
+                resultDiv.className = 'result error';
+                log('❌ Token manquant');
+                return;
+            }
+
+            log('🔄 Début du test de génération...');
+            resultDiv.textContent = '🔄 Test en cours...';
+            resultDiv.className = 'result info';
+
+            try {
+                log(`📡 Appel API: POST /api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`);
+                
+                const response = await fetch(`http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`📊 Réponse reçue: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const document = await response.json();
+                    log(`✅ Document généré avec succès!`);
+                    log(`   - ID: ${document.id}`);
+                    log(`   - Nom: ${document.fileName}`);
+                    log(`   - Statut: ${document.status}`);
+                    
+                    resultDiv.textContent = `✅ Succès!\n\nDocument généré:\n- ID: ${document.id}\n- Nom: ${document.fileName}\n- Statut: ${document.status}\n- Créé par: ${document.createdByEmail}`;
+                    resultDiv.className = 'result success';
+                    
+                    // Stocker l'ID du document pour le test de téléchargement
+                    window.generatedDocumentId = document.id;
+                    window.generatedDocumentFileName = document.fileName;
+                    
+                } else {
+                    const errorData = await response.json().catch(() => null);
+                    const message = errorData?.message || `Erreur ${response.status}`;
+                    log(`❌ Erreur de génération: ${message}`);
+                    resultDiv.textContent = `❌ Erreur: ${message}`;
+                    resultDiv.className = 'result error';
+                }
+
+            } catch (error) {
+                log(`❌ Erreur réseau: ${error.message}`);
+                resultDiv.textContent = `❌ Erreur réseau: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testDownload() {
+            if (!window.generatedDocumentId) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.textContent = '❌ Veuillez d\'abord générer un document';
+                resultDiv.className = 'result error';
+                log('❌ Aucun document généré pour le téléchargement');
+                return;
+            }
+
+            const token = document.getElementById('token').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            log(`🔄 Test de téléchargement pour le document ${window.generatedDocumentId}...`);
+            resultDiv.textContent = '🔄 Téléchargement en cours...';
+            resultDiv.className = 'result info';
+
+            try {
+                log(`📡 Appel API: GET /api/admin/documents/download/${window.generatedDocumentId}`);
+                
+                const downloadResponse = await fetch(`http://localhost:8080/api/admin/documents/download/${window.generatedDocumentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                log(`📊 Réponse téléchargement: ${downloadResponse.status} ${downloadResponse.statusText}`);
+
+                if (downloadResponse.ok) {
+                    const blob = await downloadResponse.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = window.generatedDocumentFileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    log(`✅ Document téléchargé avec succès: ${window.generatedDocumentFileName}`);
+                    resultDiv.textContent += '\n\n✅ Document téléchargé avec succès!';
+                } else {
+                    log(`❌ Erreur de téléchargement: ${downloadResponse.status}`);
+                    resultDiv.textContent += `\n\n❌ Erreur de téléchargement: ${downloadResponse.status}`;
+                    resultDiv.className = 'result error';
+                }
+
+            } catch (error) {
+                log(`❌ Erreur réseau lors du téléchargement: ${error.message}`);
+                resultDiv.textContent += `\n\n❌ Erreur réseau: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // Test automatique de connexion au chargement
+        window.onload = async function() {
+            log('🚀 Page chargée, test de connexion au backend...');
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.status === 403) {
+                    log('✅ Backend accessible (authentification requise)');
+                } else if (response.ok) {
+                    log('✅ Backend accessible et authentifié');
+                } else {
+                    log(`⚠️ Backend accessible mais erreur: ${response.status}`);
+                }
+            } catch (error) {
+                log(`❌ Backend inaccessible: ${error.message}`);
+            }
+        };
+    </script>
+</body>
+</html> 

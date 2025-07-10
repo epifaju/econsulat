@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de Génération de Document</h1>
+    
+    <div class="test-section info">
+        <h3>Instructions</h3>
+        <p>Cette page permet de tester la génération de document. Assurez-vous que :</p>
+        <ul>
+            <li>Le backend est démarré sur http://localhost:8080</li>
+            <li>Vous avez un token d'authentification valide</li>
+            <li>Il existe au moins une demande dans la base de données</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>1. Test de Connexion Backend</h3>
+        <button onclick="testBackendConnection()">Tester la connexion</button>
+        <div id="connection-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test de Génération de Document</h3>
+        <label for="token">Token d'authentification:</label><br>
+        <input type="text" id="token" placeholder="Entrez votre token JWT" style="width: 100%; margin: 5px 0; padding: 5px;"><br>
+        <label for="demandeId">ID de la demande:</label><br>
+        <input type="number" id="demandeId" value="1" style="width: 100px; margin: 5px 0; padding: 5px;"><br>
+        <label for="documentTypeId">ID du type de document:</label><br>
+        <input type="number" id="documentTypeId" value="1" style="width: 100px; margin: 5px 0; padding: 5px;"><br>
+        <button onclick="testDocumentGeneration()">Générer le document</button>
+        <div id="generation-result" class="result"></div>
+    </div>
+
+    <script>
+        async function testBackendConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.textContent = 'Test en cours...';
+            resultDiv.className = 'result info';
+
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/demandes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.status === 403) {
+                    resultDiv.textContent = '✅ Backend accessible (authentification requise)';
+                    resultDiv.className = 'result success';
+                } else if (response.ok) {
+                    resultDiv.textContent = '✅ Backend accessible et authentifié';
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = `❌ Erreur: ${response.status} ${response.statusText}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ Erreur de connexion: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testDocumentGeneration() {
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            const resultDiv = document.getElementById('generation-result');
+
+            if (!token) {
+                resultDiv.textContent = '❌ Veuillez entrer un token d\'authentification';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.textContent = 'Génération en cours...';
+            resultDiv.className = 'result info';
+
+            try {
+                // Étape 1: Générer le document
+                const generateResponse = await fetch(
+                    `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (!generateResponse.ok) {
+                    const errorData = await generateResponse.json().catch(() => null);
+                    const errorMessage = errorData?.message || `Erreur ${generateResponse.status}`;
+                    resultDiv.textContent = `❌ Erreur de génération: ${errorMessage}`;
+                    resultDiv.className = 'result error';
+                    return;
+                }
+
+                const document = await generateResponse.json();
+                resultDiv.textContent = `✅ Document généré avec succès!\nID: ${document.id}\nNom: ${document.fileName}\n\nTentative de téléchargement...`;
+                resultDiv.className = 'result success';
+
+                // Étape 2: Télécharger le document
+                const downloadResponse = await fetch(
+                    `http://localhost:8080/api/admin/documents/download/${document.id}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                if (downloadResponse.ok) {
+                    const blob = await downloadResponse.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = document.fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    resultDiv.textContent += '\n✅ Document téléchargé avec succès!';
+                } else {
+                    resultDiv.textContent += `\n❌ Erreur de téléchargement: ${downloadResponse.status}`;
+                    resultDiv.className = 'result error';
+                }
+
+            } catch (error) {
+                resultDiv.textContent = `❌ Erreur: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 

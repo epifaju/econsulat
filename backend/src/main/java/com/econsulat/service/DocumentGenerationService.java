@@ -49,6 +49,9 @@ public class DocumentGenerationService {
         DocumentType documentType = documentTypeRepository.findById(documentTypeId)
                 .orElseThrow(() -> new RuntimeException("Type de document non trouvé"));
 
+        // Validation des données de la demande
+        validateDemandeData(demande);
+
         // Vérifier si le document a déjà été généré
         GeneratedDocument existingDoc = generatedDocumentRepository
                 .findByDemandeAndDocumentType(demandeId, documentTypeId)
@@ -86,12 +89,45 @@ public class DocumentGenerationService {
         }
     }
 
+    private void validateDemandeData(Demande demande) {
+        if (demande.getFirstName() == null || demande.getFirstName().trim().isEmpty()) {
+            throw new RuntimeException("Le prénom du demandeur est requis");
+        }
+        if (demande.getLastName() == null || demande.getLastName().trim().isEmpty()) {
+            throw new RuntimeException("Le nom de famille du demandeur est requis");
+        }
+        if (demande.getBirthDate() == null) {
+            throw new RuntimeException("La date de naissance est requise");
+        }
+        if (demande.getBirthPlace() == null || demande.getBirthPlace().trim().isEmpty()) {
+            throw new RuntimeException("Le lieu de naissance est requis");
+        }
+        if (demande.getBirthCountry() == null) {
+            throw new RuntimeException("Le pays de naissance est requis");
+        }
+        if (demande.getAdresse() == null) {
+            throw new RuntimeException("L'adresse est requise");
+        }
+        if (demande.getFatherFirstName() == null || demande.getFatherFirstName().trim().isEmpty()) {
+            throw new RuntimeException("Le prénom du père est requis");
+        }
+        if (demande.getFatherLastName() == null || demande.getFatherLastName().trim().isEmpty()) {
+            throw new RuntimeException("Le nom de famille du père est requis");
+        }
+        if (demande.getMotherFirstName() == null || demande.getMotherFirstName().trim().isEmpty()) {
+            throw new RuntimeException("Le prénom de la mère est requis");
+        }
+        if (demande.getMotherLastName() == null || demande.getMotherLastName().trim().isEmpty()) {
+            throw new RuntimeException("Le nom de famille de la mère est requis");
+        }
+    }
+
     private String generateFileName(Demande demande, DocumentType documentType) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String userInfo = demande.getFirstName() + "_" + demande.getLastName();
         String docType = documentType.getLibelle().replaceAll("[^a-zA-Z0-9]", "_");
 
-        return String.format("%s_%s_%s_%s.pdf",
+        return String.format("%s_%s_%s_%s.docx",
                 docType, userInfo, timestamp, UUID.randomUUID().toString().substring(0, 8));
     }
 

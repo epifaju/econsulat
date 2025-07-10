@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Frontend Fix</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+        }
+        button:hover { background-color: #0056b3; }
+        .log { 
+            background-color: #f8f9fa; 
+            border: 1px solid #dee2e6; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            white-space: pre-wrap; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Test Frontend Fix - Génération Document</h1>
+    
+    <div class="test-section info">
+        <h3>📋 Problème identifié et corrigé</h3>
+        <p><strong>Problème :</strong> Conflit de noms de variables dans le frontend</p>
+        <p><strong>Cause :</strong> La variable <code>document</code> était utilisée à la fois pour l'objet DOM et la réponse API</p>
+        <p><strong>Solution :</strong> Renommé la variable en <code>generatedDocument</code></p>
+    </div>
+
+    <div class="test-section">
+        <h3>🔑 Configuration</h3>
+        <label>Token JWT:</label>
+        <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiJ9...">
+        <br>
+        <label>ID de la demande:</label>
+        <input type="text" id="demandeId" placeholder="1" value="1">
+        <br>
+        <label>ID du type de document:</label>
+        <input type="text" id="documentTypeId" placeholder="1" value="1">
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 Test de génération</h3>
+        <button onclick="testGeneration()">📄 Tester la génération</button>
+        <button onclick="clearLog()">🗑️ Effacer les logs</button>
+    </div>
+
+    <div class="test-section">
+        <h3>📝 Logs</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>✅ Instructions pour tester</h3>
+        <ol>
+            <li>Assurez-vous que le backend est démarré (port 8080)</li>
+            <li>Assurez-vous que le frontend est démarré (port 5173)</li>
+            <li>Connectez-vous à l'interface admin</li>
+            <li>Récupérez votre token JWT depuis les outils de développement</li>
+            <li>Collez le token dans le champ ci-dessus</li>
+            <li>Cliquez sur "Tester la génération"</li>
+        </ol>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            logDiv.textContent += `[${timestamp}] ${statusClass} ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        async function testGeneration() {
+            log('=== Test de génération de document ===');
+            
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            
+            if (!token) {
+                log('❌ Token requis pour ce test', 'error');
+                return;
+            }
+            
+            if (!demandeId || !documentTypeId) {
+                log('❌ ID de demande et type de document requis', 'error');
+                return;
+            }
+            
+            try {
+                log(`Génération pour demande ${demandeId}, type ${documentTypeId}...`);
+                
+                const response = await fetch(
+                    `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+                
+                log(`Status: ${response.status}`);
+                
+                if (response.ok) {
+                    const generatedDocument = await response.json();
+                    log('✅ Document généré avec succès', 'success');
+                    log(`Document ID: ${generatedDocument.id}`);
+                    log(`Nom du fichier: ${generatedDocument.fileName}`);
+                    log(`Chemin: ${generatedDocument.filePath}`);
+                    
+                    // Test du téléchargement
+                    log('Test du téléchargement...');
+                    const downloadResponse = await fetch(
+                        `http://localhost:8080/api/admin/documents/download/${generatedDocument.id}`,
+                        {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }
+                    );
+                    
+                    if (downloadResponse.ok) {
+                        const blob = await downloadResponse.blob();
+                        log(`✅ Téléchargement OK - Taille: ${blob.size} bytes`, 'success');
+                        
+                        // Créer le lien de téléchargement
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = generatedDocument.fileName;
+                        a.textContent = '📥 Télécharger le document généré';
+                        a.style.display = 'block';
+                        a.style.margin = '10px 0';
+                        a.style.padding = '10px';
+                        a.style.backgroundColor = '#28a745';
+                        a.style.color = 'white';
+                        a.style.textDecoration = 'none';
+                        a.style.borderRadius = '5px';
+                        document.body.appendChild(a);
+                        
+                        log('🎉 Test réussi ! Le problème de conflit de variables est résolu.', 'success');
+                    } else {
+                        log(`❌ Erreur téléchargement: ${downloadResponse.status}`, 'error');
+                    }
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    log(`❌ Erreur génération: ${response.status}`, 'error');
+                    if (errorData.message) {
+                        log(`Message: ${errorData.message}`, 'error');
+                    }
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                log(`Type d'erreur: ${error.name}`, 'error');
+            }
+        }
+
+        // Initialisation
+        window.onload = function() {
+            log('🔧 Test Frontend Fix initialisé');
+            log('ℹ️ Ce test vérifie que le conflit de variables est résolu');
+        };
+    </script>
+</body>
+</html> 

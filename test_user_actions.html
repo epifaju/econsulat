@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Actions Utilisateur</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        input, textarea { 
+            width: 100%; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+        }
+        .log { 
+            background: #f8f9fa; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            font-family: monospace; 
+            white-space: pre-wrap; 
+            max-height: 300px; 
+            overflow-y: auto; 
+        }
+        .demande-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: white;
+        }
+        .status-approved { background-color: #d4edda; }
+        .status-pending { background-color: #fff3cd; }
+        .status-rejected { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Actions Utilisateur</h1>
+    
+    <div class="test-section info">
+        <h2>📋 Configuration</h2>
+        <label>Token JWT Utilisateur:</label>
+        <input type="text" id="userToken" placeholder="Collez votre token JWT utilisateur ici">
+        <br>
+        <button onclick="testUserActions()">🚀 Tester les actions utilisateur</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Résultats des tests</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📝 Logs détaillés</h2>
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logsDiv.textContent += `[${timestamp}] ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function addResult(title, content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-section ${type}`;
+            div.innerHTML = `<h3>${title}</h3><div>${content}</div>`;
+            resultsDiv.appendChild(div);
+        }
+
+        async function testUserActions() {
+            const token = document.getElementById('userToken').value.trim();
+            if (!token) {
+                alert('Veuillez entrer un token JWT utilisateur');
+                return;
+            }
+
+            log('=== DÉBUT DES TESTS ===');
+            
+            try {
+                // Test 1: Récupérer les demandes de l'utilisateur
+                log('1. Récupération des demandes utilisateur...');
+                const demandesResponse = await fetch('http://localhost:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!demandesResponse.ok) {
+                    throw new Error(`Erreur ${demandesResponse.status}: ${demandesResponse.statusText}`);
+                }
+
+                const demandes = await demandesResponse.json();
+                log(`✅ ${demandes.length} demandes récupérées`);
+
+                // Afficher les demandes
+                let demandesHtml = '';
+                demandes.forEach(demande => {
+                    const statusClass = demande.status === 'APPROVED' ? 'status-approved' : 
+                                      demande.status === 'PENDING' ? 'status-pending' : 'status-rejected';
+                    
+                    demandesHtml += `
+                        <div class="demande-card ${statusClass}">
+                            <h4>Demande #${demande.id} - ${demande.documentTypeDisplay}</h4>
+                            <p><strong>Statut:</strong> ${demande.statusDisplay}</p>
+                            <p><strong>Demandeur:</strong> ${demande.firstName} ${demande.lastName}</p>
+                            <p><strong>Créée le:</strong> ${new Date(demande.createdAt).toLocaleDateString('fr-FR')}</p>
+                            <button onclick="testViewDetails(${demande.id})" ${!token ? 'disabled' : ''}>
+                                👁️ Voir détails
+                            </button>
+                            ${demande.status === 'APPROVED' ? 
+                                `<button onclick="testGenerateDocument(${demande.id})" ${!token ? 'disabled' : ''}>
+                                    📄 Générer document
+                                </button>` : ''
+                            }
+                        </div>
+                    `;
+                });
+
+                addResult('📋 Demandes de l\'utilisateur', demandesHtml, demandes.length > 0 ? 'success' : 'info');
+
+                // Test 2: Consulter les détails d'une demande (si disponible)
+                if (demandes.length > 0) {
+                    log('2. Test de consultation des détails...');
+                    const firstDemande = demandes[0];
+                    await testViewDetails(firstDemande.id);
+                }
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`);
+                addResult('❌ Erreur', error.message, 'error');
+            }
+
+            log('=== FIN DES TESTS ===');
+        }
+
+        async function testViewDetails(demandeId) {
+            const token = document.getElementById('userToken').value.trim();
+            
+            try {
+                log(`   Consultation des détails de la demande ${demandeId}...`);
+                const response = await fetch(`http://localhost:8080/api/demandes/${demandeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+                }
+
+                const demande = await response.json();
+                log(`   ✅ Détails récupérés pour la demande ${demandeId}`);
+
+                const detailsHtml = `
+                    <div class="demande-card">
+                        <h4>Détails complets - Demande #${demande.id}</h4>
+                        <p><strong>Type:</strong> ${demande.documentTypeDisplay}</p>
+                        <p><strong>Statut:</strong> ${demande.statusDisplay}</p>
+                        <p><strong>Nom:</strong> ${demande.firstName} ${demande.lastName}</p>
+                        <p><strong>Date de naissance:</strong> ${demande.birthDate}</p>
+                        <p><strong>Lieu de naissance:</strong> ${demande.birthPlace}</p>
+                        <p><strong>Pays de naissance:</strong> ${demande.birthCountry}</p>
+                        <p><strong>Civilité:</strong> ${demande.civilite}</p>
+                        ${demande.adresse ? `
+                            <p><strong>Adresse:</strong> ${demande.adresse.streetNumber} ${demande.adresse.streetName}, ${demande.adresse.city} ${demande.adresse.postalCode}</p>
+                        ` : ''}
+                        ${demande.fatherFirstName ? `
+                            <p><strong>Père:</strong> ${demande.fatherFirstName} ${demande.fatherLastName}</p>
+                        ` : ''}
+                        ${demande.motherFirstName ? `
+                            <p><strong>Mère:</strong> ${demande.motherFirstName} ${demande.motherLastName}</p>
+                        ` : ''}
+                    </div>
+                `;
+
+                addResult(`👁️ Détails de la demande #${demandeId}`, detailsHtml, 'success');
+
+            } catch (error) {
+                log(`   ❌ Erreur consultation détails: ${error.message}`);
+                addResult(`❌ Erreur consultation détails #${demandeId}`, error.message, 'error');
+            }
+        }
+
+        async function testGenerateDocument(demandeId) {
+            const token = document.getElementById('userToken').value.trim();
+            
+            try {
+                log(`   Génération de document pour la demande ${demandeId}...`);
+                
+                // Générer le document
+                const generateResponse = await fetch(`http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=1`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!generateResponse.ok) {
+                    const errorData = await generateResponse.json().catch(() => ({}));
+                    throw new Error(`Erreur ${generateResponse.status}: ${errorData.message || generateResponse.statusText}`);
+                }
+
+                const generatedDocument = await generateResponse.json();
+                log(`   ✅ Document généré avec l'ID: ${generatedDocument.id}`);
+
+                // Télécharger le document
+                const downloadResponse = await fetch(`http://localhost:8080/api/admin/documents/download/${generatedDocument.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!downloadResponse.ok) {
+                    throw new Error(`Erreur téléchargement: ${downloadResponse.status}`);
+                }
+
+                const blob = await downloadResponse.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = generatedDocument.fileName || `document_${demandeId}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                log(`   ✅ Document téléchargé: ${generatedDocument.fileName}`);
+
+                addResult(`📄 Document généré pour la demande #${demandeId}`, 
+                    `Document généré avec succès:<br>
+                     <strong>ID:</strong> ${generatedDocument.id}<br>
+                     <strong>Nom:</strong> ${generatedDocument.fileName}<br>
+                     <strong>Taille:</strong> ${generatedDocument.fileSize} octets<br>
+                     <strong>Statut:</strong> ${generatedDocument.status}`, 'success');
+
+            } catch (error) {
+                log(`   ❌ Erreur génération document: ${error.message}`);
+                addResult(`❌ Erreur génération document #${demandeId}`, error.message, 'error');
+            }
+        }
+
+        // Instructions
+        addResult('📖 Instructions', `
+            <ol>
+                <li>Connectez-vous en tant qu'utilisateur dans l'application</li>
+                <li>Copiez votre token JWT depuis les outils de développement (F12 → Application → Local Storage)</li>
+                <li>Collez le token dans le champ ci-dessus</li>
+                <li>Cliquez sur "Tester les actions utilisateur"</li>
+                <li>Les tests vérifieront :
+                    <ul>
+                        <li>📋 Récupération des demandes de l'utilisateur</li>
+                        <li>👁️ Consultation des détails d'une demande</li>
+                        <li>📄 Génération de document (si la demande est approuvée)</li>
+                    </ul>
+                </li>
+            </ol>
+        `, 'info');
+    </script>
+</body>
+</html> 

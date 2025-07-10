@@ -6,6 +6,9 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedDemande, setSelectedDemande] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     loadDemandes();
@@ -38,6 +41,99 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
     }
   };
 
+  const handleViewDetails = async (demandeId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/demandes/${demandeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const demande = await response.json();
+        setSelectedDemande(demande);
+        setShowModal(true);
+      } else {
+        alert("Erreur lors du chargement des détails de la demande");
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      alert("Erreur de connexion");
+    }
+  };
+
+  const handleGenerateDocument = async (demandeId) => {
+    try {
+      setGenerating(true);
+      const response = await fetch(
+        `http://localhost:8080/api/user/documents/generate?demandeId=${demandeId}&documentTypeId=1`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // Télécharger le document
+        const downloadResponse = await fetch(
+          `http://localhost:8080/api/user/documents/download/${data.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (downloadResponse.ok) {
+          const blob = await downloadResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = data.fileName || "document.docx";
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+
+          onNotification(
+            "success",
+            "Succès",
+            "Document généré et téléchargé avec succès !"
+          );
+        } else {
+          onNotification(
+            "error",
+            "Erreur",
+            "Impossible de télécharger le document"
+          );
+        }
+      } else {
+        const errorData = await response.json();
+        onNotification(
+          "error",
+          "Erreur",
+          errorData.error || "Impossible de générer le document"
+        );
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      onNotification(
+        "error",
+        "Erreur",
+        "Problème de connexion lors de la génération"
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "PENDING":
@@ -61,6 +157,11 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedDemande(null);
   };
 
   if (loading) {
@@ -210,17 +311,307 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
               <div className="flex flex-col items-end space-y-2">
                 <button
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-                  onClick={() => {
-                    /* TODO: Voir les détails */
-                  }}
+                  onClick={() => handleViewDetails(demande.id)}
                 >
                   Voir les détails
                 </button>
+
+                {demande.status === "APPROVED" && (
+                  <button
+                    className={`text-sm font-medium px-3 py-1 rounded-md ${
+                      generating
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
+                    onClick={() => handleGenerateDocument(demande.id)}
+                    disabled={generating}
+                  >
+                    {generating ? (
+                      <span className="flex items-center">
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Génération...
+                      </span>
+                    ) : (
+                      "Générer document"
+                    )}
+                  </button>
+                )}
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Modal de détails */}
+      {showModal && selectedDemande && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Détails de la demande #{selectedDemande.id}
+                </h3>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Informations générales */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Informations générales
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Type de document:</span>{" "}
+                      {selectedDemande.documentTypeDisplay}
+                    </div>
+                    <div>
+                      <span className="font-medium">Statut:</span>
+                      <span
+                        className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          selectedDemande.status
+                        )}`}
+                      >
+                        {selectedDemande.statusDisplay}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Date de création:</span>{" "}
+                      {formatDate(selectedDemande.createdAt)}
+                    </div>
+                    <div>
+                      <span className="font-medium">Dernière mise à jour:</span>{" "}
+                      {formatDate(selectedDemande.updatedAt)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations personnelles */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Informations personnelles
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Nom:</span>{" "}
+                      {selectedDemande.lastName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Prénom:</span>{" "}
+                      {selectedDemande.firstName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Date de naissance:</span>{" "}
+                      {selectedDemande.birthDate}
+                    </div>
+                    <div>
+                      <span className="font-medium">Lieu de naissance:</span>{" "}
+                      {selectedDemande.birthPlace}
+                    </div>
+                    <div>
+                      <span className="font-medium">Pays de naissance:</span>{" "}
+                      {selectedDemande.birthCountry}
+                    </div>
+                    <div>
+                      <span className="font-medium">Civilité:</span>{" "}
+                      {selectedDemande.civilite}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Adresse */}
+                {selectedDemande.adresse && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">Adresse</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="font-medium">Rue:</span>{" "}
+                        {selectedDemande.adresse.streetNumber}{" "}
+                        {selectedDemande.adresse.streetName}
+                      </div>
+                      <div>
+                        <span className="font-medium">Ville:</span>{" "}
+                        {selectedDemande.adresse.city}
+                      </div>
+                      <div>
+                        <span className="font-medium">Code postal:</span>{" "}
+                        {selectedDemande.adresse.postalCode}
+                      </div>
+                      <div>
+                        <span className="font-medium">Pays:</span>{" "}
+                        {selectedDemande.adresse.country}
+                      </div>
+                      {selectedDemande.adresse.boxNumber && (
+                        <div>
+                          <span className="font-medium">Boîte:</span>{" "}
+                          {selectedDemande.adresse.boxNumber}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Filiation */}
+                {(selectedDemande.fatherFirstName ||
+                  selectedDemande.motherFirstName) && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">
+                      Filiation
+                    </h4>
+                    {selectedDemande.fatherFirstName && (
+                      <div className="mb-3">
+                        <h5 className="font-medium text-sm text-gray-700 mb-1">
+                          Père
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium">Nom:</span>{" "}
+                            {selectedDemande.fatherLastName}
+                          </div>
+                          <div>
+                            <span className="font-medium">Prénom:</span>{" "}
+                            {selectedDemande.fatherFirstName}
+                          </div>
+                          <div>
+                            <span className="font-medium">
+                              Date de naissance:
+                            </span>{" "}
+                            {selectedDemande.fatherBirthDate}
+                          </div>
+                          <div>
+                            <span className="font-medium">
+                              Lieu de naissance:
+                            </span>{" "}
+                            {selectedDemande.fatherBirthPlace}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {selectedDemande.motherFirstName && (
+                      <div>
+                        <h5 className="font-medium text-sm text-gray-700 mb-1">
+                          Mère
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="font-medium">Nom:</span>{" "}
+                            {selectedDemande.motherLastName}
+                          </div>
+                          <div>
+                            <span className="font-medium">Prénom:</span>{" "}
+                            {selectedDemande.motherFirstName}
+                          </div>
+                          <div>
+                            <span className="font-medium">
+                              Date de naissance:
+                            </span>{" "}
+                            {selectedDemande.motherBirthDate}
+                          </div>
+                          <div>
+                            <span className="font-medium">
+                              Lieu de naissance:
+                            </span>{" "}
+                            {selectedDemande.motherBirthPlace}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Documents joints */}
+                {selectedDemande.documentFiles &&
+                  selectedDemande.documentFiles.length > 0 && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Documents joints
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedDemande.documentFiles.map((file, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-800"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-2"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {file}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  Fermer
+                </button>
+                {selectedDemande.status === "APPROVED" && (
+                  <button
+                    className={`px-4 py-2 rounded-md font-medium ${
+                      generating
+                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                        : "bg-green-600 text-white hover:bg-green-700"
+                    }`}
+                    onClick={() => handleGenerateDocument(selectedDemande.id)}
+                    disabled={generating}
+                  >
+                    {generating ? "Génération..." : "Générer document"}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
