@@ -4,11 +4,19 @@ import {
   PencilIcon,
   TrashIcon,
   DocumentArrowDownIcon,
+  DocumentTextIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowUpIcon,
   ArrowDownIcon,
 } from "@heroicons/react/24/outline";
+import {
+  downloadBlob,
+  isValidPdf,
+  ensureFileExtension,
+  formatFileSize,
+  handlePdfDownload,
+} from "../utils/fileDownload";
 
 const AdminDemandesList = ({ token, onNotification }) => {
   const [demandes, setDemandes] = useState([]);
@@ -19,6 +27,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [statusFilter, setStatusFilter] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
 
@@ -154,6 +163,191 @@ const AdminDemandesList = ({ token, onNotification }) => {
         "Erreur",
         "Problème de connexion lors de la génération"
       );
+    }
+  };
+
+  const handleGeneratePdfDocument = async (demandeId, documentTypeId) => {
+    setGeneratingPdf(true);
+    try {
+      console.log(
+        `Génération PDF pour demande ${demandeId}, type ${documentTypeId}`
+      );
+
+      const response = await fetch(
+        `http://localhost:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log(
+        `Réponse génération PDF: ${response.status} ${response.statusText}`
+      );
+
+      if (response.ok) {
+        const generatedDocument = await response.json();
+        console.log("Document généré:", generatedDocument);
+        onNotification("success", "Succès", "Document PDF généré avec succès");
+
+        // Télécharger le document PDF
+        console.log(`Téléchargement du document ${generatedDocument.id}`);
+        const downloadResponse = await fetch(
+          `http://localhost:8080/api/admin/pdf-documents/download/${generatedDocument.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log(
+          `Réponse téléchargement: ${downloadResponse.status} ${downloadResponse.statusText}`
+        );
+
+        if (downloadResponse.ok) {
+          // Vérifier le type de contenu
+          const contentType = downloadResponse.headers.get("content-type");
+          const contentLength = downloadResponse.headers.get("content-length");
+
+          console.log("Headers de réponse:", {
+            contentType,
+            contentLength,
+            status: downloadResponse.status,
+            statusText: downloadResponse.statusText,
+          });
+
+          // Vérifier que c'est bien un PDF
+          if (contentType && !contentType.includes("application/pdf")) {
+            console.warn("Type de contenu inattendu:", contentType);
+            onNotification(
+              "warning",
+              "Attention",
+              `Type de fichier inattendu: ${contentType}. Tentative de téléchargement...`
+            );
+          }
+
+          const blob = await downloadResponse.blob();
+          console.log("Blob reçu:", {
+            size: blob.size,
+            type: blob.type,
+            lastModified: blob.lastModified,
+          });
+
+          if (blob.size > 0) {
+            // Vérifier que le blob est bien un PDF
+            if (blob.type && !blob.type.includes("application/pdf")) {
+              console.warn("Type de blob inattendu:", blob.type);
+            }
+
+            // Créer l'URL du blob
+            const url = window.URL.createObjectURL(blob);
+
+            // Créer l'élément de téléchargement
+            const a = document.createElement("a");
+            a.href = url;
+
+            // S'assurer que le fichier a l'extension .pdf
+            let fileName = generatedDocument.fileName || "document.pdf";
+            if (!fileName.toLowerCase().endsWith(".pdf")) {
+              fileName = fileName.replace(/\.[^/.]+$/, "") + ".pdf";
+            }
+
+            a.download = fileName;
+            a.style.display = "none";
+
+            // Ajouter au DOM et déclencher le téléchargement
+            document.body.appendChild(a);
+
+            try {
+              a.click();
+              console.log("Téléchargement déclenché pour:", fileName);
+              onNotification(
+                "success",
+                "Succès",
+                `Document PDF téléchargé: ${fileName}`
+              );
+            } catch (downloadError) {
+              console.error(
+                "Erreur lors du déclenchement du téléchargement:",
+                downloadError
+              );
+              onNotification(
+                "error",
+                "Erreur",
+                "Impossible de déclencher le téléchargement automatique. Vérifiez les paramètres de votre navigateur."
+              );
+            } finally {
+              // Nettoyer
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);
+            }
+          } else {
+            console.error("Blob vide reçu");
+            onNotification(
+              "error",
+              "Erreur",
+              "Le document PDF généré est vide (0 bytes)"
+            );
+          }
+        } else {
+          // Gestion des erreurs HTTP
+          let errorMessage = `Erreur ${downloadResponse.status}: ${downloadResponse.statusText}`;
+
+          try {
+            const errorText = await downloadResponse.text();
+            console.error(
+              "Erreur téléchargement - Réponse complète:",
+              errorText
+            );
+
+            // Essayer de parser comme JSON
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorMessage =
+                errorJson.message || errorJson.error || errorMessage;
+            } catch {
+              // Si ce n'est pas du JSON, utiliser le texte brut
+              if (errorText.trim()) {
+                errorMessage = errorText;
+              }
+            }
+          } catch (textError) {
+            console.error("Impossible de lire le texte d'erreur:", textError);
+          }
+
+          onNotification("error", "Erreur de Téléchargement", errorMessage);
+        }
+      } else {
+        // Gestion des erreurs de génération
+        let errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+
+        try {
+          const errorData = await response.json();
+          console.error("Erreur génération:", errorData);
+          errorMessage = errorData?.message || errorData?.error || errorMessage;
+        } catch (jsonError) {
+          console.error("Impossible de parser l'erreur JSON:", jsonError);
+        }
+
+        onNotification("error", "Erreur de Génération", errorMessage);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la génération PDF:", err);
+
+      let errorMessage = err.message;
+      if (err.name === "TypeError" && err.message.includes("fetch")) {
+        errorMessage =
+          "Problème de connexion au serveur. Vérifiez que le backend est démarré.";
+      } else if (err.name === "AbortError") {
+        errorMessage = "La requête a été annulée.";
+      }
+
+      onNotification("error", "Erreur de Connexion", errorMessage);
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -328,9 +522,29 @@ const AdminDemandesList = ({ token, onNotification }) => {
                     <button
                       onClick={() => handleGenerateDocument(demande.id, 1)} // ID du type de document
                       className="text-green-600 hover:text-green-900"
-                      title="Générer document"
+                      title="Générer document Word"
                     >
                       <DocumentArrowDownIcon className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleGeneratePdfDocument(demande.id, 1)} // ID du type de document
+                      disabled={generatingPdf}
+                      className={`${
+                        generatingPdf
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-blue-600 hover:text-blue-900"
+                      }`}
+                      title={
+                        generatingPdf
+                          ? "Génération en cours..."
+                          : "Générer document PDF"
+                      }
+                    >
+                      {generatingPdf ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      ) : (
+                        <DocumentTextIcon className="h-4 w-4" />
+                      )}
                     </button>
                     <select
                       value={demande.status}

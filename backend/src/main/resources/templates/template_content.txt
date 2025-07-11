@@ -1,0 +1,30 @@
+# Template de Document Officiel
+
+## Informations du Demandeur
+
+**Nom complet :** {{FIRST_NAME}} {{LAST_NAME}}
+**Date de naissance :** {{BIRTH_DATE}}
+**Lieu de naissance :** {{BIRTH_PLACE}}, {{BIRTH_COUNTRY}}
+
+## Adresse
+
+{{ADDRESS}}
+{{POSTAL_CODE}} {{CITY}}
+{{COUNTRY}}
+
+## Filiation
+
+### Père
+**Nom complet :** {{FATHER_FIRST_NAME}} {{FATHER_LAST_NAME}}
+**Date de naissance :** {{FATHER_BIRTH_DATE}}
+**Lieu de naissance :** {{FATHER_BIRTH_PLACE}}, {{FATHER_BIRTH_COUNTRY}}
+
+### Mère
+**Nom complet :** {{MOTHER_FIRST_NAME}} {{MOTHER_LAST_NAME}}
+**Date de naissance :** {{MOTHER_BIRTH_DATE}}
+**Lieu de naissance :** {{MOTHER_BIRTH_PLACE}}, {{MOTHER_BIRTH_COUNTRY}}
+
+---
+
+*Document généré le {{GENERATION_DATE}} à {{GENERATION_TIME}}*
+*eConsulat - République de Guinée-Bissau* 

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion Backend - eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Connexion Backend - eConsulat</h1>
+        
+        <div class="form-group">
+            <label for="baseUrl">URL Backend:</label>
+            <input type="text" id="baseUrl" value="http://localhost:8080" />
+        </div>
+        
+        <div class="form-group">
+            <label for="token">Token JWT (optionnel):</label>
+            <input type="text" id="token" placeholder="Entrez votre token JWT..." />
+        </div>
+        
+        <div class="form-group">
+            <button onclick="testHealth()">🏥 Test Health</button>
+            <button onclick="testAuth()">🔐 Test Auth</button>
+            <button onclick="testDemandes()">📋 Test Demandes</button>
+            <button onclick="testPdfEndpoint()">📄 Test Endpoint PDF</button>
+            <button onclick="clearLog()">🗑️ Effacer Log</button>
+        </div>
+        
+        <div id="result" class="result"></div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        async function testHealth() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            log(`🏥 Test health check: ${baseUrl}/actuator/health`);
+            
+            try {
+                const response = await fetch(`${baseUrl}/actuator/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`📥 Réponse health: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Health OK: ${JSON.stringify(data, null, 2)}`);
+                    showResult('✅ Backend accessible et en bonne santé', 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Health error: ${errorText}`);
+                    showResult(`❌ Backend accessible mais erreur health: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`💥 Exception health: ${error.message}`);
+                showResult(`💥 Backend non accessible: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                log(`🔐 Test auth sans token: ${baseUrl}/api/auth/me`);
+                showResult('⚠️ Test auth sans token (probablement 401)', 'info');
+                return;
+            }
+            
+            log(`🔐 Test auth avec token: ${baseUrl}/api/auth/me`);
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`📥 Réponse auth: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Auth OK: ${JSON.stringify(data, null, 2)}`);
+                    showResult('✅ Token JWT valide', 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Auth error: ${errorText}`);
+                    showResult(`❌ Token JWT invalide: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`💥 Exception auth: ${error.message}`);
+                showResult(`💥 Erreur auth: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDemandes() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const token = document.getElementById('token').value;
+            
+            log(`📋 Test demandes: ${baseUrl}/api/admin/demandes`);
+            
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch(`${baseUrl}/api/admin/demandes`, {
+                    method: 'GET',
+                    headers: headers
+                });
+                
+                log(`📥 Réponse demandes: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Demandes OK: ${data.content ? data.content.length : 0} demandes trouvées`);
+                    showResult(`✅ Demandes accessibles: ${data.content ? data.content.length : 0} demandes`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Demandes error: ${errorText}`);
+                    showResult(`❌ Erreur demandes: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`💥 Exception demandes: ${error.message}`);
+                showResult(`💥 Erreur demandes: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPdfEndpoint() {
+            const baseUrl = document.getElementById('baseUrl').value;
+            const token = document.getElementById('token').value;
+            
+            log(`📄 Test endpoint PDF: ${baseUrl}/api/admin/pdf-documents/generate`);
+            
+            try {
+                const headers = {
+                    'Content-Type': 'application/json'
+                };
+                
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch(`${baseUrl}/api/admin/pdf-documents/generate?demandeId=1&documentTypeId=1`, {
+                    method: 'POST',
+                    headers: headers
+                });
+                
+                log(`📥 Réponse PDF: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ PDF endpoint OK: ${JSON.stringify(data, null, 2)}`);
+                    showResult('✅ Endpoint PDF accessible et fonctionnel', 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ PDF endpoint error: ${errorText}`);
+                    showResult(`❌ Erreur endpoint PDF: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`💥 Exception PDF endpoint: ${error.message}`);
+                showResult(`💥 Erreur endpoint PDF: ${error.message}`, 'error');
+            }
+        }
+
+        // Instructions
+        log('🔍 Test Connexion Backend - eConsulat');
+        log('Instructions:');
+        log('1. Vérifiez que le backend est démarré sur http://localhost:8080');
+        log('2. Testez d\'abord "Test Health" pour vérifier l\'accessibilité');
+        log('3. Si health OK, testez "Test Auth" avec un token JWT');
+        log('4. Testez "Test Demandes" pour vérifier l\'API');
+        log('5. Enfin, testez "Test Endpoint PDF"');
+        log('');
+        log('Si tous les tests échouent, le backend n\'est pas démarré ou accessible');
+        log('');
+    </script>
+</body>
+</html> 

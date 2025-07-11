@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Avancé Téléchargement PDF - Diagnostic Complet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .loading {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        .blob-info {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .download-options {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .download-options button {
+            flex: 1;
+        }
+        .download-options button.download {
+            background-color: #28a745;
+        }
+        .download-options button.open {
+            background-color: #17a2b8;
+        }
+        .download-options button.analyze {
+            background-color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Avancé Téléchargement PDF - Diagnostic Complet</h1>
+        
+        <div class="test-section">
+            <h3>1. Test de Connexion Backend</h3>
+            <button onclick="testBackendConnection()">Tester la Connexion</button>
+            <div id="connectionResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test d'Authentification</h3>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="admin@econsulat.com" placeholder="admin@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="admin123" placeholder="admin123">
+            </div>
+            <button onclick="testAuthentication()">Tester l'Authentification</button>
+            <div id="authResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test de Génération PDF</h3>
+            <div class="form-group">
+                <label>ID Demande:</label>
+                <input type="number" id="demandeId" value="1" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label>ID Type Document:</label>
+                <input type="number" id="documentTypeId" value="1" placeholder="1">
+            </div>
+            <button onclick="testPdfGeneration()">Générer PDF</button>
+            <div id="generationResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test de Téléchargement PDF Avancé</h3>
+            <div class="form-group">
+                <label>ID Document:</label>
+                <input type="number" id="documentId" value="1" placeholder="1">
+            </div>
+            <button onclick="testPdfDownloadAdvanced()">Analyser et Télécharger PDF</button>
+            <div id="downloadResult" class="result"></div>
+            <div id="blobInfo" class="blob-info" style="display: none;"></div>
+            <div id="downloadOptions" class="download-options" style="display: none;">
+                <button class="download" onclick="downloadPdf()">📥 Télécharger</button>
+                <button class="open" onclick="openPdf()">👁️ Ouvrir</button>
+                <button class="analyze" onclick="analyzePdf()">🔍 Analyser</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Test Complet avec Validation</h3>
+            <button onclick="testCompleteFlowWithValidation()">Test Complet avec Validation</button>
+            <div id="completeResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api';
+        let authToken = null;
+        let currentBlob = null;
+        let currentFileName = null;
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function isValidPdf(blob) {
+            if (!blob) return false;
+            if (blob.type && blob.type !== 'application/pdf') {
+                console.warn('Type MIME inattendu:', blob.type);
+                return false;
+            }
+            if (blob.size === 0) {
+                console.warn('Blob vide');
+                return false;
+            }
+            if (blob.size < 100) {
+                console.warn('Blob trop petit pour être un PDF valide:', blob.size, 'bytes');
+                return false;
+            }
+            return true;
+        }
+
+        async function testBackendConnection() {
+            showResult('connectionResult', 'Test en cours...', 'loading');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/test`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    showResult('connectionResult', `✅ Connexion réussie!\nStatus: ${response.status}\nRéponse: ${data}`, 'success');
+                } else {
+                    showResult('connectionResult', `❌ Erreur de connexion\nStatus: ${response.status}\nStatus Text: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                showResult('connectionResult', `❌ Erreur réseau: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAuthentication() {
+            showResult('authResult', 'Authentification en cours...', 'loading');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    showResult('authResult', `✅ Authentification réussie!\nToken: ${authToken.substring(0, 50)}...`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult('authResult', `❌ Échec de l'authentification\nStatus: ${response.status}\nErreur: ${errorData.message || 'Inconnue'}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Erreur réseau: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPdfGeneration() {
+            if (!authToken) {
+                showResult('generationResult', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+            
+            showResult('generationResult', 'Génération PDF en cours...', 'loading');
+            
+            const demandeId = document.getElementById('demandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('generationResult', `✅ PDF généré avec succès!\nID Document: ${data.id}\nNom fichier: ${data.fileName}\nChemin: ${data.filePath}\nStatus: ${data.status}`, 'success');
+                    
+                    // Mettre à jour l'ID du document pour le test de téléchargement
+                    document.getElementById('documentId').value = data.id;
+                } else {
+                    const errorData = await response.json();
+                    showResult('generationResult', `❌ Échec de la génération\nStatus: ${response.status}\nErreur: ${errorData.message || 'Inconnue'}`, 'error');
+                }
+            } catch (error) {
+                showResult('generationResult', `❌ Erreur réseau: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPdfDownloadAdvanced() {
+            if (!authToken) {
+                showResult('downloadResult', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+            
+            showResult('downloadResult', 'Analyse et téléchargement en cours...', 'loading');
+            
+            const documentId = document.getElementById('documentId').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/pdf-documents/download/${documentId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                // Analyser les headers de réponse
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+                
+                console.log('Headers de réponse:', headers);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    
+                    // Analyser le blob
+                    const blobInfo = {
+                        size: blob.size,
+                        type: blob.type,
+                        lastModified: blob.lastModified,
+                        isValidPdf: isValidPdf(blob)
+                    };
+                    
+                    console.log('Informations du blob:', blobInfo);
+                    
+                    // Stocker le blob pour les actions ultérieures
+                    currentBlob = blob;
+                    currentFileName = `document_${documentId}.pdf`;
+                    
+                    // Afficher les informations
+                    let resultMessage = `✅ Téléchargement réussi!\n\n`;
+                    resultMessage += `📊 Informations du fichier:\n`;
+                    resultMessage += `- Taille: ${formatFileSize(blob.size)}\n`;
+                    resultMessage += `- Type MIME: ${blob.type || 'Non spécifié'}\n`;
+                    resultMessage += `- Dernière modification: ${new Date(blob.lastModified).toLocaleString()}\n`;
+                    resultMessage += `- PDF valide: ${blobInfo.isValidPdf ? '✅ Oui' : '❌ Non'}\n\n`;
+                    
+                    resultMessage += `📋 Headers de réponse:\n`;
+                    Object.entries(headers).forEach(([key, value]) => {
+                        resultMessage += `- ${key}: ${value}\n`;
+                    });
+                    
+                    showResult('downloadResult', resultMessage, blobInfo.isValidPdf ? 'success' : 'warning');
+                    
+                    // Afficher les options de téléchargement
+                    document.getElementById('downloadOptions').style.display = 'flex';
+                    
+                } else {
+                    const errorText = await response.text();
+                    showResult('downloadResult', `❌ Échec du téléchargement\nStatus: ${response.status}\nStatus Text: ${response.statusText}\nRéponse: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showResult('downloadResult', `❌ Erreur réseau: ${error.message}`, 'error');
+            }
+        }
+
+        async function downloadPdf() {
+            if (!currentBlob) {
+                alert('Aucun PDF disponible pour le téléchargement');
+                return;
+            }
+            
+            try {
+                const url = window.URL.createObjectURL(currentBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = currentFileName;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                alert(`Téléchargement déclenché: ${currentFileName}`);
+            } catch (error) {
+                alert(`Erreur lors du téléchargement: ${error.message}`);
+            }
+        }
+
+        function openPdf() {
+            if (!currentBlob) {
+                alert('Aucun PDF disponible pour l\'ouverture');
+                return;
+            }
+            
+            try {
+                const url = window.URL.createObjectURL(currentBlob);
+                const newWindow = window.open(url, '_blank');
+                
+                if (!newWindow) {
+                    alert('Popup bloqué. Vérifiez les paramètres de votre navigateur.');
+                } else {
+                    newWindow.onbeforeunload = () => {
+                        window.URL.revokeObjectURL(url);
+                    };
+                }
+            } catch (error) {
+                alert(`Erreur lors de l'ouverture: ${error.message}`);
+            }
+        }
+
+        async function analyzePdf() {
+            if (!currentBlob) {
+                alert('Aucun PDF disponible pour l\'analyse');
+                return;
+            }
+            
+            try {
+                // Lire les premiers bytes pour vérifier la signature PDF
+                const arrayBuffer = await currentBlob.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                
+                // Signature PDF: %PDF
+                const pdfSignature = [0x25, 0x50, 0x44, 0x46]; // %PDF
+                const isPdfSignature = pdfSignature.every((byte, index) => uint8Array[index] === byte);
+                
+                let analysis = `🔍 Analyse détaillée du PDF:\n\n`;
+                analysis += `📏 Taille: ${formatFileSize(currentBlob.size)}\n`;
+                analysis += `🏷️ Type MIME: ${currentBlob.type || 'Non spécifié'}\n`;
+                analysis += `📅 Dernière modification: ${new Date(currentBlob.lastModified).toLocaleString()}\n`;
+                analysis += `🔍 Signature PDF: ${isPdfSignature ? '✅ Valide' : '❌ Invalide'}\n`;
+                
+                if (isPdfSignature) {
+                    analysis += `\n✅ Le fichier semble être un PDF valide`;
+                } else {
+                    analysis += `\n⚠️ Le fichier ne semble pas être un PDF valide`;
+                    analysis += `\nPremiers bytes: ${Array.from(uint8Array.slice(0, 10)).map(b => b.toString(16).padStart(2, '0')).join(' ')}`;
+                }
+                
+                alert(analysis);
+            } catch (error) {
+                alert(`Erreur lors de l'analyse: ${error.message}`);
+            }
+        }
+
+        async function testCompleteFlowWithValidation() {
+            showResult('completeResult', 'Test complet avec validation en cours...', 'loading');
+            
+            try {
+                // 1. Authentification
+                await testAuthentication();
+                if (!authToken) {
+                    showResult('completeResult', '❌ Échec de l\'authentification', 'error');
+                    return;
+                }
+                
+                // 2. Génération PDF
+                await testPdfGeneration();
+                
+                // 3. Téléchargement et validation PDF
+                await testPdfDownloadAdvanced();
+                
+                showResult('completeResult', '✅ Test complet terminé avec succès!\nVérifiez les résultats ci-dessus.', 'success');
+                
+            } catch (error) {
+                showResult('completeResult', `❌ Erreur lors du test complet: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html> 

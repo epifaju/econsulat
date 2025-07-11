@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PDF Simple - eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test PDF Simple - Diagnostic</h1>
+        
+        <div class="form-group">
+            <label for="token">Token JWT:</label>
+            <input type="text" id="token" placeholder="Entrez votre token JWT..." />
+        </div>
+        
+        <div class="form-group">
+            <label for="demandeId">ID Demande:</label>
+            <input type="number" id="demandeId" value="1" />
+        </div>
+        
+        <div class="form-group">
+            <label for="documentTypeId">ID Type Document:</label>
+            <input type="number" id="documentTypeId" value="1" />
+        </div>
+        
+        <div class="form-group">
+            <button onclick="testGenerate()">📄 Générer PDF</button>
+            <button onclick="testDownload()">⬇️ Tester Téléchargement</button>
+            <button onclick="clearLog()">🗑️ Effacer Log</button>
+        </div>
+        
+        <div id="result" class="result"></div>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let lastGeneratedId = null;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        async function testGenerate() {
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const documentTypeId = document.getElementById('documentTypeId').value;
+            
+            if (!token) {
+                showResult('Veuillez entrer un token JWT', 'error');
+                return;
+            }
+            
+            log(`🚀 Début test génération PDF`);
+            log(`Demande ID: ${demandeId}, Type ID: ${documentTypeId}`);
+            
+            try {
+                const url = `http://localhost:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`;
+                log(`📡 Appel API: ${url}`);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log(`📥 Réponse: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Succès: ${JSON.stringify(data, null, 2)}`);
+                    lastGeneratedId = data.id;
+                    showResult(`✅ Document généré! ID: ${data.id}, Nom: ${data.fileName}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erreur: ${errorText}`);
+                    showResult(`❌ Erreur ${response.status}: ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Exception: ${error.message}`);
+                showResult(`💥 Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDownload() {
+            if (!lastGeneratedId) {
+                showResult('❌ Aucun document généré. Générez d\'abord un document.', 'error');
+                return;
+            }
+            
+            const token = document.getElementById('token').value;
+            
+            log(`⬇️ Test téléchargement document ${lastGeneratedId}`);
+            
+            try {
+                const url = `http://localhost:8080/api/admin/pdf-documents/download/${lastGeneratedId}`;
+                log(`📡 Appel API: ${url}`);
+                
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                log(`📥 Réponse: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    log(`📦 Blob reçu: ${blob.size} bytes, type: ${blob.type}`);
+                    
+                    if (blob.size > 0) {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `test_document_${lastGeneratedId}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        showResult(`✅ Téléchargement réussi! Taille: ${blob.size} bytes`, 'success');
+                    } else {
+                        showResult('❌ Le document téléchargé est vide', 'error');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erreur téléchargement: ${errorText}`);
+                    showResult(`❌ Erreur téléchargement ${response.status}: ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`💥 Exception téléchargement: ${error.message}`);
+                showResult(`💥 Erreur téléchargement: ${error.message}`, 'error');
+            }
+        }
+
+        // Instructions
+        log('🔍 Test PDF Simple - Diagnostic');
+        log('Instructions:');
+        log('1. Entrez votre token JWT d\'admin');
+        log('2. Entrez l\'ID d\'une demande existante');
+        log('3. Cliquez sur "Générer PDF"');
+        log('4. Vérifiez les logs pour diagnostiquer');
+        log('5. Si génération OK, testez le téléchargement');
+        log('');
+    </script>
+</body>
+</html> 

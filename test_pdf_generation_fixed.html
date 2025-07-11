@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération PDF - Corrigé</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .result { margin-top: 10px; padding: 10px; background-color: #f8f9fa; border-radius: 3px; }
+        .loading { color: #007bff; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <h1>Test Génération PDF - Backend Corrigé</h1>
+    
+    <div class="test-section info">
+        <h3>1. Test de Connexion Backend</h3>
+        <button onclick="testBackendConnection()">Tester la Connexion</button>
+        <div id="connection-result" class="result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>2. Test d'Authentification Admin</h3>
+        <button onclick="testAdminAuth()">Authentifier Admin</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>3. Test de Génération PDF</h3>
+        <button onclick="testPdfGeneration()">Générer PDF</button>
+        <div id="generation-result" class="result"></div>
+    </div>
+
+    <div class="test-section info">
+        <h3>4. Test de Téléchargement PDF</h3>
+        <button onclick="testPdfDownload()">Télécharger PDF</button>
+        <div id="download-result" class="result"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function testBackendConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<div class="loading"><span class="spinner"></span> Test en cours...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/test', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<div class="success">✅ Backend connecté et fonctionnel</div>';
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur ${response.status}: ${response.statusText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+
+        async function testAdminAuth() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<div class="loading"><span class="spinner"></span> Authentification en cours...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    resultDiv.innerHTML = '<div class="success">✅ Authentification admin réussie</div>';
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur d'authentification: ${errorData.message || response.statusText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testPdfGeneration() {
+            const resultDiv = document.getElementById('generation-result');
+            resultDiv.innerHTML = '<div class="loading"><span class="spinner"></span> Génération PDF en cours...</div>';
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Veuillez d\'abord vous authentifier</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/pdf-documents/generate?demandeId=1&documentTypeId=1', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<div class="success">✅ PDF généré avec succès<br>ID: ${data.id}<br>Fichier: ${data.fileName}</div>`;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur de génération: ${errorData.message || response.statusText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+
+        async function testPdfDownload() {
+            const resultDiv = document.getElementById('download-result');
+            resultDiv.innerHTML = '<div class="loading"><span class="spinner"></span> Téléchargement en cours...</div>';
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Veuillez d\'abord vous authentifier</div>';
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/pdf-documents/download/1', {
+                    method: 'GET',
+                    headers: { 
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    resultDiv.innerHTML = `<div class="success">✅ PDF téléchargé avec succès<br>Taille: ${blob.size} bytes<br>Type: ${blob.type}</div>`;
+                    
+                    // Créer un lien de téléchargement
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'document_generé.pdf';
+                    a.textContent = 'Télécharger le PDF';
+                    a.style.display = 'block';
+                    a.style.marginTop = '10px';
+                    a.style.padding = '5px 10px';
+                    a.style.backgroundColor = '#007bff';
+                    a.style.color = 'white';
+                    a.style.textDecoration = 'none';
+                    a.style.borderRadius = '3px';
+                    resultDiv.appendChild(a);
+                    
+                    // Nettoyer l'URL après téléchargement
+                    setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur de téléchargement: ${response.status} - ${errorText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 

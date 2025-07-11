@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération PDF</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Génération PDF - eConsulat</h1>
+    
+    <div class="test-section">
+        <h3>1. Test de connexion backend</h3>
+        <button onclick="testBackendConnection()">Tester la connexion</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test d'authentification</h3>
+        <button onclick="testAuthentication()">Tester l'authentification</button>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test de génération PDF</h3>
+        <button onclick="testPdfGeneration()">Générer un PDF</button>
+        <div id="pdf-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test de téléchargement PDF</h3>
+        <button onclick="testPdfDownload()">Télécharger le PDF</button>
+        <div id="download-result"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        async function testBackendConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<div class="info">Test en cours...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/actuator/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `<div class="success">✅ Backend connecté: ${data.status}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur backend: ${response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+
+        async function testAuthentication() {
+            const resultDiv = document.getElementById('auth-result');
+            resultDiv.innerHTML = '<div class="info">Authentification en cours...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    resultDiv.innerHTML = `<div class="success">✅ Authentification réussie</div>`;
+                } else {
+                    const errorData = await response.json();
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur d'authentification: ${errorData.message || response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+
+        async function testPdfGeneration() {
+            const resultDiv = document.getElementById('pdf-result');
+            resultDiv.innerHTML = '<div class="info">Génération PDF en cours...</div>';
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Veuillez d\'abord vous authentifier</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/pdf-documents/generate?demandeId=1&documentTypeId=1', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ PDF généré avec succès<br>
+                            ID: ${data.id}<br>
+                            Nom: ${data.fileName}<br>
+                            Chemin: ${data.filePath}<br>
+                            Statut: ${data.status}
+                        </div>
+                    `;
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur de génération: ${errorData.message || response.status}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+
+        async function testPdfDownload() {
+            const resultDiv = document.getElementById('download-result');
+            resultDiv.innerHTML = '<div class="info">Téléchargement en cours...</div>';
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '<div class="error">❌ Veuillez d\'abord vous authentifier</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/pdf-documents/download/1', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            ✅ PDF téléchargé avec succès<br>
+                            Taille: ${blob.size} bytes<br>
+                            Type: ${blob.type}
+                        </div>
+                    `;
+                    
+                    // Créer un lien de téléchargement
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'test_document.pdf';
+                    a.textContent = 'Télécharger le PDF';
+                    a.className = 'button';
+                    resultDiv.appendChild(a);
+                    
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `<div class="error">❌ Erreur de téléchargement: ${response.status} - ${errorText}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Erreur de connexion: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html> 
+</html> 
