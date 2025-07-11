@@ -19,6 +19,8 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showUserDetails, setShowUserDetails] = useState(false);
 
   // États pour la pagination et filtres
   const [currentPage, setCurrentPage] = useState(1);
@@ -112,6 +114,39 @@ const UserManagement = () => {
       key,
       direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
     }));
+  };
+
+  const handleViewUserDetails = async (userId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/admin/users/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const user = await response.json();
+        setSelectedUser(user);
+        setShowUserDetails(true);
+      } else {
+        showNotification(
+          "error",
+          "Erreur",
+          "Impossible de charger les détails de l'utilisateur"
+        );
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      showNotification("error", "Erreur", "Problème de connexion");
+    }
+  };
+
+  const closeUserDetails = () => {
+    setShowUserDetails(false);
+    setSelectedUser(null);
   };
 
   const getRoleBadge = (role) => {
@@ -355,6 +390,7 @@ const UserManagement = () => {
                         <button
                           className="btn-secondary btn-sm"
                           title="Voir détails"
+                          onClick={() => handleViewUserDetails(user.id)}
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
@@ -398,6 +434,126 @@ const UserManagement = () => {
           )}
         </div>
       </div>
+
+      {/* Modal Détails Utilisateur */}
+      {showUserDetails && selectedUser && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Détails de l'utilisateur #{selectedUser.id}
+                </h3>
+                <button
+                  onClick={closeUserDetails}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Informations personnelles */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Informations personnelles
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Nom:</span>{" "}
+                      {selectedUser.lastName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Prénom:</span>{" "}
+                      {selectedUser.firstName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Email:</span>{" "}
+                      {selectedUser.email}
+                    </div>
+                    <div>
+                      <span className="font-medium">Rôle:</span>{" "}
+                      {selectedUser.roleDisplay}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations du compte */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Informations du compte
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Email vérifié:</span>{" "}
+                      {selectedUser.emailVerified ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Oui
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          Non
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium">Date d'inscription:</span>{" "}
+                      {new Date(selectedUser.createdAt).toLocaleDateString(
+                        "fr-FR",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium">Nombre de demandes:</span>{" "}
+                      {selectedUser.demandesCount || 0}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  onClick={closeUserDetails}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  Fermer
+                </button>
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+                  onClick={() => {
+                    // TODO: Implémenter la modification d'utilisateur
+                    showNotification(
+                      "info",
+                      "Info",
+                      "Fonctionnalité de modification à implémenter"
+                    );
+                  }}
+                >
+                  Modifier
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

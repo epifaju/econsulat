@@ -16,7 +16,7 @@ public class GeneratedDocument {
     private Demande demande;
 
     @ManyToOne
-    @JoinColumn(name = "document_type_id", nullable = false)
+    @JoinColumn(name = "document_type_id", nullable = true)
     private DocumentType documentType;
 
     @Column(name = "file_name", nullable = false)

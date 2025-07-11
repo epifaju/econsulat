@@ -9,7 +9,7 @@ echo Recherche des processus utilisant le port 8080...
 echo.
 
 REM Trouver les processus utilisant le port 8080
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8080') do (
+for /f "tokens=5" %%a in ('netstat -aon | findstr :8080') do (
     set PID=%%a
     echo Processus trouvé avec PID: !PID!
     

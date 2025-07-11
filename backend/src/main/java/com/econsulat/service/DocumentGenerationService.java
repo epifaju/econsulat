@@ -46,15 +46,12 @@ public class DocumentGenerationService {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
 
-        DocumentType documentType = documentTypeRepository.findById(documentTypeId)
-                .orElseThrow(() -> new RuntimeException("Type de document non trouvé"));
-
         // Validation des données de la demande
         validateDemandeData(demande);
 
         // Vérifier si le document a déjà été généré
         GeneratedDocument existingDoc = generatedDocumentRepository
-                .findByDemandeAndDocumentType(demandeId, documentTypeId)
+                .findByDemandeAndDocumentType(demandeId, null)
                 .orElse(null);
 
         if (existingDoc != null) {
@@ -69,17 +66,19 @@ public class DocumentGenerationService {
             }
 
             // Générer le nom du fichier
-            String fileName = generateFileName(demande, documentType);
+            String fileName = generateFileName(demande);
             String filePath = documentsPath.resolve(fileName).toString();
 
             // Générer le document
-            generateDocumentFromTemplate(demande, documentType, filePath);
+            generateDocumentFromTemplate(demande, filePath);
 
-            // Créer l'enregistrement en base
-            GeneratedDocument generatedDocument = new GeneratedDocument(
-                    demande, documentType, fileName, filePath, currentUser);
-
-            // Définir la date d'expiration (30 jours)
+            // Créer l'enregistrement en base (sans DocumentType pour l'instant)
+            GeneratedDocument generatedDocument = new GeneratedDocument();
+            generatedDocument.setDemande(demande);
+            generatedDocument.setFileName(fileName);
+            generatedDocument.setFilePath(filePath);
+            generatedDocument.setCreatedBy(currentUser);
+            generatedDocument.setStatus("GENERATED");
             generatedDocument.setExpiresAt(LocalDateTime.now().plusDays(30));
 
             return generatedDocumentRepository.save(generatedDocument);
@@ -122,24 +121,20 @@ public class DocumentGenerationService {
         }
     }
 
-    private String generateFileName(Demande demande, DocumentType documentType) {
+    private String generateFileName(Demande demande) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String userInfo = demande.getFirstName() + "_" + demande.getLastName();
-        String docType = documentType.getLibelle().replaceAll("[^a-zA-Z0-9]", "_");
+        String docType = demande.getDocumentType().getDisplayName().replaceAll("[^a-zA-Z0-9]", "_");
 
         return String.format("%s_%s_%s_%s.docx",
                 docType, userInfo, timestamp, UUID.randomUUID().toString().substring(0, 8));
     }
 
-    private void generateDocumentFromTemplate(Demande demande, DocumentType documentType, String outputPath)
+    private void generateDocumentFromTemplate(Demande demande, String outputPath)
             throws IOException {
 
-        // Charger le template Word
-        String templatePath = documentType.getTemplatePath();
-        if (templatePath == null || templatePath.isEmpty()) {
-            // Utiliser un template par défaut
-            templatePath = "templates/default_template.docx";
-        }
+        // Utiliser un template par défaut
+        String templatePath = "templates/default_template.docx";
 
         try (InputStream is = new FileInputStream(templatePath);
                 XWPFDocument document = new XWPFDocument(is)) {
@@ -157,7 +152,7 @@ public class DocumentGenerationService {
 
         } catch (FileNotFoundException e) {
             // Si le template n'existe pas, créer un document simple
-            createSimpleDocument(demande, documentType, outputPath);
+            createSimpleDocument(demande, outputPath);
         }
     }
 
@@ -233,7 +228,7 @@ public class DocumentGenerationService {
         }
     }
 
-    private void createSimpleDocument(Demande demande, DocumentType documentType, String outputPath)
+    private void createSimpleDocument(Demande demande, String outputPath)
             throws IOException {
 
         try (XWPFDocument document = new XWPFDocument()) {
@@ -241,7 +236,7 @@ public class DocumentGenerationService {
             // Titre
             XWPFParagraph title = document.createParagraph();
             XWPFRun titleRun = title.createRun();
-            titleRun.setText(documentType.getLibelle());
+            titleRun.setText(demande.getDocumentType().getDisplayName());
             titleRun.setBold(true);
             titleRun.setFontSize(16);
 

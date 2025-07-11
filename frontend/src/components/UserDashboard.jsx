@@ -23,6 +23,8 @@ const UserDashboard = () => {
     useDemandes();
   const [notification, setNotification] = useState(null);
   const [showNewDemandeForm, setShowNewDemandeForm] = useState(false);
+  const [selectedDemande, setSelectedDemande] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // États pour la pagination et filtres
   const [currentPage, setCurrentPage] = useState(1);
@@ -55,6 +57,39 @@ const UserDashboard = () => {
   const handleRefreshData = () => {
     refreshDemandes();
     showNotification("info", "Info", "Données actualisées");
+  };
+
+  const handleViewDetails = async (demandeId) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/demandes/${demandeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const demande = await response.json();
+        setSelectedDemande(demande);
+        setShowDetailsModal(true);
+      } else {
+        showNotification(
+          "error",
+          "Erreur",
+          "Impossible de charger les détails de la demande"
+        );
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      showNotification("error", "Erreur", "Problème de connexion");
+    }
+  };
+
+  const closeDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedDemande(null);
   };
 
   // Calcul des statistiques
@@ -110,10 +145,10 @@ const UserDashboard = () => {
     }));
   };
 
-  const handleGenerateDocument = async (citizenId) => {
+  const handleGenerateDocument = async (demandeId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/passport/generate/${citizenId}`,
+        `http://localhost:8080/api/demandes/${demandeId}/generate-document`,
         {
           method: "POST",
           headers: {
@@ -128,7 +163,7 @@ const UserDashboard = () => {
 
         // Télécharger le document
         const downloadResponse = await fetch(
-          `http://localhost:8080/api/passport/download/${data.fileName}`,
+          `http://localhost:8080/api/demandes/${demandeId}/download-document`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -141,20 +176,34 @@ const UserDashboard = () => {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
-          a.download = data.fileName;
+          a.download = data.fileName || "document.docx";
           document.body.appendChild(a);
           a.click();
           window.URL.revokeObjectURL(url);
           document.body.removeChild(a);
+
+          showNotification(
+            "success",
+            "Succès",
+            "Document téléchargé avec succès"
+          );
+        } else {
+          showNotification(
+            "error",
+            "Erreur",
+            "Impossible de télécharger le document"
+          );
         }
       } else {
+        const errorData = await response.json();
         showNotification(
           "error",
           "Erreur",
-          "Impossible de générer le document"
+          errorData.error || "Impossible de générer le document"
         );
       }
     } catch (err) {
+      console.error("Erreur:", err);
       showNotification("error", "Erreur", "Problème lors de la génération");
     }
   };
@@ -169,6 +218,21 @@ const UserDashboard = () => {
         return <span className="badge badge-rejected">Rejeté</span>;
       default:
         return <span className="badge badge-pending">{status}</span>;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "APPROVED":
+        return "bg-green-100 text-green-800";
+      case "REJECTED":
+        return "bg-red-100 text-red-800";
+      case "COMPLETED":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -415,6 +479,7 @@ const UserDashboard = () => {
                         <button
                           className="btn-secondary btn-sm"
                           title="Voir détails"
+                          onClick={() => handleViewDetails(demande.id)}
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
@@ -459,6 +524,269 @@ const UserDashboard = () => {
           onClose={handleNewDemandeClose}
           onSuccess={handleNewDemandeSuccess}
         />
+      )}
+
+      {/* Modal Détails Demande */}
+      {showDetailsModal && selectedDemande && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Détails de la demande #{selectedDemande.id}
+                </h3>
+                <button
+                  onClick={closeDetailsModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Informations générales */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Informations générales
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Type de document:</span>{" "}
+                      {selectedDemande.documentTypeDisplay}
+                    </div>
+                    <div>
+                      <span className="font-medium">Statut:</span>
+                      <span
+                        className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                          selectedDemande.status
+                        )}`}
+                      >
+                        {selectedDemande.statusDisplay}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium">Date de création:</span>{" "}
+                      {new Date(selectedDemande.createdAt).toLocaleDateString(
+                        "fr-FR",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium">Dernière mise à jour:</span>{" "}
+                      {new Date(selectedDemande.updatedAt).toLocaleDateString(
+                        "fr-FR",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations personnelles */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">
+                    Informations personnelles
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Nom:</span>{" "}
+                      {selectedDemande.lastName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Prénom:</span>{" "}
+                      {selectedDemande.firstName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Date de naissance:</span>{" "}
+                      {selectedDemande.birthDate}
+                    </div>
+                    <div>
+                      <span className="font-medium">Lieu de naissance:</span>{" "}
+                      {selectedDemande.birthPlace}
+                    </div>
+                    <div>
+                      <span className="font-medium">Pays de naissance:</span>{" "}
+                      {selectedDemande.birthCountry}
+                    </div>
+                    <div>
+                      <span className="font-medium">Civilité:</span>{" "}
+                      {selectedDemande.civilite}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Adresse */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-900 mb-2">Adresse</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">Rue:</span>{" "}
+                      {selectedDemande.streetNumber}{" "}
+                      {selectedDemande.streetName}
+                    </div>
+                    <div>
+                      <span className="font-medium">Boîte:</span>{" "}
+                      {selectedDemande.boxNumber || "N/A"}
+                    </div>
+                    <div>
+                      <span className="font-medium">Code postal:</span>{" "}
+                      {selectedDemande.postalCode}
+                    </div>
+                    <div>
+                      <span className="font-medium">Ville:</span>{" "}
+                      {selectedDemande.city}
+                    </div>
+                    <div>
+                      <span className="font-medium">Pays:</span>{" "}
+                      {selectedDemande.country}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filiation */}
+                {(selectedDemande.fatherFirstName ||
+                  selectedDemande.motherFirstName) && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-900 mb-2">
+                      Filiation
+                    </h4>
+                    <div className="space-y-4">
+                      {selectedDemande.fatherFirstName && (
+                        <div>
+                          <h5 className="font-medium text-sm text-gray-700 mb-1">
+                            Père
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-medium">Nom:</span>{" "}
+                              {selectedDemande.fatherLastName}
+                            </div>
+                            <div>
+                              <span className="font-medium">Prénom:</span>{" "}
+                              {selectedDemande.fatherFirstName}
+                            </div>
+                            <div>
+                              <span className="font-medium">
+                                Date de naissance:
+                              </span>{" "}
+                              {selectedDemande.fatherBirthDate}
+                            </div>
+                            <div>
+                              <span className="font-medium">
+                                Lieu de naissance:
+                              </span>{" "}
+                              {selectedDemande.fatherBirthPlace}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      {selectedDemande.motherFirstName && (
+                        <div>
+                          <h5 className="font-medium text-sm text-gray-700 mb-1">
+                            Mère
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-medium">Nom:</span>{" "}
+                              {selectedDemande.motherLastName}
+                            </div>
+                            <div>
+                              <span className="font-medium">Prénom:</span>{" "}
+                              {selectedDemande.motherFirstName}
+                            </div>
+                            <div>
+                              <span className="font-medium">
+                                Date de naissance:
+                              </span>{" "}
+                              {selectedDemande.motherBirthDate}
+                            </div>
+                            <div>
+                              <span className="font-medium">
+                                Lieu de naissance:
+                              </span>{" "}
+                              {selectedDemande.motherBirthPlace}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Documents joints */}
+                {selectedDemande.documentFiles &&
+                  selectedDemande.documentFiles.length > 0 && (
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        Documents joints
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedDemande.documentFiles.map((file, index) => (
+                          <span
+                            key={index}
+                            className="inline-flex items-center px-3 py-1 rounded-md text-sm font-medium bg-blue-100 text-blue-800"
+                          >
+                            <svg
+                              className="w-4 h-4 mr-2"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                            {file}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+
+              <div className="flex justify-end mt-6 space-x-3">
+                <button
+                  onClick={closeDetailsModal}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+                >
+                  Fermer
+                </button>
+                {selectedDemande.status === "APPROVED" && (
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
+                    onClick={() => handleGenerateDocument(selectedDemande.id)}
+                  >
+                    Générer document
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Notification */}

@@ -15,24 +15,24 @@ import java.util.Optional;
 @Repository
 public interface GeneratedDocumentRepository extends JpaRepository<GeneratedDocument, Long> {
 
-    List<GeneratedDocument> findByDemandeId(Long demandeId);
+        List<GeneratedDocument> findByDemandeId(Long demandeId);
 
-    List<GeneratedDocument> findByCreatedByEmail(String email);
+        List<GeneratedDocument> findByCreatedByEmail(String email);
 
-    @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.demande.id = :demandeId AND gd.documentType.id = :documentTypeId")
-    Optional<GeneratedDocument> findByDemandeAndDocumentType(@Param("demandeId") Long demandeId,
-            @Param("documentTypeId") Long documentTypeId);
+        @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.demande.id = :demandeId AND (gd.documentType.id = :documentTypeId OR :documentTypeId IS NULL)")
+        Optional<GeneratedDocument> findByDemandeAndDocumentType(@Param("demandeId") Long demandeId,
+                        @Param("documentTypeId") Long documentTypeId);
 
-    @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.status = :status")
-    Page<GeneratedDocument> findByStatus(@Param("status") String status, Pageable pageable);
+        @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.status = :status")
+        Page<GeneratedDocument> findByStatus(@Param("status") String status, Pageable pageable);
 
-    @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.createdAt BETWEEN :startDate AND :endDate")
-    List<GeneratedDocument> findByCreatedAtBetween(@Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate);
+        @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.createdAt BETWEEN :startDate AND :endDate")
+        List<GeneratedDocument> findByCreatedAtBetween(@Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
 
-    @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.expiresAt < :now")
-    List<GeneratedDocument> findExpiredDocuments(@Param("now") LocalDateTime now);
+        @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.expiresAt < :now")
+        List<GeneratedDocument> findExpiredDocuments(@Param("now") LocalDateTime now);
 
-    @Query("SELECT COUNT(gd) FROM GeneratedDocument gd WHERE gd.createdAt >= :startDate")
-    Long countDocumentsGeneratedSince(@Param("startDate") LocalDateTime startDate);
+        @Query("SELECT COUNT(gd) FROM GeneratedDocument gd WHERE gd.createdAt >= :startDate")
+        Long countDocumentsGeneratedSince(@Param("startDate") LocalDateTime startDate);
 }
