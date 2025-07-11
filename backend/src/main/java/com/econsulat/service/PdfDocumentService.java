@@ -258,26 +258,40 @@ public class PdfDocumentService {
     }
 
     /**
-     * Ajoute un filigrane diagonal à une page spécifique
+     * Ajoute un filigrane diagonal centré à une page spécifique
      */
     private void addDiagonalWatermarkToPage(PdfDocument pdfDoc, int pageNumber) throws IOException {
         PdfPage page = pdfDoc.getPage(pageNumber);
         Rectangle pageSize = page.getPageSize();
         PdfCanvas canvas = new PdfCanvas(page);
 
-        // Configuration du texte
         String watermark = "DOCUMENT OFFICIEL - eCONSULAT";
         float fontSize = 48;
-        float x = (pageSize.getLeft() + pageSize.getRight()) / 2;
-        float y = (pageSize.getTop() + pageSize.getBottom()) / 2;
 
-        // Appliquer une rotation de 45°
+        // Utiliser la police par défaut d'iText
+        var font = PdfFontFactory.createFont();
+
+        // Largeur réelle du texte dans la police choisie
+        float textWidth = font.getWidth(watermark, fontSize);
+
+        // Centre de la page
+        float centerX = pageSize.getWidth() / 2;
+        float centerY = pageSize.getHeight() / 2;
+
+        // Appliquer une rotation de 45° autour du centre
+        double angle = Math.PI / 4;
+        float cos = (float) Math.cos(angle);
+        float sin = (float) Math.sin(angle);
+
+        // Décaler pour centrer le texte (attention à la rotation)
+        float x = centerX - (textWidth / 2) * cos;
+        float y = centerY - (textWidth / 2) * sin;
+
         canvas.saveState();
         canvas.setFillColor(ColorConstants.LIGHT_GRAY);
-        canvas.setFontAndSize(PdfFontFactory.createFont(), fontSize);
+        canvas.setFontAndSize(font, fontSize);
         canvas.beginText();
-        canvas.setTextMatrix((float) Math.cos(Math.PI / 4), (float) Math.sin(Math.PI / 4),
-                (float) -Math.sin(Math.PI / 4), (float) Math.cos(Math.PI / 4), x, y);
+        canvas.setTextMatrix(cos, sin, -sin, cos, x, y);
         canvas.showText(watermark);
         canvas.endText();
         canvas.restoreState();
