@@ -29,8 +29,8 @@ const Step4DocumentType = ({ formData, updateFormData, documentTypes }) => {
           >
             <option value="">Sélectionnez un type de document</option>
             {documentTypes.map((type) => (
-              <option key={type} value={type}>
-                {type.displayName || type}
+              <option key={type.value || type} value={type.value || type}>
+                {type.label || type.displayName || type}
               </option>
             ))}
           </select>

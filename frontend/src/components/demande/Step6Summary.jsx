@@ -19,8 +19,8 @@ const Step6Summary = ({
   };
 
   const getDocumentTypeLabel = (type) => {
-    const docType = documentTypes.find((t) => t === type);
-    return docType && docType.displayName ? docType.displayName : type;
+    const docType = documentTypes.find((t) => (t.value || t) === type);
+    return docType ? docType.label || docType.displayName || type : type;
   };
 
   const formatDate = (dateString) => {

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Formulaire de création</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #ffc107; }
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Formulaire de création</h1>
+    
+    <div class="container">
+        <h2>🔑 Authentification</h2>
+        <div class="form-group">
+            <label for="token">Token JWT:</label>
+            <textarea id="token" rows="3" placeholder="Collez votre token JWT ici..."></textarea>
+        </div>
+        <button onclick="testAuth()">🔐 Tester l'authentification</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Test des données de référence</h2>
+        
+        <div class="test-section">
+            <h3>Types de documents</h3>
+            <button onclick="testDocumentTypes()">📋 Tester /api/demandes/document-types</button>
+            <div id="documentTypesResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Civilités</h3>
+            <button onclick="testCivilites()">👤 Tester /api/demandes/civilites</button>
+            <div id="civilitesResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Pays</h3>
+            <button onclick="testPays()">🌍 Tester /api/demandes/pays</button>
+            <div id="paysResult"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📝 Test de création de demande</h2>
+        <div class="form-group">
+            <label for="civiliteId">Civilité ID:</label>
+            <input type="number" id="civiliteId" placeholder="1">
+        </div>
+        <div class="form-group">
+            <label for="firstName">Prénom:</label>
+            <input type="text" id="firstName" placeholder="Jean">
+        </div>
+        <div class="form-group">
+            <label for="lastName">Nom:</label>
+            <input type="text" id="lastName" placeholder="Dupont">
+        </div>
+        <div class="form-group">
+            <label for="birthDate">Date de naissance:</label>
+            <input type="date" id="birthDate">
+        </div>
+        <div class="form-group">
+            <label for="birthPlace">Lieu de naissance:</label>
+            <input type="text" id="birthPlace" placeholder="Paris">
+        </div>
+        <div class="form-group">
+            <label for="birthCountryId">Pays de naissance ID:</label>
+            <input type="number" id="birthCountryId" placeholder="1">
+        </div>
+        <div class="form-group">
+            <label for="documentType">Type de document:</label>
+            <select id="documentType">
+                <option value="">Sélectionner...</option>
+            </select>
+        </div>
+        <button onclick="testCreateDemande()">📝 Tester création de demande</button>
+        <div id="createDemandeResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Logs</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.innerHTML = `<div style="color: red;">❌ ${data}</div>`;
+            } else {
+                element.innerHTML = `<div style="color: green;">✅ ${JSON.stringify(data, null, 2)}</div>`;
+            }
+        }
+
+        async function testAuth() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            try {
+                log('🔐 Test d\'authentification...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Authentification réussie', 'success');
+                    log(`📊 ${data.length} demandes trouvées`, 'info');
+                } else {
+                    log(`❌ Erreur d'authentification: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function testDocumentTypes() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                showResult('documentTypesResult', 'Token requis', true);
+                return;
+            }
+
+            try {
+                log('📋 Test des types de documents...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/demandes/document-types', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Types de documents récupérés', 'success');
+                    log(`📊 Format: ${JSON.stringify(data, null, 2)}`, 'info');
+                    
+                    // Mettre à jour le select
+                    const select = document.getElementById('documentType');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    data.forEach(type => {
+                        const option = document.createElement('option');
+                        option.value = type.value || type;
+                        option.textContent = type.label || type.displayName || type;
+                        select.appendChild(option);
+                    });
+                    
+                    showResult('documentTypesResult', data);
+                } else {
+                    showResult('documentTypesResult', `Erreur: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (err) {
+                showResult('documentTypesResult', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        async function testCivilites() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                showResult('civilitesResult', 'Token requis', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/civilites', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('civilitesResult', data);
+                } else {
+                    showResult('civilitesResult', `Erreur: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (err) {
+                showResult('civilitesResult', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        async function testPays() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                showResult('paysResult', 'Token requis', true);
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/pays', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('paysResult', data);
+                } else {
+                    showResult('paysResult', `Erreur: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (err) {
+                showResult('paysResult', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        async function testCreateDemande() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                showResult('createDemandeResult', 'Token requis', true);
+                return;
+            }
+
+            const civiliteId = document.getElementById('civiliteId').value;
+            const firstName = document.getElementById('firstName').value;
+            const lastName = document.getElementById('lastName').value;
+            const birthDate = document.getElementById('birthDate').value;
+            const birthPlace = document.getElementById('birthPlace').value;
+            const birthCountryId = document.getElementById('birthCountryId').value;
+            const documentType = document.getElementById('documentType').value;
+
+            if (!civiliteId || !firstName || !lastName || !birthDate || !birthPlace || !birthCountryId || !documentType) {
+                showResult('createDemandeResult', 'Tous les champs sont requis', true);
+                return;
+            }
+
+            try {
+                log('📝 Test de création de demande...', 'info');
+                
+                const demandeData = {
+                    civiliteId: parseInt(civiliteId),
+                    firstName: firstName,
+                    lastName: lastName,
+                    birthDate: birthDate,
+                    birthPlace: birthPlace,
+                    birthCountryId: parseInt(birthCountryId),
+                    streetName: "Rue de test",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: parseInt(birthCountryId),
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Dupont",
+                    fatherBirthDate: "1950-01-01",
+                    fatherBirthPlace: "Paris",
+                    fatherBirthCountryId: parseInt(birthCountryId),
+                    motherFirstName: "Marie",
+                    motherLastName: "Martin",
+                    motherBirthDate: "1955-01-01",
+                    motherBirthPlace: "Paris",
+                    motherBirthCountryId: parseInt(birthCountryId),
+                    documentType: documentType,
+                    documentFiles: []
+                };
+
+                log(`📤 Données: ${JSON.stringify(demandeData, null, 2)}`, 'info');
+
+                const response = await fetch('http://localhost:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(demandeData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demande créée avec succès', 'success');
+                    showResult('createDemandeResult', data);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData.message || `Erreur ${response.status}`;
+                    log(`❌ Erreur: ${errorMessage}`, 'error');
+                    showResult('createDemandeResult', errorMessage, true);
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+                showResult('createDemandeResult', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        // Initialisation
+        log('🚀 Test du formulaire de création initialisé', 'info');
+        log('💡 Instructions:', 'info');
+        log('1. Collez votre token JWT', 'info');
+        log('2. Testez l\'authentification', 'info');
+        log('3. Testez les données de référence', 'info');
+        log('4. Remplissez le formulaire et testez la création', 'info');
+    </script>
+</body>
+</html> 
