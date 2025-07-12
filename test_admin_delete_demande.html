@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Suppression de demande admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #ffc107; }
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .demande-item {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        .demande-item h4 {
+            margin: 0 0 5px 0;
+            color: #495057;
+        }
+        .demande-item p {
+            margin: 2px 0;
+            font-size: 12px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Test - Suppression de demande admin</h1>
+    
+    <div class="container">
+        <h2>🔑 Authentification</h2>
+        <div class="form-group">
+            <label for="token">Token JWT Admin:</label>
+            <textarea id="token" rows="3" placeholder="Collez votre token JWT admin ici..."></textarea>
+        </div>
+        <button onclick="testAuth()">🔐 Tester l'authentification</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Liste des demandes</h2>
+        <button onclick="fetchDemandes()">📋 Charger les demandes</button>
+        <div id="demandesList"></div>
+    </div>
+
+    <div class="container">
+        <h2>🗑️ Test de suppression</h2>
+        <div class="form-group">
+            <label for="demandeId">ID de la demande à supprimer:</label>
+            <input type="number" id="demandeId" placeholder="Entrez l'ID de la demande">
+        </div>
+        <button class="danger" onclick="testDeleteDemande()">🗑️ Supprimer la demande</button>
+        <div id="deleteResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Logs</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.innerHTML = `<div style="color: red;">❌ ${data}</div>`;
+            } else {
+                element.innerHTML = `<div style="color: green;">✅ ${JSON.stringify(data, null, 2)}</div>`;
+            }
+        }
+
+        async function testAuth() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            try {
+                log('🔐 Test d\'authentification admin...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/demandes?page=0&size=1', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Authentification admin réussie', 'success');
+                    log(`📊 ${data.totalElements} demandes au total`, 'info');
+                } else {
+                    log(`❌ Erreur d'authentification: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchDemandes() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                showResult('demandesList', 'Token requis', true);
+                return;
+            }
+
+            try {
+                log('📋 Chargement des demandes...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/demandes?page=0&size=10', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demandes chargées avec succès', 'success');
+                    log(`📊 ${data.content.length} demandes récupérées`, 'info');
+                    
+                    displayDemandes(data.content);
+                } else {
+                    showResult('demandesList', `Erreur: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (err) {
+                showResult('demandesList', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        function displayDemandes(demandes) {
+            const container = document.getElementById('demandesList');
+            
+            if (demandes.length === 0) {
+                container.innerHTML = '<p>Aucune demande trouvée</p>';
+                return;
+            }
+
+            let html = '<h3>Demandes disponibles:</h3>';
+            demandes.forEach(demande => {
+                html += `
+                    <div class="demande-item">
+                        <h4>ID: ${demande.id} - ${demande.firstName} ${demande.lastName}</h4>
+                        <p><strong>Email:</strong> ${demande.user?.email || 'N/A'}</p>
+                        <p><strong>Type:</strong> ${demande.documentTypeDisplay}</p>
+                        <p><strong>Statut:</strong> ${demande.status}</p>
+                        <p><strong>Date:</strong> ${new Date(demande.createdAt).toLocaleDateString('fr-FR')}</p>
+                        <button class="danger" onclick="setDemandeId(${demande.id})">🗑️ Sélectionner pour suppression</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function setDemandeId(id) {
+            document.getElementById('demandeId').value = id;
+            log(`📝 ID de demande sélectionné: ${id}`, 'info');
+        }
+
+        async function testDeleteDemande() {
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            
+            if (!token) {
+                showResult('deleteResult', 'Token requis', true);
+                return;
+            }
+
+            if (!demandeId) {
+                showResult('deleteResult', 'ID de demande requis', true);
+                return;
+            }
+
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer la demande ${demandeId} ? Cette action est irréversible.`)) {
+                log('❌ Suppression annulée par l\'utilisateur', 'warning');
+                return;
+            }
+
+            try {
+                log(`🗑️ Suppression de la demande ${demandeId}...`, 'info');
+                
+                const response = await fetch(`http://localhost:8080/api/admin/demandes/${demandeId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                log(`📊 Réponse: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demande supprimée avec succès', 'success');
+                    showResult('deleteResult', data);
+                    
+                    // Vider le champ ID
+                    document.getElementById('demandeId').value = '';
+                    
+                    // Recharger la liste des demandes
+                    setTimeout(() => {
+                        fetchDemandes();
+                    }, 1000);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData?.message || `Erreur ${response.status}`;
+                    log(`❌ Erreur: ${errorMessage}`, 'error');
+                    showResult('deleteResult', errorMessage, true);
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+                showResult('deleteResult', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        // Initialisation
+        log('🚀 Test de suppression de demande initialisé', 'info');
+        log('💡 Instructions:', 'info');
+        log('1. Collez votre token JWT admin', 'info');
+        log('2. Testez l\'authentification', 'info');
+        log('3. Chargez la liste des demandes', 'info');
+        log('4. Sélectionnez une demande à supprimer', 'info');
+        log('5. Testez la suppression', 'info');
+    </script>
+</body>
+</html> 

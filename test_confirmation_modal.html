@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Modal de confirmation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .demo-section {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .demo-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        button.warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        button.warning:hover {
+            background-color: #e0a800;
+        }
+        button.info {
+            background-color: #17a2b8;
+        }
+        button.info:hover {
+            background-color: #138496;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #ffc107; }
+
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 90%;
+            margin: 20px;
+        }
+        .modal-header {
+            padding: 20px 20px 0 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+        }
+        .modal-header.danger { border-color: #f5c6cb; }
+        .modal-header.warning { border-color: #ffeaa7; }
+        .modal-header.info { border-color: #b8e6bf; }
+        .modal-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+        }
+        .modal-icon.danger { color: #dc3545; }
+        .modal-icon.warning { color: #ffc107; }
+        .modal-icon.info { color: #17a2b8; }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #212529;
+            margin: 0;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .modal-message {
+            color: #6c757d;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .modal-footer {
+            padding: 0 20px 20px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        .modal-btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .modal-btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .modal-btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .modal-btn-danger:hover {
+            background-color: #c82333;
+        }
+        .modal-btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .modal-btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .modal-btn-info {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .modal-btn-info:hover {
+            background-color: #138496;
+        }
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Modal de confirmation personnalisé</h1>
+    
+    <div class="container">
+        <h2>🎯 Démonstration des différents types de modals</h2>
+        
+        <div class="demo-section">
+            <h3>⚠️ Modal de danger (suppression)</h3>
+            <p>Utilisé pour les actions destructives comme la suppression de données.</p>
+            <button class="danger" onclick="showDangerModal()">🗑️ Supprimer une demande</button>
+        </div>
+
+        <div class="demo-section">
+            <h3>⚠️ Modal d'avertissement</h3>
+            <p>Utilisé pour les actions qui nécessitent une attention particulière.</p>
+            <button class="warning" onclick="showWarningModal()">⚠️ Action critique</button>
+        </div>
+
+        <div class="demo-section">
+            <h3>ℹ️ Modal d'information</h3>
+            <p>Utilisé pour confirmer des actions standard.</p>
+            <button class="info" onclick="showInfoModal()">ℹ️ Confirmer action</button>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔄 Modal avec chargement</h3>
+            <p>Simule une action qui prend du temps.</p>
+            <button onclick="showLoadingModal()">🔄 Action avec délai</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Logs des actions</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <!-- Modal de danger -->
+    <div id="dangerModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header danger">
+                <svg class="modal-icon danger" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <h3 class="modal-title">Supprimer la demande</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">Êtes-vous sûr de vouloir supprimer définitivement la demande de Jean Dupont ? Cette action est irréversible et supprimera également tous les documents générés associés.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="hideModal('dangerModal')">Annuler</button>
+                <button class="modal-btn modal-btn-danger" onclick="confirmAction('danger')">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'avertissement -->
+    <div id="warningModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header warning">
+                <svg class="modal-icon warning" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <h3 class="modal-title">Action critique</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">Cette action va modifier des paramètres critiques du système. Assurez-vous d'avoir sauvegardé vos données avant de continuer.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="hideModal('warningModal')">Annuler</button>
+                <button class="modal-btn modal-btn-warning" onclick="confirmAction('warning')">Continuer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal d'information -->
+    <div id="infoModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header info">
+                <svg class="modal-icon info" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <h3 class="modal-title">Confirmer l'action</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">Voulez-vous vraiment effectuer cette action ? Elle sera appliquée immédiatement.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="hideModal('infoModal')">Annuler</button>
+                <button class="modal-btn modal-btn-info" onclick="confirmAction('info')">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal avec chargement -->
+    <div id="loadingModal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <div class="modal-header info">
+                <svg class="modal-icon info" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                </svg>
+                <h3 class="modal-title">Traitement en cours</h3>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">Veuillez patienter pendant le traitement de votre demande...</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="hideModal('loadingModal')" disabled>Annuler</button>
+                <button class="modal-btn modal-btn-info" onclick="confirmAction('loading')" disabled>
+                    <span class="spinner"></span>
+                    Traitement...
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'flex';
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function showDangerModal() {
+            log('🔴 Ouverture du modal de danger', 'warning');
+            showModal('dangerModal');
+        }
+
+        function showWarningModal() {
+            log('🟡 Ouverture du modal d\'avertissement', 'warning');
+            showModal('warningModal');
+        }
+
+        function showInfoModal() {
+            log('🔵 Ouverture du modal d\'information', 'info');
+            showModal('infoModal');
+        }
+
+        function showLoadingModal() {
+            log('🔄 Ouverture du modal avec chargement', 'info');
+            showModal('loadingModal');
+            
+            // Simuler un traitement
+            setTimeout(() => {
+                hideModal('loadingModal');
+                log('✅ Traitement terminé avec succès', 'success');
+            }, 3000);
+        }
+
+        function confirmAction(type) {
+            switch(type) {
+                case 'danger':
+                    log('🗑️ Action de suppression confirmée', 'error');
+                    hideModal('dangerModal');
+                    break;
+                case 'warning':
+                    log('⚠️ Action critique confirmée', 'warning');
+                    hideModal('warningModal');
+                    break;
+                case 'info':
+                    log('ℹ️ Action standard confirmée', 'success');
+                    hideModal('infoModal');
+                    break;
+                case 'loading':
+                    log('🔄 Traitement en cours...', 'info');
+                    // Le modal se ferme automatiquement après 3 secondes
+                    break;
+            }
+        }
+
+        // Fermer les modals en cliquant sur l'overlay
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.style.display = 'none';
+                    log('❌ Modal fermé en cliquant sur l\'overlay', 'info');
+                }
+            });
+        });
+
+        // Initialisation
+        log('🚀 Test du modal de confirmation initialisé', 'info');
+        log('💡 Instructions:', 'info');
+        log('1. Cliquez sur les différents boutons pour tester les modals', 'info');
+        log('2. Observez les différents styles et comportements', 'info');
+        log('3. Testez la fermeture en cliquant sur l\'overlay', 'info');
+    </script>
+</body>
+</html> 

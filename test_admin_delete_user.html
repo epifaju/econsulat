@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Suppression d'utilisateur admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button.danger:hover {
+            background-color: #c82333;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #ffc107; }
+        .test-section {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .user-item {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+        .user-item h4 {
+            margin: 0 0 5px 0;
+            color: #495057;
+        }
+        .user-item p {
+            margin: 2px 0;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        .role-admin { background-color: #f5c6cb; color: #721c24; }
+        .role-user { background-color: #d4edda; color: #155724; }
+        .role-agent { background-color: #cce5ff; color: #004085; }
+        .role-citizen { background-color: #e2d9f3; color: #5a2d82; }
+    </style>
+</head>
+<body>
+    <h1>🗑️ Test - Suppression d'utilisateur admin</h1>
+    
+    <div class="container">
+        <h2>🔑 Authentification</h2>
+        <div class="form-group">
+            <label for="token">Token JWT Admin:</label>
+            <textarea id="token" rows="3" placeholder="Collez votre token JWT admin ici..."></textarea>
+        </div>
+        <button onclick="testAuth()">🔐 Tester l'authentification</button>
+    </div>
+
+    <div class="container">
+        <h2>👥 Liste des utilisateurs</h2>
+        <button onclick="fetchUsers()">👥 Charger les utilisateurs</button>
+        <div id="usersList"></div>
+    </div>
+
+    <div class="container">
+        <h2>🗑️ Test de suppression</h2>
+        <div class="form-group">
+            <label for="userId">ID de l'utilisateur à supprimer:</label>
+            <input type="number" id="userId" placeholder="Entrez l'ID de l'utilisateur">
+        </div>
+        <button class="danger" onclick="testDeleteUser()">🗑️ Supprimer l'utilisateur</button>
+        <div id="deleteResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Logs</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            if (isError) {
+                element.innerHTML = `<div style="color: red;">❌ ${data}</div>`;
+            } else {
+                element.innerHTML = `<div style="color: green;">✅ ${JSON.stringify(data, null, 2)}</div>`;
+            }
+        }
+
+        function getRoleBadge(role) {
+            const roleConfig = {
+                'ADMIN': { class: 'role-admin', label: 'Admin' },
+                'USER': { class: 'role-user', label: 'User' },
+                'AGENT': { class: 'role-agent', label: 'Agent' },
+                'CITIZEN': { class: 'role-citizen', label: 'Citizen' }
+            };
+            const config = roleConfig[role] || roleConfig['USER'];
+            return `<span class="role-badge ${config.class}">${config.label}</span>`;
+        }
+
+        async function testAuth() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            try {
+                log('🔐 Test d\'authentification admin...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/users?page=0&size=1', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Authentification admin réussie', 'success');
+                    log(`📊 ${data.totalElements} utilisateurs au total`, 'info');
+                } else {
+                    log(`❌ Erreur d'authentification: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchUsers() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                showResult('usersList', 'Token requis', true);
+                return;
+            }
+
+            try {
+                log('👥 Chargement des utilisateurs...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/users?page=0&size=10', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Utilisateurs chargés avec succès', 'success');
+                    log(`📊 ${data.content.length} utilisateurs récupérés`, 'info');
+                    
+                    displayUsers(data.content);
+                } else {
+                    showResult('usersList', `Erreur: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (err) {
+                showResult('usersList', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        function displayUsers(users) {
+            const container = document.getElementById('usersList');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p>Aucun utilisateur trouvé</p>';
+                return;
+            }
+
+            let html = '<h3>Utilisateurs disponibles:</h3>';
+            users.forEach(user => {
+                html += `
+                    <div class="user-item">
+                        <h4>ID: ${user.id} - ${user.firstName} ${user.lastName} ${getRoleBadge(user.role)}</h4>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Rôle:</strong> ${user.role}</p>
+                        <p><strong>Email vérifié:</strong> ${user.emailVerified ? '✅ Oui' : '❌ Non'}</p>
+                        <p><strong>Demandes:</strong> ${user.demandesCount || 0}</p>
+                        <p><strong>Date d'inscription:</strong> ${new Date(user.createdAt).toLocaleDateString('fr-FR')}</p>
+                        <button class="danger" onclick="setUserId(${user.id})">🗑️ Sélectionner pour suppression</button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function setUserId(id) {
+            document.getElementById('userId').value = id;
+            log(`📝 ID d'utilisateur sélectionné: ${id}`, 'info');
+        }
+
+        async function testDeleteUser() {
+            const token = document.getElementById('token').value;
+            const userId = document.getElementById('userId').value;
+            
+            if (!token) {
+                showResult('deleteResult', 'Token requis', true);
+                return;
+            }
+
+            if (!userId) {
+                showResult('deleteResult', 'ID d\'utilisateur requis', true);
+                return;
+            }
+
+            if (!confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${userId} ? Cette action est irréversible et supprimera également toutes les demandes associées.`)) {
+                log('❌ Suppression annulée par l\'utilisateur', 'warning');
+                return;
+            }
+
+            try {
+                log(`🗑️ Suppression de l'utilisateur ${userId}...`, 'info');
+                
+                const response = await fetch(`http://localhost:8080/api/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                log(`📊 Réponse: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Utilisateur supprimé avec succès', 'success');
+                    showResult('deleteResult', data);
+                    
+                    // Vider le champ ID
+                    document.getElementById('userId').value = '';
+                    
+                    // Recharger la liste des utilisateurs
+                    setTimeout(() => {
+                        fetchUsers();
+                    }, 1000);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    const errorMessage = errorData?.message || `Erreur ${response.status}`;
+                    log(`❌ Erreur: ${errorMessage}`, 'error');
+                    showResult('deleteResult', errorMessage, true);
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+                showResult('deleteResult', `Erreur: ${err.message}`, true);
+            }
+        }
+
+        // Initialisation
+        log('🚀 Test de suppression d\'utilisateur initialisé', 'info');
+        log('💡 Instructions:', 'info');
+        log('1. Collez votre token JWT admin', 'info');
+        log('2. Testez l\'authentification', 'info');
+        log('3. Chargez la liste des utilisateurs', 'info');
+        log('4. Sélectionnez un utilisateur à supprimer', 'info');
+        log('5. Testez la suppression', 'info');
+        log('⚠️ Attention: La suppression est irréversible!', 'warning');
+    </script>
+</body>
+</html> 

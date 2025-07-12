@@ -117,6 +117,19 @@ public class AdminService {
         return convertToDemandeAdminResponse(savedDemande);
     }
 
+    @Transactional
+    public void deleteDemande(Long id) {
+        Demande demande = demandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
+
+        // Supprimer d'abord les documents générés associés
+        List<GeneratedDocument> generatedDocs = generatedDocumentRepository.findByDemandeId(id);
+        generatedDocumentRepository.deleteAll(generatedDocs);
+
+        // Supprimer la demande
+        demandeRepository.delete(demande);
+    }
+
     // Gestion des utilisateurs
     public Page<UserAdminResponse> getAllUsers(Pageable pageable) {
         Page<User> users = userRepository.findAll(pageable);

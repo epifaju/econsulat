@@ -18,6 +18,7 @@ import {
   handlePdfDownload,
 } from "../utils/fileDownload";
 import AdminDemandeEditModal from "./AdminDemandeEditModal";
+import ConfirmationModal from "./ConfirmationModal";
 
 const AdminDemandesList = ({ token, onNotification }) => {
   const [demandes, setDemandes] = useState([]);
@@ -33,6 +34,9 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingDemande, setEditingDemande] = useState(null);
+  const [deletingDemande, setDeletingDemande] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [demandeToDelete, setDemandeToDelete] = useState(null);
 
   useEffect(() => {
     fetchDemandes();
@@ -368,6 +372,61 @@ const AdminDemandesList = ({ token, onNotification }) => {
     );
   };
 
+  const handleDeleteDemande = (demande) => {
+    setDemandeToDelete(demande);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteDemande = async () => {
+    if (!demandeToDelete) return;
+
+    try {
+      setDeletingDemande(demandeToDelete.id);
+      console.log(`Suppression de la demande ${demandeToDelete.id}`);
+
+      const response = await fetch(
+        `http://localhost:8080/api/admin/demandes/${demandeToDelete.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log(
+        `Réponse suppression: ${response.status} ${response.statusText}`
+      );
+
+      if (response.ok) {
+        onNotification("success", "Succès", "Demande supprimée avec succès");
+        fetchDemandes();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData?.message || "Impossible de supprimer la demande";
+        console.error("Erreur suppression:", errorData);
+        onNotification("error", "Erreur", errorMessage);
+      }
+    } catch (err) {
+      console.error("Erreur lors de la suppression:", err);
+      onNotification(
+        "error",
+        "Erreur",
+        "Problème de connexion lors de la suppression"
+      );
+    } finally {
+      setDeletingDemande(null);
+      setShowDeleteModal(false);
+      setDemandeToDelete(null);
+    }
+  };
+
+  const cancelDeleteDemande = () => {
+    setShowDeleteModal(false);
+    setDemandeToDelete(null);
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       PENDING: { color: "bg-yellow-100 text-yellow-800", label: "En attente" },
@@ -582,6 +641,26 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       <option value="REJECTED">Rejeté</option>
                       <option value="COMPLETED">Terminé</option>
                     </select>
+                    <button
+                      onClick={() => handleDeleteDemande(demande)}
+                      disabled={deletingDemande === demande.id}
+                      className={`${
+                        deletingDemande === demande.id
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-red-600 hover:text-red-900"
+                      }`}
+                      title={
+                        deletingDemande === demande.id
+                          ? "Suppression en cours..."
+                          : "Supprimer la demande"
+                      }
+                    >
+                      {deletingDemande === demande.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                      ) : (
+                        <TrashIcon className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -703,6 +782,23 @@ const AdminDemandesList = ({ token, onNotification }) => {
         onSave={handleSaveDemande}
         token={token}
         onNotification={onNotification}
+      />
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDeleteDemande}
+        onConfirm={confirmDeleteDemande}
+        title="Supprimer la demande"
+        message={
+          demandeToDelete
+            ? `Êtes-vous sûr de vouloir supprimer définitivement la demande de ${demandeToDelete.firstName} ${demandeToDelete.lastName} ? Cette action est irréversible et supprimera également tous les documents générés associés.`
+            : "Êtes-vous sûr de vouloir supprimer cette demande ?"
+        }
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        type="danger"
+        loading={deletingDemande !== null}
       />
     </div>
   );

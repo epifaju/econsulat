@@ -102,6 +102,14 @@ public class AdminController {
         return ResponseEntity.ok(updatedDemande);
     }
 
+    @DeleteMapping("/demandes/{id}")
+    public ResponseEntity<Map<String, String>> deleteDemande(@PathVariable Long id) {
+        adminService.deleteDemande(id);
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Demande supprimée avec succès");
+        return ResponseEntity.ok(response);
+    }
+
     // Gestion des utilisateurs
     @GetMapping("/users")
     public ResponseEntity<Page<UserAdminResponse>> getAllUsers(

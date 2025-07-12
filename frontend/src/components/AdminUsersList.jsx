@@ -10,6 +10,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import ConfirmationModal from "./ConfirmationModal";
 
 const AdminUsersList = ({ token, onNotification }) => {
   const [users, setUsers] = useState([]);
@@ -22,6 +23,9 @@ const AdminUsersList = ({ token, onNotification }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -138,16 +142,20 @@ const AdminUsersList = ({ token, onNotification }) => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (
-      !window.confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")
-    ) {
-      return;
-    }
+  const handleDeleteUser = (user) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
+      setDeletingUser(userToDelete.id);
+      console.log(`Suppression de l'utilisateur ${userToDelete.id}`);
+
       const response = await fetch(
-        `http://localhost:8080/api/admin/users/${userId}`,
+        `http://localhost:8080/api/admin/users/${userToDelete.id}`,
         {
           method: "DELETE",
           headers: {
@@ -156,19 +164,33 @@ const AdminUsersList = ({ token, onNotification }) => {
         }
       );
 
+      console.log(
+        `Réponse suppression: ${response.status} ${response.statusText}`
+      );
+
       if (response.ok) {
         onNotification("success", "Succès", "Utilisateur supprimé avec succès");
         fetchUsers();
       } else {
-        onNotification(
-          "error",
-          "Erreur",
-          "Impossible de supprimer l'utilisateur"
-        );
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData?.message || "Impossible de supprimer l'utilisateur";
+        console.error("Erreur suppression:", errorData);
+        onNotification("error", "Erreur", errorMessage);
       }
     } catch (err) {
+      console.error("Erreur lors de la suppression:", err);
       onNotification("error", "Erreur", "Problème lors de la suppression");
+    } finally {
+      setDeletingUser(null);
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     }
+  };
+
+  const cancelDeleteUser = () => {
+    setShowDeleteModal(false);
+    setUserToDelete(null);
   };
 
   const getRoleBadge = (role) => {
@@ -352,11 +374,24 @@ const AdminUsersList = ({ token, onNotification }) => {
                       <PencilIcon className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleDeleteUser(user.id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Supprimer"
+                      onClick={() => handleDeleteUser(user)}
+                      disabled={deletingUser === user.id}
+                      className={`${
+                        deletingUser === user.id
+                          ? "text-gray-400 cursor-not-allowed"
+                          : "text-red-600 hover:text-red-900"
+                      }`}
+                      title={
+                        deletingUser === user.id
+                          ? "Suppression en cours..."
+                          : "Supprimer l'utilisateur"
+                      }
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      {deletingUser === user.id ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                      ) : (
+                        <TrashIcon className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </td>
@@ -633,6 +668,23 @@ const AdminUsersList = ({ token, onNotification }) => {
           </div>
         </div>
       )}
+
+      {/* Modal de confirmation de suppression */}
+      <ConfirmationModal
+        isOpen={showDeleteModal}
+        onClose={cancelDeleteUser}
+        onConfirm={confirmDeleteUser}
+        title="Supprimer l'utilisateur"
+        message={
+          userToDelete
+            ? `Êtes-vous sûr de vouloir supprimer définitivement l'utilisateur ${userToDelete.firstName} ${userToDelete.lastName} (${userToDelete.email}) ? Cette action est irréversible et supprimera également toutes les demandes associées à cet utilisateur.`
+            : "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"
+        }
+        confirmText="Supprimer"
+        cancelText="Annuler"
+        type="danger"
+        loading={deletingUser !== null}
+      />
     </div>
   );
 };
