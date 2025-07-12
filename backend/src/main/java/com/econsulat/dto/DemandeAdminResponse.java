@@ -3,6 +3,7 @@ package com.econsulat.dto;
 import com.econsulat.model.Demande;
 import com.econsulat.model.User;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,6 +20,33 @@ public class DemandeAdminResponse {
     private UserInfo user;
     private List<String> documentFiles;
     private boolean hasGeneratedDocuments;
+
+    // Champs pour l'édition
+    private Long civiliteId;
+    private String civilite;
+    private LocalDate birthDate;
+    private String birthPlace;
+    private Long birthCountryId;
+    private String birthCountry;
+    private String streetName;
+    private String streetNumber;
+    private String boxNumber;
+    private String postalCode;
+    private String city;
+    private Long countryId;
+    private String country;
+    private String fatherFirstName;
+    private String fatherLastName;
+    private LocalDate fatherBirthDate;
+    private String fatherBirthPlace;
+    private Long fatherBirthCountryId;
+    private String fatherBirthCountry;
+    private String motherFirstName;
+    private String motherLastName;
+    private LocalDate motherBirthDate;
+    private String motherBirthPlace;
+    private Long motherBirthCountryId;
+    private String motherBirthCountry;
 
     public static class UserInfo {
         private Long id;
@@ -97,6 +125,33 @@ public class DemandeAdminResponse {
         this.documentFiles = demande.getDocumentsPath() != null ? List.of(demande.getDocumentsPath().split(","))
                 : List.of();
         this.hasGeneratedDocuments = false; // Sera mis à jour par le service
+
+        // Champs pour l'édition
+        this.civiliteId = demande.getCivilite().getId();
+        this.civilite = demande.getCivilite().getLibelle();
+        this.birthDate = demande.getBirthDate();
+        this.birthPlace = demande.getBirthPlace();
+        this.birthCountryId = demande.getBirthCountry().getId();
+        this.birthCountry = demande.getBirthCountry().getLibelle();
+        this.streetName = demande.getAdresse().getStreetName();
+        this.streetNumber = demande.getAdresse().getStreetNumber();
+        this.boxNumber = demande.getAdresse().getBoxNumber();
+        this.postalCode = demande.getAdresse().getPostalCode();
+        this.city = demande.getAdresse().getCity();
+        this.countryId = demande.getAdresse().getCountry().getId();
+        this.country = demande.getAdresse().getCountry().getLibelle();
+        this.fatherFirstName = demande.getFatherFirstName();
+        this.fatherLastName = demande.getFatherLastName();
+        this.fatherBirthDate = demande.getFatherBirthDate();
+        this.fatherBirthPlace = demande.getFatherBirthPlace();
+        this.fatherBirthCountryId = demande.getFatherBirthCountry().getId();
+        this.fatherBirthCountry = demande.getFatherBirthCountry().getLibelle();
+        this.motherFirstName = demande.getMotherFirstName();
+        this.motherLastName = demande.getMotherLastName();
+        this.motherBirthDate = demande.getMotherBirthDate();
+        this.motherBirthPlace = demande.getMotherBirthPlace();
+        this.motherBirthCountryId = demande.getMotherBirthCountry().getId();
+        this.motherBirthCountry = demande.getMotherBirthCountry().getLibelle();
     }
 
     // Getters et Setters
@@ -194,5 +249,206 @@ public class DemandeAdminResponse {
 
     public void setHasGeneratedDocuments(boolean hasGeneratedDocuments) {
         this.hasGeneratedDocuments = hasGeneratedDocuments;
+    }
+
+    // Getters et Setters pour les champs d'édition
+    public Long getCiviliteId() {
+        return civiliteId;
+    }
+
+    public void setCiviliteId(Long civiliteId) {
+        this.civiliteId = civiliteId;
+    }
+
+    public String getCivilite() {
+        return civilite;
+    }
+
+    public void setCivilite(String civilite) {
+        this.civilite = civilite;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getBirthPlace() {
+        return birthPlace;
+    }
+
+    public void setBirthPlace(String birthPlace) {
+        this.birthPlace = birthPlace;
+    }
+
+    public Long getBirthCountryId() {
+        return birthCountryId;
+    }
+
+    public void setBirthCountryId(Long birthCountryId) {
+        this.birthCountryId = birthCountryId;
+    }
+
+    public String getBirthCountry() {
+        return birthCountry;
+    }
+
+    public void setBirthCountry(String birthCountry) {
+        this.birthCountry = birthCountry;
+    }
+
+    public String getStreetName() {
+        return streetName;
+    }
+
+    public void setStreetName(String streetName) {
+        this.streetName = streetName;
+    }
+
+    public String getStreetNumber() {
+        return streetNumber;
+    }
+
+    public void setStreetNumber(String streetNumber) {
+        this.streetNumber = streetNumber;
+    }
+
+    public String getBoxNumber() {
+        return boxNumber;
+    }
+
+    public void setBoxNumber(String boxNumber) {
+        this.boxNumber = boxNumber;
+    }
+
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    public void setPostalCode(String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public Long getCountryId() {
+        return countryId;
+    }
+
+    public void setCountryId(Long countryId) {
+        this.countryId = countryId;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getFatherFirstName() {
+        return fatherFirstName;
+    }
+
+    public void setFatherFirstName(String fatherFirstName) {
+        this.fatherFirstName = fatherFirstName;
+    }
+
+    public String getFatherLastName() {
+        return fatherLastName;
+    }
+
+    public void setFatherLastName(String fatherLastName) {
+        this.fatherLastName = fatherLastName;
+    }
+
+    public LocalDate getFatherBirthDate() {
+        return fatherBirthDate;
+    }
+
+    public void setFatherBirthDate(LocalDate fatherBirthDate) {
+        this.fatherBirthDate = fatherBirthDate;
+    }
+
+    public String getFatherBirthPlace() {
+        return fatherBirthPlace;
+    }
+
+    public void setFatherBirthPlace(String fatherBirthPlace) {
+        this.fatherBirthPlace = fatherBirthPlace;
+    }
+
+    public Long getFatherBirthCountryId() {
+        return fatherBirthCountryId;
+    }
+
+    public void setFatherBirthCountryId(Long fatherBirthCountryId) {
+        this.fatherBirthCountryId = fatherBirthCountryId;
+    }
+
+    public String getFatherBirthCountry() {
+        return fatherBirthCountry;
+    }
+
+    public void setFatherBirthCountry(String fatherBirthCountry) {
+        this.fatherBirthCountry = fatherBirthCountry;
+    }
+
+    public String getMotherFirstName() {
+        return motherFirstName;
+    }
+
+    public void setMotherFirstName(String motherFirstName) {
+        this.motherFirstName = motherFirstName;
+    }
+
+    public String getMotherLastName() {
+        return motherLastName;
+    }
+
+    public void setMotherLastName(String motherLastName) {
+        this.motherLastName = motherLastName;
+    }
+
+    public LocalDate getMotherBirthDate() {
+        return motherBirthDate;
+    }
+
+    public void setMotherBirthDate(LocalDate motherBirthDate) {
+        this.motherBirthDate = motherBirthDate;
+    }
+
+    public String getMotherBirthPlace() {
+        return motherBirthPlace;
+    }
+
+    public void setMotherBirthPlace(String motherBirthPlace) {
+        this.motherBirthPlace = motherBirthPlace;
+    }
+
+    public Long getMotherBirthCountryId() {
+        return motherBirthCountryId;
+    }
+
+    public void setMotherBirthCountryId(Long motherBirthCountryId) {
+        this.motherBirthCountryId = motherBirthCountryId;
+    }
+
+    public String getMotherBirthCountry() {
+        return motherBirthCountry;
+    }
+
+    public void setMotherBirthCountry(String motherBirthCountry) {
+        this.motherBirthCountry = motherBirthCountry;
     }
 }

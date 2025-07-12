@@ -17,6 +17,7 @@ import {
   formatFileSize,
   handlePdfDownload,
 } from "../utils/fileDownload";
+import AdminDemandeEditModal from "./AdminDemandeEditModal";
 
 const AdminDemandesList = ({ token, onNotification }) => {
   const [demandes, setDemandes] = useState([]);
@@ -30,6 +31,8 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [selectedDemande, setSelectedDemande] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingDemande, setEditingDemande] = useState(null);
 
   useEffect(() => {
     fetchDemandes();
@@ -351,6 +354,20 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
+  const handleEditDemande = (demande) => {
+    setEditingDemande(demande);
+    setShowEditModal(true);
+  };
+
+  const handleSaveDemande = (updatedDemande) => {
+    // Mettre à jour la liste des demandes avec la demande modifiée
+    setDemandes((prevDemandes) =>
+      prevDemandes.map((demande) =>
+        demande.id === updatedDemande.id ? updatedDemande : demande
+      )
+    );
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       PENDING: { color: "bg-yellow-100 text-yellow-800", label: "En attente" },
@@ -520,6 +537,13 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       <EyeIcon className="h-4 w-4" />
                     </button>
                     <button
+                      onClick={() => handleEditDemande(demande)}
+                      className="text-orange-600 hover:text-orange-900"
+                      title="Modifier la demande"
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => handleGenerateDocument(demande.id, 1)} // ID du type de document
                       className="text-green-600 hover:text-green-900"
                       title="Générer document Word"
@@ -667,6 +691,19 @@ const AdminDemandesList = ({ token, onNotification }) => {
           </div>
         </div>
       )}
+
+      {/* Modal d'édition */}
+      <AdminDemandeEditModal
+        demande={editingDemande}
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingDemande(null);
+        }}
+        onSave={handleSaveDemande}
+        token={token}
+        onNotification={onNotification}
+      />
     </div>
   );
 };

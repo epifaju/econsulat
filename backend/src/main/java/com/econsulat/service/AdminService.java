@@ -1,17 +1,15 @@
 package com.econsulat.service;
 
 import com.econsulat.dto.DemandeAdminResponse;
+import com.econsulat.dto.DemandeRequest;
 import com.econsulat.dto.UserAdminResponse;
-import com.econsulat.model.Demande;
-import com.econsulat.model.GeneratedDocument;
-import com.econsulat.model.User;
-import com.econsulat.repository.DemandeRepository;
-import com.econsulat.repository.GeneratedDocumentRepository;
-import com.econsulat.repository.UserRepository;
+import com.econsulat.model.*;
+import com.econsulat.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +25,12 @@ public class AdminService {
 
     @Autowired
     private GeneratedDocumentRepository generatedDocumentRepository;
+
+    @Autowired
+    private CiviliteRepository civiliteRepository;
+
+    @Autowired
+    private PaysRepository paysRepository;
 
     // Gestion des demandes
     public Page<DemandeAdminResponse> getAllDemandes(Pageable pageable) {
@@ -56,6 +60,61 @@ public class AdminService {
                 .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
         demande.setStatus(Demande.Status.valueOf(status.toUpperCase()));
         return demandeRepository.save(demande);
+    }
+
+    @Transactional
+    public DemandeAdminResponse updateDemande(Long id, DemandeRequest request) {
+        Demande demande = demandeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
+
+        // Récupérer les entités liées
+        Civilite civilite = civiliteRepository.findById(request.getCiviliteId())
+                .orElseThrow(() -> new RuntimeException("Civilité non trouvée"));
+
+        Pays birthCountry = paysRepository.findById(request.getBirthCountryId())
+                .orElseThrow(() -> new RuntimeException("Pays de naissance non trouvé"));
+
+        Pays country = paysRepository.findById(request.getCountryId())
+                .orElseThrow(() -> new RuntimeException("Pays non trouvé"));
+
+        Pays fatherBirthCountry = paysRepository.findById(request.getFatherBirthCountryId())
+                .orElseThrow(() -> new RuntimeException("Pays de naissance du père non trouvé"));
+
+        Pays motherBirthCountry = paysRepository.findById(request.getMotherBirthCountryId())
+                .orElseThrow(() -> new RuntimeException("Pays de naissance de la mère non trouvé"));
+
+        // Mettre à jour l'adresse
+        Adresse adresse = demande.getAdresse();
+        adresse.setStreetName(request.getStreetName());
+        adresse.setStreetNumber(request.getStreetNumber());
+        adresse.setBoxNumber(request.getBoxNumber());
+        adresse.setPostalCode(request.getPostalCode());
+        adresse.setCity(request.getCity());
+        adresse.setCountry(country);
+
+        // Mettre à jour la demande
+        demande.setCivilite(civilite);
+        demande.setFirstName(request.getFirstName());
+        demande.setLastName(request.getLastName());
+        demande.setBirthDate(request.getBirthDate());
+        demande.setBirthPlace(request.getBirthPlace());
+        demande.setBirthCountry(birthCountry);
+        demande.setAdresse(adresse);
+        demande.setFatherFirstName(request.getFatherFirstName());
+        demande.setFatherLastName(request.getFatherLastName());
+        demande.setFatherBirthDate(request.getFatherBirthDate());
+        demande.setFatherBirthPlace(request.getFatherBirthPlace());
+        demande.setFatherBirthCountry(fatherBirthCountry);
+        demande.setMotherFirstName(request.getMotherFirstName());
+        demande.setMotherLastName(request.getMotherLastName());
+        demande.setMotherBirthDate(request.getMotherBirthDate());
+        demande.setMotherBirthPlace(request.getMotherBirthPlace());
+        demande.setMotherBirthCountry(motherBirthCountry);
+        demande.setDocumentType(request.getDocumentType());
+        demande.setDocumentsPath(String.join(",", request.getDocumentFiles()));
+
+        Demande savedDemande = demandeRepository.save(demande);
+        return convertToDemandeAdminResponse(savedDemande);
     }
 
     // Gestion des utilisateurs

@@ -93,6 +93,15 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/demandes/{id}")
+    public ResponseEntity<DemandeAdminResponse> updateDemande(
+            @PathVariable Long id,
+            @RequestBody com.econsulat.dto.DemandeRequest demandeRequest) {
+
+        DemandeAdminResponse updatedDemande = adminService.updateDemande(id, demandeRequest);
+        return ResponseEntity.ok(updatedDemande);
+    }
+
     // Gestion des utilisateurs
     @GetMapping("/users")
     public ResponseEntity<Page<UserAdminResponse>> getAllUsers(

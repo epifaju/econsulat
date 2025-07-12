@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/demandes")
@@ -160,8 +162,14 @@ public class DemandeController {
     }
 
     @GetMapping("/document-types")
-    public ResponseEntity<Demande.DocumentType[]> getDocumentTypes() {
-        Demande.DocumentType[] types = Demande.DocumentType.values();
+    public ResponseEntity<List<Map<String, String>>> getDocumentTypes() {
+        List<Map<String, String>> types = new ArrayList<>();
+        for (Demande.DocumentType type : Demande.DocumentType.values()) {
+            Map<String, String> typeMap = new HashMap<>();
+            typeMap.put("value", type.name());
+            typeMap.put("label", type.getDisplayName());
+            types.add(typeMap);
+        }
         return ResponseEntity.ok(types);
     }
 

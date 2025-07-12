@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Édition des demandes par l'admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        .log-warning { color: #ffc107; }
+        .demande-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .demande-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .demande-details {
+            font-size: 12px;
+            color: #666;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-approved { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
+        .status-completed { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Édition des demandes par l'admin</h1>
+    
+    <div class="container">
+        <h2>🔑 Authentification</h2>
+        <div class="form-group">
+            <label for="token">Token JWT Admin:</label>
+            <textarea id="token" rows="3" placeholder="Collez votre token JWT admin ici..."></textarea>
+        </div>
+        <button onclick="testAuth()">🔐 Tester l'authentification</button>
+    </div>
+
+    <div class="container">
+        <h2>📋 Récupération des demandes</h2>
+        <button onclick="fetchDemandes()">📋 Récupérer les demandes</button>
+        <div id="demandesList"></div>
+    </div>
+
+    <div class="container">
+        <h2>✏️ Test d'édition</h2>
+        <div class="form-group">
+            <label for="demandeId">ID de la demande à modifier:</label>
+            <input type="number" id="demandeId" placeholder="Entrez l'ID de la demande">
+        </div>
+        <div class="form-group">
+            <label for="newFirstName">Nouveau prénom:</label>
+            <input type="text" id="newFirstName" placeholder="Nouveau prénom">
+        </div>
+        <div class="form-group">
+            <label for="newLastName">Nouveau nom:</label>
+            <input type="text" id="newLastName" placeholder="Nouveau nom">
+        </div>
+        <div class="form-group">
+            <label for="newBirthPlace">Nouveau lieu de naissance:</label>
+            <input type="text" id="newBirthPlace" placeholder="Nouveau lieu de naissance">
+        </div>
+        <button onclick="testEditDemande()">✏️ Tester la modification</button>
+    </div>
+
+    <div class="container">
+        <h2>📊 Logs</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function testAuth() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            try {
+                log('🔐 Test d\'authentification...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/stats', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const stats = await response.json();
+                    log('✅ Authentification réussie', 'success');
+                    log(`📊 Statistiques: ${stats.totalDemandes} demandes, ${stats.totalUsers} utilisateurs`, 'info');
+                } else {
+                    log(`❌ Erreur d'authentification: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchDemandes() {
+            const token = document.getElementById('token').value;
+            
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            try {
+                log('📋 Récupération des demandes...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/demandes?page=0&size=10', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ ${data.content.length} demandes récupérées`, 'success');
+                    
+                    displayDemandes(data.content);
+                } else {
+                    log(`❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        function displayDemandes(demandes) {
+            const container = document.getElementById('demandesList');
+            container.innerHTML = '';
+
+            if (demandes.length === 0) {
+                container.innerHTML = '<p>Aucune demande trouvée</p>';
+                return;
+            }
+
+            demandes.forEach(demande => {
+                const div = document.createElement('div');
+                div.className = 'demande-item';
+                
+                const statusClass = `status-${demande.status.toLowerCase()}`;
+                
+                div.innerHTML = `
+                    <div class="demande-header">
+                        ${demande.firstName} ${demande.lastName} 
+                        <span class="status-badge ${statusClass}">${demande.statusDisplay}</span>
+                    </div>
+                    <div class="demande-details">
+                        <strong>ID:</strong> ${demande.id} | 
+                        <strong>Type:</strong> ${demande.documentTypeDisplay} | 
+                        <strong>Email:</strong> ${demande.user?.email || 'N/A'} | 
+                        <strong>Créée:</strong> ${new Date(demande.createdAt).toLocaleDateString('fr-FR')}
+                    </div>
+                    <div class="demande-details">
+                        <strong>Lieu de naissance:</strong> ${demande.birthPlace || 'N/A'} | 
+                        <strong>Pays de naissance:</strong> ${demande.birthCountry || 'N/A'}
+                    </div>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        async function testEditDemande() {
+            const token = document.getElementById('token').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const newFirstName = document.getElementById('newFirstName').value;
+            const newLastName = document.getElementById('newLastName').value;
+            const newBirthPlace = document.getElementById('newBirthPlace').value;
+
+            if (!token) {
+                log('❌ Token requis', 'error');
+                return;
+            }
+
+            if (!demandeId) {
+                log('❌ ID de demande requis', 'error');
+                return;
+            }
+
+            try {
+                log(`✏️ Modification de la demande ${demandeId}...`, 'info');
+                
+                // D'abord, récupérer la demande actuelle
+                const getResponse = await fetch(`http://localhost:8080/api/admin/demandes/${demandeId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!getResponse.ok) {
+                    log(`❌ Impossible de récupérer la demande: ${getResponse.status}`, 'error');
+                    return;
+                }
+
+                const currentDemande = await getResponse.json();
+                log(`📋 Demande actuelle récupérée: ${currentDemande.firstName} ${currentDemande.lastName}`, 'info');
+
+                // Préparer les données de modification
+                const updateData = {
+                    civiliteId: currentDemande.civiliteId,
+                    firstName: newFirstName || currentDemande.firstName,
+                    lastName: newLastName || currentDemande.lastName,
+                    birthDate: currentDemande.birthDate,
+                    birthPlace: newBirthPlace || currentDemande.birthPlace,
+                    birthCountryId: currentDemande.birthCountryId,
+                    streetName: currentDemande.streetName,
+                    streetNumber: currentDemande.streetNumber,
+                    boxNumber: currentDemande.boxNumber,
+                    postalCode: currentDemande.postalCode,
+                    city: currentDemande.city,
+                    countryId: currentDemande.countryId,
+                    fatherFirstName: currentDemande.fatherFirstName,
+                    fatherLastName: currentDemande.fatherLastName,
+                    fatherBirthDate: currentDemande.fatherBirthDate,
+                    fatherBirthPlace: currentDemande.fatherBirthPlace,
+                    fatherBirthCountryId: currentDemande.fatherBirthCountryId,
+                    motherFirstName: currentDemande.motherFirstName,
+                    motherLastName: currentDemande.motherLastName,
+                    motherBirthDate: currentDemande.motherBirthDate,
+                    motherBirthPlace: currentDemande.motherBirthPlace,
+                    motherBirthCountryId: currentDemande.motherBirthCountryId,
+                    documentType: currentDemande.documentType,
+                    documentFiles: currentDemande.documentFiles || []
+                };
+
+                log('📤 Envoi des données de modification...', 'info');
+                console.log('Données de modification:', updateData);
+
+                const updateResponse = await fetch(`http://localhost:8080/api/admin/demandes/${demandeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                if (updateResponse.ok) {
+                    const updatedDemande = await updateResponse.json();
+                    log('✅ Demande modifiée avec succès!', 'success');
+                    log(`📝 Nouveau nom: ${updatedDemande.firstName} ${updatedDemande.lastName}`, 'info');
+                    log(`📝 Nouveau lieu de naissance: ${updatedDemande.birthPlace}`, 'info');
+                    
+                    // Rafraîchir la liste
+                    setTimeout(() => fetchDemandes(), 1000);
+                } else {
+                    const errorText = await updateResponse.text();
+                    log(`❌ Erreur lors de la modification: ${updateResponse.status} ${updateResponse.statusText}`, 'error');
+                    log(`📄 Réponse: ${errorText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        // Initialisation
+        log('🚀 Test d\'édition des demandes par l\'admin initialisé', 'info');
+        log('💡 Instructions:', 'info');
+        log('1. Collez votre token JWT admin', 'info');
+        log('2. Testez l\'authentification', 'info');
+        log('3. Récupérez les demandes', 'info');
+        log('4. Entrez l\'ID d\'une demande et les nouvelles valeurs', 'info');
+        log('5. Testez la modification', 'info');
+    </script>
+</body>
+</html> 

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Types de documents</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-success { color: #28a745; }
+        .log-error { color: #dc3545; }
+        .log-info { color: #17a2b8; }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Types de documents</h1>
+    
+    <div class="container">
+        <h2>📋 Test des endpoints</h2>
+        <button onclick="testDemandesDocumentTypes()">📋 /api/demandes/document-types</button>
+        <button onclick="testAdminDocumentTypes()">📋 /api/admin/document-types</button>
+    </div>
+
+    <div class="container">
+        <h2>📊 Logs</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function testDemandesDocumentTypes() {
+            try {
+                log('📋 Test de /api/demandes/document-types...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/demandes/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Réponse reçue:', 'success');
+                    log(`📊 Nombre de types: ${data.length}`, 'info');
+                    
+                    data.forEach((type, index) => {
+                        log(`   ${index + 1}. value: "${type.value}", label: "${type.label}"`, 'info');
+                    });
+                    
+                    log('📋 Format JSON complet:', 'info');
+                    log(JSON.stringify(data, null, 2), 'info');
+                } else {
+                    log(`❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function testAdminDocumentTypes() {
+            try {
+                log('📋 Test de /api/admin/document-types...', 'info');
+                
+                const response = await fetch('http://localhost:8080/api/admin/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Réponse reçue:', 'success');
+                    log(`📊 Nombre de types: ${data.length}`, 'info');
+                    
+                    data.forEach((type, index) => {
+                        log(`   ${index + 1}. id: ${type.id}, libelle: "${type.libelle}"`, 'info');
+                    });
+                    
+                    log('📋 Format JSON complet:', 'info');
+                    log(JSON.stringify(data, null, 2), 'info');
+                } else {
+                    log(`❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log(`❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        // Initialisation
+        log('🚀 Test des types de documents initialisé', 'info');
+        log('💡 Cliquez sur les boutons pour tester les endpoints', 'info');
+    </script>
+</body>
+</html> 
