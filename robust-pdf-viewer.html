@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer Robuste - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .pdf-container { border: 1px solid #ddd; border-radius: 8px; overflow: hidden; margin: 20px 0; }
+        .pdf-toolbar { background: #f8f9fa; padding: 10px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; align-items: center; }
+        .pdf-viewer { width: 100%; height: 600px; background: #f0f0f0; position: relative; }
+        .pdf-canvas { display: block; margin: 0 auto; }
+        .error-container { padding: 20px; text-align: center; color: #721c24; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; margin: 20px 0; }
+        .warning-container { padding: 20px; text-align: center; color: #856404; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; margin: 20px 0; }
+        .loading { display: flex; justify-content: center; align-items: center; height: 100%; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        input[type="file"] { display: none; }
+        .file-label { padding: 8px 16px; background: #28a745; color: white; cursor: pointer; border-radius: 4px; }
+        .file-label:hover { background: #218838; }
+        .status { padding: 10px; background: #e9ecef; border-radius: 4px; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Viewer Robuste - eConsulat</h1>
+        
+        <div class="pdf-container">
+            <div class="pdf-toolbar">
+                <label for="pdfFile" class="file-label">📁 Choisir un PDF</label>
+                <input type="file" id="pdfFile" accept=".pdf" onchange="loadPdf(this.files[0])">
+                
+                <div class="controls">
+                    <button onclick="previousPage()" id="prevBtn" disabled>◀ Précédent</button>
+                    <span id="pageInfo">Page 0 sur 0</span>
+                    <button onclick="nextPage()" id="nextBtn" disabled>Suivant ▶</button>
+                    <button onclick="zoomIn()">🔍+</button>
+                    <button onclick="zoomOut()">🔍-</button>
+                    <button onclick="resetZoom()">🔍 Reset</button>
+                </div>
+                
+                <div class="status" id="status">Prêt</div>
+            </div>
+            
+            <div class="pdf-viewer" id="pdfViewer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Choisissez un fichier PDF pour commencer</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="errorContainer" style="display: none;"></div>
+        <div id="warningContainer" style="display: none;"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configuration PDF.js robuste
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        // Variables globales
+        let pdfDoc = null;
+        let currentPage = 1;
+        let currentScale = 1.0;
+        let canvas = null;
+        let ctx = null;
+        
+        // Configuration robuste pour gérer les PDFs corrompus
+        const ROBUST_CONFIG = {
+            // Essayer de charger même avec des erreurs mineures
+            disableAutoFetch: false,
+            disableStream: false,
+            disableRange: false,
+            // Permettre les réparations automatiques
+            isEvalSupported: true,
+            // Configuration de fallback
+            maxImageSize: -1,
+            cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
+            cMapPacked: true,
+            // Gestion des erreurs
+            verbosity: 1
+        };
+
+        async function loadPdf(file) {
+            if (!file) return;
+            
+            try {
+                updateStatus('📖 Chargement du PDF...');
+                showLoading();
+                
+                // Lire le fichier
+                const arrayBuffer = await file.arrayBuffer();
+                
+                // Vérifier l'intégrité de base
+                const integrityCheck = await checkPdfIntegrity(arrayBuffer);
+                if (!integrityCheck.isValid) {
+                    showWarning(`⚠️ Problèmes détectés: ${integrityCheck.issues.join(', ')}`);
+                }
+                
+                // Tentative de chargement avec configuration robuste
+                const loadingTask = pdfjsLib.getDocument({
+                    data: arrayBuffer,
+                    ...ROBUST_CONFIG
+                });
+                
+                // Gestion des erreurs de chargement
+                loadingTask.onProgress = (progress) => {
+                    updateStatus(`📊 Chargement: ${Math.round(progress.ratio * 100)}%`);
+                };
+                
+                // Chargement avec gestion d'erreur robuste
+                pdfDoc = await loadingTask.promise;
+                
+                updateStatus(`✅ PDF chargé: ${pdfDoc.numPages} pages`);
+                showPdf();
+                
+                // Réinitialiser la pagination
+                currentPage = 1;
+                updatePageInfo();
+                renderPage(currentPage);
+                
+            } catch (error) {
+                console.error('Erreur de chargement PDF:', error);
+                
+                // Tentative de réparation automatique
+                if (error.message.includes('Invalid PDF structure')) {
+                    await attemptPdfRepair(arrayBuffer);
+                } else {
+                    showError(`❌ Erreur de chargement: ${error.message}`);
+                }
+            }
+        }
+
+        async function checkPdfIntegrity(arrayBuffer) {
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const issues = [];
+            
+            // Vérifier la signature PDF
+            const signature = String.fromCharCode(...uint8Array.slice(0, 4));
+            if (signature !== '%PDF') {
+                issues.push('Signature PDF invalide');
+            }
+            
+            // Vérifier la version
+            const version = String.fromCharCode(...uint8Array.slice(5, 8));
+            if (!version.match(/^\d+\.\d+$/)) {
+                issues.push('Version PDF invalide');
+            }
+            
+            // Vérifier la fin du fichier
+            const endMarker = String.fromCharCode(...uint8Array.slice(-5));
+            if (!endMarker.includes('%%EOF')) {
+                issues.push('Marqueur EOF manquant');
+            }
+            
+            // Vérifier la structure des objets
+            const content = String.fromCharCode(...uint8Array);
+            const objectMatches = content.match(/\d+ \d+ obj/g) || [];
+            const endObjectMatches = content.match(/endobj/g) || [];
+            
+            if (objectMatches.length !== endObjectMatches.length) {
+                issues.push('Structure des objets déséquilibrée');
+            }
+            
+            return {
+                isValid: issues.length === 0,
+                issues: issues,
+                objectCount: objectMatches.length,
+                endObjectCount: endObjectMatches.length
+            };
+        }
+
+        async function attemptPdfRepair(arrayBuffer) {
+            try {
+                updateStatus('🔧 Tentative de réparation automatique...');
+                
+                // Méthode 1: Essayer avec une configuration plus permissive
+                const repairConfig = {
+                    ...ROBUST_CONFIG,
+                    disableAutoFetch: true,
+                    disableStream: true,
+                    verbosity: 0
+                };
+                
+                const loadingTask = pdfjsLib.getDocument({
+                    data: arrayBuffer,
+                    ...repairConfig
+                });
+                
+                pdfDoc = await loadingTask.promise;
+                updateStatus(`✅ PDF réparé et chargé: ${pdfDoc.numPages} pages`);
+                showPdf();
+                currentPage = 1;
+                updatePageInfo();
+                renderPage(currentPage);
+                
+            } catch (repairError) {
+                console.error('Réparation échouée:', repairError);
+                
+                // Méthode 2: Créer un PDF minimal de remplacement
+                await createReplacementPdf();
+            }
+        }
+
+        async function createReplacementPdf() {
+            try {
+                updateStatus('🔄 Création d\'un PDF de remplacement...');
+                
+                // Créer un PDF minimal valide
+                const minimalPdfContent = createMinimalPdfContent();
+                const encoder = new TextEncoder();
+                const arrayBuffer = encoder.encode(minimalPdfContent).buffer;
+                
+                const loadingTask = pdfjsLib.getDocument({
+                    data: arrayBuffer,
+                    ...ROBUST_CONFIG
+                });
+                
+                pdfDoc = await loadingTask.promise;
+                updateStatus('✅ PDF de remplacement créé et chargé');
+                showPdf();
+                currentPage = 1;
+                updatePageInfo();
+                renderPage(currentPage);
+                
+                showWarning('⚠️ Le PDF original était corrompu. Un PDF de remplacement a été créé.');
+                
+            } catch (error) {
+                console.error('Création du PDF de remplacement échouée:', error);
+                showError('❌ Impossible de créer un PDF de remplacement');
+            }
+        }
+
+        function createMinimalPdfContent() {
+            return `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+/Resources <<
+/Font <<
+/F1 <<
+/Type /Font
+/Subtype /Type1
+/BaseFont /Helvetica
+>>
+>>
+>>
+>>
+endobj
+
+4 0 obj
+<<
+/Length 200
+>>
+stream
+BT
+/F1 24 Tf
+72 720 Td
+(Le PDF original était corrompu) Tj
+0 -30 Td
+(Un document de remplacement a été créé) Tj
+0 -30 Td
+(Veuillez régénérer le document) Tj
+ET
+endstream
+endobj
+
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000204 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+295
+%%EOF`;
+        }
+
+        function showPdf() {
+            const viewer = document.getElementById('pdfViewer');
+            viewer.innerHTML = '<canvas id="pdfCanvas" class="pdf-canvas"></canvas>';
+            
+            canvas = document.getElementById('pdfCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Activer les contrôles
+            document.getElementById('prevBtn').disabled = false;
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        function showLoading() {
+            const viewer = document.getElementById('pdfViewer');
+            viewer.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Chargement en cours...</p>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const container = document.getElementById('errorContainer');
+            container.innerHTML = `<div class="error-container">${message}</div>`;
+            container.style.display = 'block';
+            
+            // Masquer le conteneur d'erreur après 5 secondes
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 5000);
+        }
+
+        function showWarning(message) {
+            const container = document.getElementById('warningContainer');
+            container.innerHTML = `<div class="warning-container">${message}</div>`;
+            container.style.display = 'block';
+            
+            // Masquer le conteneur d'avertissement après 8 secondes
+            setTimeout(() => {
+                container.style.display = 'none';
+            }, 8000);
+        }
+
+        async function renderPage(pageNum) {
+            if (!pdfDoc) return;
+            
+            try {
+                updateStatus(`📄 Rendu de la page ${pageNum}...`);
+                
+                const page = await pdfDoc.getPage(pageNum);
+                const viewport = page.getViewport({ scale: currentScale });
+                
+                // Ajuster la taille du canvas
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Rendu de la page
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                await page.render(renderContext);
+                updateStatus(`✅ Page ${pageNum} rendue (${Math.round(viewport.width)}x${Math.round(viewport.height)})`);
+                
+            } catch (error) {
+                console.error('Erreur de rendu:', error);
+                showError(`❌ Erreur lors du rendu de la page ${pageNum}: ${error.message}`);
+            }
+        }
+
+        function updatePageInfo() {
+            if (!pdfDoc) return;
+            
+            const pageInfo = document.getElementById('pageInfo');
+            pageInfo.textContent = `Page ${currentPage} sur ${pdfDoc.numPages}`;
+            
+            // Mettre à jour l'état des boutons
+            document.getElementById('prevBtn').disabled = currentPage <= 1;
+            document.getElementById('nextBtn').disabled = currentPage >= pdfDoc.numPages;
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // Navigation
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePageInfo();
+                renderPage(currentPage);
+            }
+        }
+
+        function nextPage() {
+            if (pdfDoc && currentPage < pdfDoc.numPages) {
+                currentPage++;
+                updatePageInfo();
+                renderPage(currentPage);
+            }
+        }
+
+        // Zoom
+        function zoomIn() {
+            currentScale *= 1.2;
+            if (pdfDoc) renderPage(currentPage);
+        }
+
+        function zoomOut() {
+            currentScale /= 1.2;
+            if (pdfDoc) renderPage(currentPage);
+        }
+
+        function resetZoom() {
+            currentScale = 1.0;
+            if (pdfDoc) renderPage(currentPage);
+        }
+
+        // Initialisation
+        updateStatus('Prêt - Choisissez un fichier PDF');
+    </script>
+</body>
+</html>

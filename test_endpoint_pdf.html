@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Endpoint PDF - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Endpoint PDF - eConsulat</h1>
+        
+        <div class="test-section">
+            <h3>1. Test de connexion au backend</h3>
+            <button onclick="testConnection()">🔌 Tester la connexion</button>
+            <div id="connection-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test des endpoints disponibles</h3>
+            <button onclick="testEndpoints()">🔍 Tester les endpoints</button>
+            <div id="endpoints-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test direct de l'endpoint PDF</h3>
+            <button onclick="testPdfEndpoint()">📄 Tester endpoint PDF</button>
+            <div id="pdf-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Logs détaillés</h3>
+            <button onclick="clearLogs()">🗑️ Effacer</button>
+            <div id="logs" class="result info"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+
+        function log(msg, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${msg}\n`;
+            console.log(msg);
+        }
+
+        function showResult(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            el.innerHTML = msg;
+            el.className = `result ${type}`;
+        }
+
+        async function testConnection() {
+            try {
+                log('🔌 Test de connexion au backend...');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    log(`✅ Connexion réussie! Token reçu: ${data.token.substring(0, 20)}...`);
+                    showResult('connection-result', '✅ Connexion au backend réussie', 'success');
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur ${response.status}: ${errorText}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de connexion: ${error.message}`);
+                showResult('connection-result', `❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEndpoints() {
+            try {
+                if (!authToken) {
+                    throw new Error('Token d\'authentification requis');
+                }
+
+                log('🔍 Test des endpoints disponibles...');
+                
+                const endpoints = [
+                    { name: 'Documents Word', url: '/api/admin/documents/generate' },
+                    { name: 'Documents PDF', url: '/api/admin/pdf-documents/generate' }
+                ];
+
+                let results = '<h4>Résultats des tests d\'endpoints:</h4>';
+
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:8080${endpoint.url}?demandeId=1&documentTypeId=1`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (response.status === 400) {
+                            // Erreur de validation (normal)
+                            results += `<div class="success">✅ ${endpoint.name}: Accessible (erreur de validation normale)</div>`;
+                        } else if (response.status === 200) {
+                            results += `<div class="success">✅ ${endpoint.name}: Accessible et fonctionnel</div>`;
+                        } else {
+                            results += `<div class="error">❌ ${endpoint.name}: Erreur ${response.status}</div>`;
+                        }
+                    } catch (error) {
+                        results += `<div class="error">❌ ${endpoint.name}: Erreur de connexion</div>`;
+                    }
+                }
+
+                showResult('endpoints-result', results, 'info');
+                
+            } catch (error) {
+                log(`❌ Erreur lors du test des endpoints: ${error.message}`);
+                showResult('endpoints-result', `❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPdfEndpoint() {
+            try {
+                if (!authToken) {
+                    throw new Error('Token d\'authentification requis');
+                }
+
+                log('📄 Test direct de l\'endpoint PDF...');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/admin/pdf-documents/generate?demandeId=1&documentTypeId=1', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                log(`Réponse endpoint PDF: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ PDF généré: ID=${data.id}, Nom=${data.fileName}`);
+                    showResult('pdf-result', `✅ PDF généré avec succès: ${data.fileName}`, 'success');
+                    
+                    // Tester le téléchargement
+                    await testPdfDownload(data.id);
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erreur endpoint PDF: ${response.status} - ${errorText}`);
+                    showResult('pdf-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Erreur lors du test PDF: ${error.message}`);
+                showResult('pdf-result', `❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function testPdfDownload(documentId) {
+            try {
+                log(`⬇️ Test de téléchargement du document ${documentId}...`);
+                
+                const response = await fetch(`http://127.0.0.1:8080/api/admin/pdf-documents/download/${documentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    const contentLength = response.headers.get('content-length');
+                    
+                    log(`Headers: Content-Type=${contentType}, Content-Length=${contentLength}`);
+                    
+                    if (contentType && contentType.includes('application/pdf')) {
+                        log('✅ Type de contenu correct: application/pdf');
+                    } else {
+                        log(`⚠️ Type de contenu inattendu: ${contentType}`);
+                    }
+                    
+                    const blob = await response.blob();
+                    log(`Blob reçu: taille=${blob.size} bytes, type=${blob.type}`);
+                    
+                    // Analyser les premiers octets
+                    const arrayBuffer = await blob.arrayBuffer();
+                    const bytes = new Uint8Array(arrayBuffer);
+                    const firstBytes = Array.from(bytes.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+                    
+                    log(`Premiers octets: ${firstBytes}`);
+                    
+                    if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+                        log('✅ Signature PDF détectée: %PDF');
+                        showResult('pdf-result', '✅ PDF généré et téléchargé avec succès - Signature PDF valide', 'success');
+                    } else if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
+                        log('❌ Signature ZIP/DOCX détectée: PK');
+                        showResult('pdf-result', '❌ ERREUR: Le service PDF génère un fichier Word !', 'error');
+                    } else {
+                        log(`⚠️ Signature inconnue: ${firstBytes}`);
+                        showResult('pdf-result', `⚠️ Signature inconnue: ${firstBytes}`, 'error');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`Erreur ${response.status}: ${errorText}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de téléchargement: ${error.message}`);
+                throw error;
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('🧪 Test endpoint PDF chargé');
+        log('🔍 Outil de test pour diagnostiquer l\'endpoint PDF');
+    </script>
+</body>
+</html>

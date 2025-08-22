@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test PDF Simple - eConsulat</title>
+    <title>Test PDF Frontend - eConsulat</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
@@ -19,7 +19,7 @@
     </style>
 </head>
 <body>
-    <h1>🔍 Test PDF Simple - eConsulat</h1>
+    <h1>🔍 Test PDF Frontend - eConsulat</h1>
     
     <div class="test-section">
         <h3>1. Configuration</h3>
@@ -48,15 +48,15 @@
     </div>
 
     <div class="test-section">
-        <h3>3. Test de Génération PDF</h3>
-        <button onclick="testPdfGeneration()" id="pdfBtn" disabled>Générer PDF</button>
-        <div id="pdf-result" class="result"></div>
+        <h3>3. Test de Génération PDF (localhost)</h3>
+        <button onclick="testPdfLocalhost()" id="pdfLocalhostBtn" disabled>Générer PDF (localhost)</button>
+        <div id="pdf-localhost-result" class="result"></div>
     </div>
 
     <div class="test-section">
-        <h3>4. Test de Téléchargement</h3>
-        <button onclick="testPdfDownload()" id="downloadBtn" disabled>Télécharger PDF</button>
-        <div id="download-result" class="result"></div>
+        <h3>4. Test de Génération PDF (127.0.0.1)</h3>
+        <button onclick="testPdfIp()" id="pdfIpBtn" disabled>Générer PDF (127.0.0.1)</button>
+        <div id="pdf-ip-result" class="result"></div>
     </div>
 
     <div class="test-section">
@@ -67,7 +67,6 @@
 
     <script>
         let authToken = null;
-        let generatedPdfId = null;
 
         function log(msg, type = 'info') {
             const logs = document.getElementById('logs');
@@ -106,7 +105,8 @@
                         log(`✅ Token reçu: ${data.token.substring(0, 20)}...`);
                         
                         // Activer les boutons
-                        document.getElementById('pdfBtn').disabled = false;
+                        document.getElementById('pdfLocalhostBtn').disabled = false;
+                        document.getElementById('pdfIpBtn').disabled = false;
                     } else {
                         showResult('auth-result', `⚠️ Pas de token dans la réponse`, 'warning');
                     }
@@ -120,14 +120,49 @@
             }
         }
 
-        async function testPdfGeneration() {
+        async function testPdfLocalhost() {
             if (!authToken) {
-                showResult('pdf-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                showResult('pdf-localhost-result', '❌ Veuillez d\'abord vous authentifier', 'error');
                 return;
             }
 
             try {
-                log('📄 Test de génération PDF...');
+                log('📄 Test de génération PDF avec localhost:8080...');
+                
+                const demandeId = document.getElementById('demandeId').value;
+                const documentTypeId = document.getElementById('documentTypeId').value;
+                
+                const response = await fetch(`http://localhost:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('pdf-localhost-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}`, 'success');
+                    log(`✅ PDF généré avec localhost: ID=${data.id}`);
+                } else {
+                    const errorText = await response.text();
+                    showResult('pdf-localhost-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                    log(`❌ Erreur avec localhost: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                showResult('pdf-localhost-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Exception avec localhost: ${error.message}`);
+            }
+        }
+
+        async function testPdfIp() {
+            if (!authToken) {
+                showResult('pdf-ip-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+
+            try {
+                log('📄 Test de génération PDF avec 127.0.0.1:8080...');
                 
                 const demandeId = document.getElementById('demandeId').value;
                 const documentTypeId = document.getElementById('documentTypeId').value;
@@ -142,75 +177,16 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    generatedPdfId = data.id;
-                    
-                    showResult('pdf-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}\nChemin: ${data.filePath}`, 'success');
-                    log(`✅ PDF généré: ID=${data.id}, Nom=${data.fileName}`);
-                    
-                    // Activer le bouton de téléchargement
-                    document.getElementById('downloadBtn').disabled = false;
+                    showResult('pdf-ip-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}`, 'success');
+                    log(`✅ PDF généré avec 127.0.0.1: ID=${data.id}`);
                 } else {
                     const errorText = await response.text();
-                    showResult('pdf-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
-                    log(`❌ Erreur de génération: ${response.status} - ${errorText}`);
+                    showResult('pdf-ip-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                    log(`❌ Erreur avec 127.0.0.1: ${response.status} - ${errorText}`);
                 }
             } catch (error) {
-                showResult('pdf-result', `❌ Erreur: ${error.message}`, 'error');
-                log(`❌ Exception: ${error.message}`);
-            }
-        }
-
-        async function testPdfDownload() {
-            if (!authToken || !generatedPdfId) {
-                showResult('download-result', '❌ Veuillez d\'abord générer un PDF', 'error');
-                return;
-            }
-
-            try {
-                log('⬇️ Test de téléchargement PDF...');
-                
-                const response = await fetch(`http://127.0.0.1:8080/api/admin/pdf-documents/download/${generatedPdfId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`
-                    }
-                });
-
-                if (response.ok) {
-                    const contentType = response.headers.get('content-type');
-                    const contentLength = response.headers.get('content-length');
-                    
-                    log(`Headers: Content-Type=${contentType}, Content-Length=${contentLength}`);
-                    
-                    if (contentType && contentType.includes('application/pdf')) {
-                        const blob = await response.blob();
-                        log(`Blob reçu: taille=${blob.size} bytes, type=${blob.type}`);
-                        
-                        if (blob.size > 0) {
-                            // Créer le téléchargement
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `document_${generatedPdfId}.pdf`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            window.URL.revokeObjectURL(url);
-
-                            showResult('download-result', `✅ PDF téléchargé avec succès!\nTaille: ${blob.size} bytes\nType: ${blob.type}`, 'success');
-                            log(`✅ PDF téléchargé: ${blob.size} bytes`);
-                        } else {
-                            showResult('download-result', '❌ Le fichier téléchargé est vide (0 bytes)', 'error');
-                        }
-                    } else {
-                        showResult('download-result', `⚠️ Type de contenu inattendu: ${contentType}`, 'warning');
-                    }
-                } else {
-                    const errorText = await response.text();
-                    showResult('download-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
-                }
-            } catch (error) {
-                showResult('download-result', `❌ Erreur: ${error.message}`, 'error');
-                log(`❌ Exception: ${error.message}`);
+                showResult('pdf-ip-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Exception avec 127.0.0.1: ${error.message}`);
             }
         }
 
@@ -219,8 +195,8 @@
         }
 
         // Initialisation
-        log('🚀 Test PDF simple chargé');
-        log('🔍 Test de la génération PDF corrigée');
+        log('🚀 Test PDF frontend chargé');
+        log('🔍 Test des deux méthodes de connexion');
     </script>
 </body>
-</html> 
+</html>

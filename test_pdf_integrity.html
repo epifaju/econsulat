@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic PDF - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 150px; font-weight: bold; }
+        input, select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 300px; }
+        .file-input { border: 2px dashed #ddd; padding: 20px; text-align: center; margin: 10px 0; }
+        .file-input.dragover { border-color: #007bff; background: #f0f8ff; }
+        .progress { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #007bff; width: 0%; transition: width 0.3s; }
+        .pdf-preview { max-width: 100%; height: 500px; border: 1px solid #ddd; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic PDF - eConsulat</h1>
+        
+        <div class="test-section">
+            <h3>1. Sélection du fichier PDF</h3>
+            <div class="file-input" id="dropZone">
+                <p>Glissez-déposez votre fichier PDF ici ou cliquez pour sélectionner</p>
+                <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+            </div>
+            <div id="fileInfo" class="result info" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test d'intégrité du fichier</h3>
+            <button onclick="testFileIntegrity()" id="integrityBtn" disabled>Vérifier l'intégrité</button>
+            <div id="integrity-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test de lecture avec PDF.js</h3>
+            <button onclick="testPdfJsReading()" id="pdfjsBtn" disabled>Tester avec PDF.js</button>
+            <div id="pdfjs-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test de réparation et conversion</h3>
+            <button onclick="testPdfRepair()" id="repairBtn" disabled>Tenter la réparation</button>
+            <div id="repair-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Aperçu du PDF (si possible)</h3>
+            <div id="pdfPreview" class="pdf-preview" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Logs détaillés</h3>
+            <button onclick="clearLogs()">Effacer les logs</button>
+            <div id="logs" class="result info"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let pdfData = null;
+
+        // Gestion du drag & drop
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelection(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            if (file.type !== 'application/pdf') {
+                showResult('fileInfo', '❌ Veuillez sélectionner un fichier PDF', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            const fileInfo = `📁 Fichier sélectionné:\nNom: ${file.name}\nTaille: ${formatFileSize(file.size)}\nType: ${file.type}\nDernière modification: ${new Date(file.lastModified).toLocaleString()}`;
+            
+            showResult('fileInfo', fileInfo, 'success');
+            document.getElementById('integrityBtn').disabled = false;
+            
+            log(`📁 Fichier sélectionné: ${file.name} (${formatFileSize(file.size)})`);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function log(msg, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${msg}\n`;
+            console.log(msg);
+        }
+
+        function showResult(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = `result ${type}`;
+            el.style.display = 'block';
+        }
+
+        async function testFileIntegrity() {
+            if (!selectedFile) return;
+
+            try {
+                log('🔍 Test d\'intégrité du fichier...');
+                
+                // Lire le fichier comme ArrayBuffer
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                
+                // Vérifier la signature PDF (magic number)
+                const pdfSignature = String.fromCharCode(...uint8Array.slice(0, 4));
+                if (pdfSignature !== '%PDF') {
+                    showResult('integrity-result', `❌ Signature PDF invalide: "${pdfSignature}" (attendu: "%PDF")`, 'error');
+                    return;
+                }
+                
+                // Vérifier la version PDF
+                const versionMatch = String.fromCharCode(...uint8Array.slice(5, 8));
+                log(`📄 Version PDF détectée: ${versionMatch}`);
+                
+                // Chercher la fin du fichier (EOF marker)
+                const eofMarker = String.fromCharCode(...uint8Array.slice(-5));
+                if (!eofMarker.includes('%%EOF')) {
+                    showResult('integrity-result', `⚠️ Marqueur EOF manquant ou corrompu: "${eofMarker}"`, 'warning');
+                } else {
+                    log(`✅ Marqueur EOF trouvé: ${eofMarker}`);
+                }
+                
+                // Analyser la structure de base
+                const fileContent = String.fromCharCode(...uint8Array);
+                const objectCount = (fileContent.match(/\d+ \d+ obj/g) || []).length;
+                const endObjectCount = (fileContent.match(/endobj/g) || []).length;
+                
+                log(`📊 Structure: ${objectCount} objets, ${endObjectCount} endobj`);
+                
+                if (objectCount !== endObjectCount) {
+                    showResult('integrity-result', `⚠️ Structure PDF déséquilibrée: ${objectCount} objets vs ${endObjectCount} endobj`, 'warning');
+                } else {
+                    showResult('integrity-result', `✅ Structure PDF de base valide\nVersion: ${versionMatch}\nObjets: ${objectCount}\nTaille: ${formatFileSize(uint8Array.length)}`, 'success');
+                    document.getElementById('pdfjsBtn').disabled = false;
+                    document.getElementById('repairBtn').disabled = false;
+                }
+                
+                // Stocker les données pour les tests suivants
+                pdfData = uint8Array;
+                
+            } catch (error) {
+                showResult('integrity-result', `❌ Erreur lors de l'analyse: ${error.message}`, 'error');
+                log(`❌ Erreur d'analyse: ${error.message}`);
+            }
+        }
+
+        async function testPdfJsReading() {
+            if (!pdfData) return;
+
+            try {
+                log('📖 Test de lecture avec PDF.js...');
+                
+                // Charger PDF.js
+                if (typeof pdfjsLib === 'undefined') {
+                    // Charger PDF.js depuis CDN si pas déjà chargé
+                    const script = document.createElement('script');
+                    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                    script.onload = () => {
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        performPdfJsTest();
+                    };
+                    document.head.appendChild(script);
+                } else {
+                    performPdfJsTest();
+                }
+                
+            } catch (error) {
+                showResult('pdfjs-result', `❌ Erreur lors du test PDF.js: ${error.message}`, 'error');
+                log(`❌ Erreur PDF.js: ${error.message}`);
+            }
+        }
+
+        async function performPdfJsTest() {
+            try {
+                const loadingTask = pdfjsLib.getDocument({data: pdfData});
+                
+                loadingTask.onProgress = (progress) => {
+                    log(`📊 Progression: ${Math.round(progress.ratio * 100)}%`);
+                };
+                
+                const pdf = await loadingTask.promise;
+                log(`✅ PDF chargé avec succès! Pages: ${pdf.numPages}`);
+                
+                // Tenter de lire la première page
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({scale: 1.0});
+                
+                log(`📄 Page 1: ${viewport.width}x${viewport.height}`);
+                
+                showResult('pdfjs-result', `✅ PDF.js peut lire le fichier!\nPages: ${pdf.numPages}\nPremière page: ${Math.round(viewport.width)}x${Math.round(viewport.height)}`, 'success');
+                
+                // Afficher l'aperçu
+                displayPdfPreview(pdf);
+                
+            } catch (error) {
+                showResult('pdfjs-result', `❌ PDF.js ne peut pas lire le fichier: ${error.message}`, 'error');
+                log(`❌ Erreur PDF.js: ${error.message}`);
+                
+                // Analyser l'erreur spécifique
+                if (error.message.includes('Invalid PDF structure')) {
+                    log(`🔍 Erreur de structure PDF détectée - tentative de réparation...`);
+                }
+            }
+        }
+
+        function displayPdfPreview(pdf) {
+            const previewDiv = document.getElementById('pdfPreview');
+            previewDiv.style.display = 'block';
+            
+            // Créer un canvas pour l'aperçu
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            previewDiv.innerHTML = '';
+            previewDiv.appendChild(canvas);
+            
+            // Afficher la première page
+            pdf.getPage(1).then(page => {
+                const viewport = page.getViewport({scale: 0.5});
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                page.render(renderContext);
+            });
+        }
+
+        async function testPdfRepair() {
+            if (!pdfData) return;
+
+            try {
+                log('🔧 Tentative de réparation du PDF...');
+                
+                // Méthode 1: Vérifier et corriger les caractères corrompus
+                let repairedData = new Uint8Array(pdfData);
+                
+                // Chercher et corriger les problèmes courants
+                const content = String.fromCharCode(...repairedData);
+                
+                // Vérifier les objets PDF
+                const objectMatches = content.match(/(\d+) (\d+) obj/g);
+                if (objectMatches) {
+                    log(`🔍 Trouvé ${objectMatches.length} objets PDF`);
+                    
+                    // Vérifier chaque objet
+                    for (let match of objectMatches) {
+                        const [objNum, genNum] = match.split(' ');
+                        const objStart = content.indexOf(match);
+                        const objEnd = content.indexOf('endobj', objStart);
+                        
+                        if (objEnd === -1) {
+                            log(`⚠️ Objet ${objNum} sans endobj`);
+                        }
+                    }
+                }
+                
+                // Méthode 2: Essayer de recréer un PDF minimal
+                const minimalPdf = createMinimalPdf();
+                
+                showResult('repair-result', `🔧 Tentative de réparation terminée\nObjets trouvés: ${objectMatches ? objectMatches.length : 0}\nPDF minimal créé: ${minimalPdf ? 'Oui' : 'Non'}`, 'info');
+                
+            } catch (error) {
+                showResult('repair-result', `❌ Erreur lors de la réparation: ${error.message}`, 'error');
+                log(`❌ Erreur de réparation: ${error.message}`);
+            }
+        }
+
+        function createMinimalPdf() {
+            try {
+                // Créer un PDF minimal valide
+                const minimalPdfContent = `%PDF-1.4
+1 0 obj
+<<
+/Type /Catalog
+/Pages 2 0 R
+>>
+endobj
+
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+
+3 0 obj
+<<
+/Type /Page
+/Parent 2 0 R
+/MediaBox [0 0 612 792]
+/Contents 4 0 R
+>>
+endobj
+
+4 0 obj
+<<
+/Length 44
+>>
+stream
+BT
+/F1 12 Tf
+72 720 Td
+(Test PDF) Tj
+ET
+endstream
+endobj
+
+xref
+0 5
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000204 00000 n 
+trailer
+<<
+/Size 5
+/Root 1 0 R
+>>
+startxref
+295
+%%EOF`;
+                
+                log(`✅ PDF minimal créé (${minimalPdfContent.length} caractères)`);
+                return true;
+            } catch (error) {
+                log(`❌ Erreur création PDF minimal: ${error.message}`);
+                return false;
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('🚀 Diagnostic PDF chargé');
+        log('📁 Glissez-déposez un fichier PDF pour commencer l\'analyse');
+    </script>
+</body>
+</html>

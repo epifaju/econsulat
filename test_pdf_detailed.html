@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test PDF Simple - eConsulat</title>
+    <title>Test PDF Détaillé - eConsulat</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
@@ -16,13 +16,14 @@
         .form-group { margin: 10px 0; }
         label { display: inline-block; width: 120px; font-weight: bold; }
         input { padding: 5px; border: 1px solid #ddd; border-radius: 3px; width: 200px; }
+        .step { margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
     </style>
 </head>
 <body>
-    <h1>🔍 Test PDF Simple - eConsulat</h1>
+    <h1>🔍 Test PDF Détaillé - eConsulat</h1>
     
     <div class="test-section">
-        <h3>1. Configuration</h3>
+        <h3>1. Configuration de Test</h3>
         <div class="form-group">
             <label>Email:</label>
             <input type="email" id="email" value="admin@econsulat.com">
@@ -60,7 +61,13 @@
     </div>
 
     <div class="test-section">
-        <h3>5. Logs</h3>
+        <h3>5. Test de Génération Word (Comparaison)</h3>
+        <button onclick="testWordGeneration()" id="wordBtn" disabled>Générer Word</button>
+        <div id="word-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>6. Logs Détaillés</h3>
         <button onclick="clearLogs()">Effacer</button>
         <div id="logs" class="result info"></div>
     </div>
@@ -68,6 +75,7 @@
     <script>
         let authToken = null;
         let generatedPdfId = null;
+        let generatedWordId = null;
 
         function log(msg, type = 'info') {
             const logs = document.getElementById('logs');
@@ -82,14 +90,24 @@
             el.className = `result ${type}`;
         }
 
+        function addStep(stepNumber, description, status = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusIcon = status === 'success' ? '✅' : status === 'error' ? '❌' : status === 'warning' ? '⚠️' : 'ℹ️';
+            logs.textContent += `[${timestamp}] ${statusIcon} Étape ${stepNumber}: ${description}\n`;
+        }
+
         async function testAuth() {
             try {
                 log('🔐 Début de l\'authentification...');
+                addStep(1, 'Début de l\'authentification');
                 
                 const email = document.getElementById('email').value;
                 const password = document.getElementById('password').value;
                 
-                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                addStep(2, `Tentative de connexion avec ${email}`);
+                
+                const response = await fetch('http://localhost:8080/api/auth/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -97,25 +115,34 @@
                     },
                     body: JSON.stringify({ email, password })
                 });
+
+                addStep(3, `Réponse reçue: ${response.status} ${response.statusText}`);
                 
                 if (response.ok) {
                     const data = await response.json();
                     if (data.token) {
                         authToken = data.token;
                         showResult('auth-result', `✅ Authentification réussie! Token reçu`, 'success');
-                        log(`✅ Token reçu: ${data.token.substring(0, 20)}...`);
+                        addStep(4, 'Token JWT reçu avec succès', 'success');
                         
                         // Activer les boutons
                         document.getElementById('pdfBtn').disabled = false;
+                        document.getElementById('downloadBtn').disabled = false;
+                        document.getElementById('wordBtn').disabled = false;
+                        
+                        log(`✅ Authentification réussie - Token: ${data.token.substring(0, 20)}...`);
                     } else {
                         showResult('auth-result', `⚠️ Pas de token dans la réponse`, 'warning');
+                        addStep(4, 'Pas de token dans la réponse', 'warning');
                     }
                 } else {
                     const errorText = await response.text();
                     showResult('auth-result', `❌ Échec: ${response.status} - ${errorText}`, 'error');
+                    addStep(4, `Échec de l'authentification: ${response.status}`, 'error');
                 }
             } catch (error) {
-                showResult('auth-result', `❌ Erreur: ${error.message}`, 'error');
+                showResult('auth-result', `❌ Erreur: ${error.name} - ${error.message}`, 'error');
+                addStep(4, `Erreur: ${error.message}`, 'error');
                 log(`❌ Erreur d'authentification: ${error.message}`);
             }
         }
@@ -127,12 +154,16 @@
             }
 
             try {
-                log('📄 Test de génération PDF...');
+                log('📄 Début de la génération PDF...');
+                addStep(1, 'Début de la génération PDF');
                 
                 const demandeId = document.getElementById('demandeId').value;
                 const documentTypeId = document.getElementById('documentTypeId').value;
                 
-                const response = await fetch(`http://127.0.0.1:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                addStep(2, `Appel API: /api/admin/pdf-documents/generate`);
+                addStep(3, `Paramètres: demandeId=${demandeId}, documentTypeId=${documentTypeId}`);
+                
+                const response = await fetch(`http://localhost:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -140,11 +171,15 @@
                     }
                 });
 
+                addStep(4, `Réponse reçue: ${response.status} ${response.statusText}`);
+                
                 if (response.ok) {
                     const data = await response.json();
                     generatedPdfId = data.id;
                     
                     showResult('pdf-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}\nChemin: ${data.filePath}`, 'success');
+                    addStep(5, 'Document PDF créé en base de données', 'success');
+                    
                     log(`✅ PDF généré: ID=${data.id}, Nom=${data.fileName}`);
                     
                     // Activer le bouton de téléchargement
@@ -152,11 +187,23 @@
                 } else {
                     const errorText = await response.text();
                     showResult('pdf-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
-                    log(`❌ Erreur de génération: ${response.status} - ${errorText}`);
+                    addStep(5, `Erreur lors de la génération: ${response.status}`, 'error');
+                    
+                    log(`❌ Erreur de génération PDF: ${response.status} - ${errorText}`);
+                    
+                    // Essayer de parser l'erreur JSON
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        log(`❌ Détails de l'erreur: ${JSON.stringify(errorData, null, 2)}`);
+                    } catch (e) {
+                        log(`❌ Erreur non-JSON: ${errorText}`);
+                    }
                 }
             } catch (error) {
-                showResult('pdf-result', `❌ Erreur: ${error.message}`, 'error');
-                log(`❌ Exception: ${error.message}`);
+                showResult('pdf-result', `❌ Erreur: ${error.name} - ${error.message}`, 'error');
+                addStep(5, `Exception: ${error.message}`, 'error');
+                log(`❌ Exception lors de la génération PDF: ${error.message}`);
+                log(`❌ Stack: ${error.stack}`);
             }
         }
 
@@ -167,23 +214,29 @@
             }
 
             try {
-                log('⬇️ Test de téléchargement PDF...');
+                log('⬇️ Début du téléchargement PDF...');
+                addStep(1, 'Début du téléchargement PDF');
                 
-                const response = await fetch(`http://127.0.0.1:8080/api/admin/pdf-documents/download/${generatedPdfId}`, {
+                addStep(2, `Appel API: /api/admin/pdf-documents/download/${generatedPdfId}`);
+                
+                const response = await fetch(`http://localhost:8080/api/admin/pdf-documents/download/${generatedPdfId}`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
                 });
 
+                addStep(3, `Réponse reçue: ${response.status} ${response.statusText}`);
+                
                 if (response.ok) {
+                    // Vérifier les headers
                     const contentType = response.headers.get('content-type');
                     const contentLength = response.headers.get('content-length');
                     
-                    log(`Headers: Content-Type=${contentType}, Content-Length=${contentLength}`);
+                    addStep(4, `Headers: Content-Type=${contentType}, Content-Length=${contentLength}`);
                     
                     if (contentType && contentType.includes('application/pdf')) {
                         const blob = await response.blob();
-                        log(`Blob reçu: taille=${blob.size} bytes, type=${blob.type}`);
+                        addStep(5, `Blob reçu: taille=${blob.size} bytes, type=${blob.type}`, 'success');
                         
                         if (blob.size > 0) {
                             // Créer le téléchargement
@@ -197,20 +250,70 @@
                             window.URL.revokeObjectURL(url);
 
                             showResult('download-result', `✅ PDF téléchargé avec succès!\nTaille: ${blob.size} bytes\nType: ${blob.type}`, 'success');
+                            addStep(6, 'Téléchargement réussi', 'success');
                             log(`✅ PDF téléchargé: ${blob.size} bytes`);
                         } else {
                             showResult('download-result', '❌ Le fichier téléchargé est vide (0 bytes)', 'error');
+                            addStep(6, 'Fichier vide reçu', 'error');
                         }
                     } else {
                         showResult('download-result', `⚠️ Type de contenu inattendu: ${contentType}`, 'warning');
+                        addStep(6, `Type de contenu inattendu: ${contentType}`, 'warning');
                     }
                 } else {
                     const errorText = await response.text();
                     showResult('download-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                    addStep(6, `Erreur HTTP: ${response.status}`, 'error');
                 }
             } catch (error) {
-                showResult('download-result', `❌ Erreur: ${error.message}`, 'error');
-                log(`❌ Exception: ${error.message}`);
+                showResult('download-result', `❌ Erreur: ${error.name} - ${error.message}`, 'error');
+                addStep(6, `Exception: ${error.message}`, 'error');
+                log(`❌ Exception lors du téléchargement: ${error.message}`);
+            }
+        }
+
+        async function testWordGeneration() {
+            if (!authToken) {
+                showResult('word-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+
+            try {
+                log('📝 Test de génération Word...');
+                addStep(1, 'Test de génération Word');
+                
+                const demandeId = document.getElementById('demandeId').value;
+                const documentTypeId = document.getElementById('documentTypeId').value;
+                
+                addStep(2, `Appel API: /api/admin/documents/generate`);
+                
+                const response = await fetch(`http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                addStep(3, `Réponse reçue: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    generatedWordId = data.id;
+                    
+                    showResult('word-result', `✅ Word généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}`, 'success');
+                    addStep(4, 'Document Word créé avec succès', 'success');
+                    
+                    log(`✅ Word généré: ID=${data.id}, Nom=${data.fileName}`);
+                } else {
+                    const errorText = await response.text();
+                    showResult('word-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                    addStep(4, `Erreur lors de la génération Word: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('word-result', `❌ Erreur: ${error.name} - ${error.message}`, 'error');
+                addStep(4, `Exception: ${error.message}`, 'error');
+                log(`❌ Exception lors de la génération Word: ${error.message}`);
             }
         }
 
@@ -219,8 +322,9 @@
         }
 
         // Initialisation
-        log('🚀 Test PDF simple chargé');
-        log('🔍 Test de la génération PDF corrigée');
+        log('🚀 Test PDF détaillé chargé');
+        log('📍 URL du backend: http://localhost:8080');
+        log('🔑 Commencez par l\'authentification');
     </script>
 </body>
-</html> 
+</html>

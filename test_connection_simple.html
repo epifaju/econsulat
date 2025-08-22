@@ -3,122 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Connexion Simple</title>
+    <title>Test Connexion Simple - eConsulat</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
-        .success { background-color: #d4edda; }
-        .error { background-color: #f8d7da; }
-        .info { background-color: #d1ecf1; }
-        button { padding: 10px 20px; margin: 5px; }
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
     </style>
 </head>
 <body>
-    <h1>Test Connexion Backend</h1>
+    <h1>🔍 Test Connexion Simple - eConsulat</h1>
     
-    <button onclick="testConnection()">Tester la connexion</button>
-    <button onclick="testCORS()">Tester CORS</button>
-    <button onclick="testAuth()">Tester Authentification</button>
-    
-    <div id="result" class="result"></div>
+    <div class="test-section">
+        <h3>1. Test de Connexion Basique</h3>
+        <button onclick="testBasicConnection()">Test Connexion Simple</button>
+        <div id="basic-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test avec Fetch API</h3>
+        <button onclick="testFetchAPI()">Test Fetch API</button>
+        <div id="fetch-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test avec XMLHttpRequest</h3>
+        <button onclick="testXHR()">Test XMLHttpRequest</button>
+        <div id="xhr-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test d'Authentification</h3>
+        <button onclick="testAuth()">Test Auth</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Logs Détaillés</h3>
+        <button onclick="clearLogs()">Effacer</button>
+        <div id="logs" class="result info"></div>
+    </div>
 
     <script>
-        function log(message) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.textContent += message + '\n';
-            console.log(message);
+        function log(msg, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${msg}\n`;
+            console.log(msg);
         }
 
-        async function testConnection() {
-            log('=== Test de connexion de base ===');
-            
+        function showResult(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = `result ${type}`;
+        }
+
+        async function testBasicConnection() {
             try {
-                const response = await fetch('http://localhost:8080/api/admin/demandes', {
-                    method: 'GET',
+                log('🔍 Test de connexion basique...');
+                
+                // Test simple avec fetch
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
-                    }
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    })
                 });
+
+                log(`📡 Réponse reçue: ${response.status} ${response.statusText}`);
                 
-                log(`Status: ${response.status}`);
-                log(`Status Text: ${response.statusText}`);
-                log(`Headers: ${JSON.stringify([...response.headers.entries()])}`);
-                
-                if (response.status === 403) {
-                    log('✅ Connexion OK - Authentification requise (normal)');
-                } else if (response.ok) {
-                    log('✅ Connexion OK - Authentifié');
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('basic-result', `✅ Connexion réussie! Status: ${response.status}`, 'success');
+                    log(`✅ Connexion réussie - Token: ${data.token ? 'Oui' : 'Non'}`);
                 } else {
-                    log(`❌ Erreur: ${response.status}`);
+                    const errorText = await response.text();
+                    showResult('basic-result', `⚠️ Réponse: ${response.status} - ${errorText}`, 'warning');
+                    log(`⚠️ Réponse: ${response.status} - ${errorText}`);
                 }
             } catch (error) {
-                log(`❌ Erreur de connexion: ${error.message}`);
-                log(`Type d'erreur: ${error.name}`);
+                showResult('basic-result', `❌ Erreur: ${error.name} - ${error.message}`, 'error');
+                log(`❌ Erreur: ${error.name} - ${error.message}`);
+                log(`❌ Stack: ${error.stack}`);
             }
         }
 
-        async function testCORS() {
-            log('\n=== Test CORS ===');
-            
+        async function testFetchAPI() {
             try {
-                const response = await fetch('http://localhost:8080/api/admin/demandes', {
-                    method: 'OPTIONS',
+                log('🔍 Test Fetch API avec options...');
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 secondes timeout
+                
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
                     headers: {
-                        'Origin': 'http://localhost:5173',
-                        'Access-Control-Request-Method': 'GET',
-                        'Access-Control-Request-Headers': 'Content-Type,Authorization'
-                    }
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'User-Agent': 'eConsulat-Test'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    }),
+                    signal: controller.signal,
+                    mode: 'cors',
+                    credentials: 'omit'
                 });
+
+                clearTimeout(timeoutId);
+                log(`📡 Fetch API - Réponse: ${response.status} ${response.statusText}`);
                 
-                log(`CORS Status: ${response.status}`);
-                log(`CORS Headers: ${JSON.stringify([...response.headers.entries()])}`);
-                
-                if (response.status === 200) {
-                    log('✅ CORS configuré correctement');
+                if (response.ok) {
+                    showResult('fetch-result', `✅ Fetch API OK! Status: ${response.status}`, 'success');
+                    log(`✅ Fetch API fonctionne`);
                 } else {
-                    log('❌ Problème CORS');
+                    showResult('fetch-result', `⚠️ Fetch API - Status: ${response.status}`, 'warning');
+                    log(`⚠️ Fetch API - Status: ${response.status}`);
                 }
             } catch (error) {
-                log(`❌ Erreur CORS: ${error.message}`);
+                if (error.name === 'AbortError') {
+                    showResult('fetch-result', `❌ Timeout après 10 secondes`, 'error');
+                    log(`❌ Timeout après 10 secondes`);
+                } else {
+                    showResult('fetch-result', `❌ Erreur Fetch: ${error.name} - ${error.message}`, 'error');
+                    log(`❌ Erreur Fetch: ${error.name} - ${error.message}`);
+                }
+            }
+        }
+
+        function testXHR() {
+            try {
+                log('🔍 Test XMLHttpRequest...');
+                
+                const xhr = new XMLHttpRequest();
+                xhr.timeout = 10000; // 10 secondes timeout
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        log(`📡 XHR - ReadyState: ${xhr.readyState}, Status: ${xhr.status}`);
+                        
+                        if (xhr.status === 200) {
+                            showResult('xhr-result', `✅ XHR OK! Status: ${xhr.status}`, 'success');
+                            log(`✅ XHR fonctionne`);
+                        } else if (xhr.status === 403) {
+                            showResult('xhr-result', `⚠️ XHR - Status: ${xhr.status} (Normal pour auth)`, 'warning');
+                            log(`⚠️ XHR - Status: ${xhr.status} (Normal pour auth)`);
+                        } else {
+                            showResult('xhr-result', `❌ XHR - Status: ${xhr.status}`, 'error');
+                            log(`❌ XHR - Status: ${xhr.status}`);
+                        }
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    showResult('xhr-result', `❌ XHR - Erreur réseau`, 'error');
+                    log(`❌ XHR - Erreur réseau`);
+                };
+                
+                xhr.ontimeout = function() {
+                    showResult('xhr-result', `❌ XHR - Timeout`, 'error');
+                    log(`❌ XHR - Timeout`);
+                };
+                
+                xhr.open('POST', 'http://localhost:8080/api/auth/login', true);
+                xhr.setRequestHeader('Content-Type', 'application/json');
+                xhr.setRequestHeader('Accept', 'application/json');
+                
+                const data = JSON.stringify({
+                    email: 'admin@econsulat.com',
+                    password: 'admin123'
+                });
+                
+                xhr.send(data);
+                
+            } catch (error) {
+                showResult('xhr-result', `❌ Erreur XHR: ${error.message}`, 'error');
+                log(`❌ Erreur XHR: ${error.message}`);
             }
         }
 
         async function testAuth() {
-            log('\n=== Test avec token ===');
-            
-            const token = prompt('Entrez un token JWT (optionnel):');
-            if (!token) {
-                log('Aucun token fourni');
-                return;
-            }
-            
             try {
-                const response = await fetch('http://localhost:8080/api/admin/demandes', {
-                    method: 'GET',
+                log('🔍 Test d\'authentification complet...');
+                
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    })
+                });
+
+                log(`📡 Auth - Réponse: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.token) {
+                        showResult('auth-result', `✅ Auth OK! Token reçu`, 'success');
+                        log(`✅ Auth OK! Token: ${data.token.substring(0, 20)}...`);
+                        
+                        // Test de génération PDF avec le token
+                        log('🔍 Test de génération PDF...');
+                        await testPdfGeneration(data.token);
+                    } else {
+                        showResult('auth-result', `⚠️ Auth OK mais pas de token`, 'warning');
+                        log(`⚠️ Auth OK mais pas de token`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    showResult('auth-result', `❌ Auth échoué: ${response.status} - ${errorText}`, 'error');
+                    log(`❌ Auth échoué: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                showResult('auth-result', `❌ Erreur Auth: ${error.name} - ${error.message}`, 'error');
+                log(`❌ Erreur Auth: ${error.name} - ${error.message}`);
+            }
+        }
+
+        async function testPdfGeneration(token) {
+            try {
+                log('🔍 Test de génération PDF...');
+                
+                const response = await fetch('http://localhost:8080/api/admin/pdf-documents/generate?demandeId=1&documentTypeId=1', {
+                    method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                
-                log(`Auth Status: ${response.status}`);
+
+                log(`📡 PDF - Réponse: ${response.status} ${response.statusText}`);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    log('✅ Authentification réussie');
-                    log(`Données reçues: ${JSON.stringify(data).substring(0, 200)}...`);
+                    showResult('auth-result', `✅ PDF généré! ID: ${data.id}`, 'success');
+                    log(`✅ PDF généré avec succès! ID: ${data.id}`);
                 } else {
-                    log(`❌ Erreur d'authentification: ${response.status}`);
+                    const errorText = await response.text();
+                    showResult('auth-result', `❌ PDF échoué: ${response.status} - ${errorText}`, 'error');
+                    log(`❌ PDF échoué: ${response.status} - ${errorText}`);
                 }
             } catch (error) {
-                log(`❌ Erreur: ${error.message}`);
+                showResult('auth-result', `❌ Erreur PDF: ${error.name} - ${error.message}`, 'error');
+                log(`❌ Erreur PDF: ${error.name} - ${error.message}`);
             }
         }
 
-        // Test automatique au chargement
-        window.onload = function() {
-            log('Page chargée - Tests disponibles');
-        };
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('🚀 Page de test chargée');
+        log('📍 URL du backend: http://localhost:8080');
+        log('🔑 Credentials: admin@econsulat.com / admin123');
+        log('📋 Commencez par tester la connexion basique');
     </script>
 </body>
+</html> 
 </html> 

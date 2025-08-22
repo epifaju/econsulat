@@ -12,7 +12,7 @@ import com.econsulat.repository.GeneratedDocumentRepository;
 import com.econsulat.repository.PaysRepository;
 import com.econsulat.repository.UserRepository;
 import com.econsulat.service.DemandeService;
-import com.econsulat.service.DocumentGenerationService;
+import com.econsulat.service.PdfDocumentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -36,7 +36,7 @@ public class DemandeController {
     private DemandeService demandeService;
 
     @Autowired
-    private DocumentGenerationService documentGenerationService;
+    private PdfDocumentService pdfDocumentService;
 
     @Autowired
     private UserRepository userRepository;
@@ -97,8 +97,8 @@ public class DemandeController {
             User currentUser = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-            // Générer le document
-            GeneratedDocument generatedDocument = documentGenerationService.generateDocument(id, 1L, currentUser);
+            // Générer le document PDF
+            GeneratedDocument generatedDocument = pdfDocumentService.generatePdfDocument(id, 1L, currentUser);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
@@ -132,11 +132,11 @@ public class DemandeController {
                 return ResponseEntity.notFound().build();
             }
 
-            // Télécharger le document
-            byte[] documentBytes = documentGenerationService.downloadDocument(generatedDocument.getId());
+            // Télécharger le document PDF
+            byte[] documentBytes = pdfDocumentService.downloadPdfDocument(generatedDocument.getId());
 
             HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDispositionFormData("attachment", generatedDocument.getFileName());
 
             return ResponseEntity.ok()

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détection Type de Fichier - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .file-input { border: 2px dashed #ddd; padding: 20px; text-align: center; margin: 10px 0; }
+        .file-input.dragover { border-color: #007bff; background: #f0f8ff; }
+        .hex-viewer { background: #000; color: #0f0; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 300px; overflow-y: auto; }
+        .file-info { background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #007bff; }
+        .type-badge { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin: 5px; }
+        .type-pdf { background: #dc3545; color: white; }
+        .type-word { background: #007bff; color: white; }
+        .type-zip { background: #28a745; color: white; }
+        .type-unknown { background: #6c757d; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Détection Type de Fichier - eConsulat</h1>
+        
+        <div class="test-section">
+            <h3>1. Sélection du fichier</h3>
+            <div class="file-input" id="dropZone">
+                <p>Glissez-déposez votre fichier ici ou cliquez pour sélectionner</p>
+                <input type="file" id="fileInput" accept="*.*" style="display: none;">
+            </div>
+            <div id="fileInfo" class="file-info" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Analyse du type de fichier</h3>
+            <button onclick="analyzeFileType()" id="analyzeBtn" disabled>Analyser le type</button>
+            <div id="type-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Vue hexadécimale (premiers octets)</h3>
+            <div id="hexViewer" class="hex-viewer" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Diagnostic et recommandations</h3>
+            <div id="diagnostic" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Logs détaillés</h3>
+            <button onclick="clearLogs()">Effacer</button>
+            <div id="logs" class="result info"></div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let fileData = null;
+
+        // Gestion du drag & drop
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelection(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelection(file) {
+            selectedFile = file;
+            const fileInfo = `
+                <strong>📁 Fichier sélectionné:</strong><br>
+                <strong>Nom:</strong> ${file.name}<br>
+                <strong>Taille:</strong> ${formatFileSize(file.size)}<br>
+                <strong>Type MIME:</strong> ${file.type || 'Non détecté'}<br>
+                <strong>Extension:</strong> ${getFileExtension(file.name)}<br>
+                <strong>Dernière modification:</strong> ${new Date(file.lastModified).toLocaleString()}
+            `;
+            
+            document.getElementById('fileInfo').innerHTML = fileInfo;
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('analyzeBtn').disabled = false;
+            
+            log(`📁 Fichier sélectionné: ${file.name} (${formatFileSize(file.size)})`);
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getFileExtension(filename) {
+            return filename.split('.').pop().toLowerCase();
+        }
+
+        function log(msg, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${msg}\n`;
+            console.log(msg);
+        }
+
+        function showResult(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            el.innerHTML = msg;
+            el.className = `result ${type}`;
+        }
+
+        async function analyzeFileType() {
+            if (!selectedFile) return;
+
+            try {
+                log('🔍 Début de l\'analyse du type de fichier...');
+                
+                // Lire le fichier comme ArrayBuffer
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+                fileData = uint8Array;
+                
+                // Analyser les premiers octets pour identifier le type
+                const fileType = detectFileType(uint8Array);
+                
+                // Afficher la vue hexadécimale
+                displayHexViewer(uint8Array);
+                
+                // Générer le diagnostic
+                generateDiagnostic(fileType, selectedFile);
+                
+                log(`✅ Analyse terminée. Type détecté: ${fileType.name}`);
+                
+            } catch (error) {
+                showResult('type-result', `❌ Erreur lors de l'analyse: ${error.message}`, 'error');
+                log(`❌ Erreur d'analyse: ${error.message}`);
+            }
+        }
+
+        function detectFileType(uint8Array) {
+            const firstBytes = Array.from(uint8Array.slice(0, 16));
+            const hexString = firstBytes.map(b => b.toString(16).padStart(2, '0')).join(' ').toUpperCase();
+            
+            log(`🔍 Premiers octets: ${hexString}`);
+            
+            // Détection par signature (magic numbers)
+            if (uint8Array[0] === 0x25 && uint8Array[1] === 0x50 && uint8Array[2] === 0x44 && uint8Array[3] === 0x46) {
+                return {
+                    name: 'PDF',
+                    type: 'pdf',
+                    confidence: '100%',
+                    description: 'Document PDF valide',
+                    signature: '%PDF'
+                };
+            }
+            
+            if (uint8Array[0] === 0x50 && uint8Array[1] === 0x4B) {
+                // ZIP, DOCX, XLSX, PPTX, etc.
+                if (uint8Array[2] === 0x03 && uint8Array[3] === 0x04) {
+                    return {
+                        name: 'ZIP/DOCX/XLSX/PPTX',
+                        type: 'zip',
+                        confidence: '95%',
+                        description: 'Archive ZIP ou document Office (DOCX, XLSX, PPTX)',
+                        signature: 'PK'
+                    };
+                }
+            }
+            
+            if (uint8Array[0] === 0xD0 && uint8Array[1] === 0xCF && uint8Array[2] === 0x11 && uint8Array[3] === 0xE0) {
+                return {
+                    name: 'DOC/XLS/PPT (ancien format)',
+                    type: 'doc',
+                    confidence: '90%',
+                    description: 'Document Office au format binaire (DOC, XLS, PPT)',
+                    signature: 'D0CF11E0'
+                };
+            }
+            
+            if (uint8Array[0] === 0xFF && uint8Array[1] === 0xFE) {
+                return {
+                    name: 'TXT/RTF (UTF-16 LE)',
+                    type: 'txt',
+                    confidence: '80%',
+                    description: 'Fichier texte en UTF-16 Little Endian',
+                    signature: 'FFFE'
+                };
+            }
+            
+            if (uint8Array[0] === 0xEF && uint8Array[1] === 0xBB && uint8Array[2] === 0xBF) {
+                return {
+                    name: 'TXT/HTML (UTF-8 BOM)',
+                    type: 'txt',
+                    confidence: '80%',
+                    description: 'Fichier texte en UTF-8 avec BOM',
+                    signature: 'EFBBBF'
+                };
+            }
+            
+            // Vérifier l'extension du fichier
+            const extension = getFileExtension(selectedFile.name);
+            if (extension === 'pdf') {
+                return {
+                    name: 'PDF (extension mais signature invalide)',
+                    type: 'corrupted',
+                    confidence: '70%',
+                    description: 'Fichier avec extension .pdf mais signature invalide - probablement corrompu',
+                    signature: 'Inconnue'
+                };
+            }
+            
+            return {
+                name: 'Type inconnu',
+                type: 'unknown',
+                confidence: '0%',
+                description: 'Impossible de déterminer le type de fichier',
+                signature: 'Inconnue'
+            };
+        }
+
+        function displayHexViewer(uint8Array) {
+            const hexViewer = document.getElementById('hexViewer');
+            hexViewer.style.display = 'block';
+            
+            let hexContent = '';
+            const bytesPerLine = 16;
+            
+            for (let i = 0; i < Math.min(uint8Array.length, 256); i += bytesPerLine) {
+                // Offset
+                hexContent += `${i.toString(16).padStart(4, '0').toUpperCase()}: `;
+                
+                // Octets hexadécimaux
+                for (let j = 0; j < bytesPerLine && i + j < uint8Array.length; j++) {
+                    hexContent += `${uint8Array[i + j].toString(16).padStart(2, '0').toUpperCase()} `;
+                }
+                
+                // Caractères ASCII
+                hexContent += '  ';
+                for (let j = 0; j < bytesPerLine && i + j < uint8Array.length; j++) {
+                    const byte = uint8Array[i + j];
+                    const char = (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.';
+                    hexContent += char;
+                }
+                
+                hexContent += '\n';
+            }
+            
+            hexViewer.textContent = hexContent;
+        }
+
+        function generateDiagnostic(fileType, file) {
+            const extension = getFileExtension(file.name);
+            let diagnostic = '';
+            let typeClass = 'info';
+            
+            // Badge de type
+            const typeBadge = `<span class="type-badge type-${fileType.type}">${fileType.name}</span>`;
+            
+            if (fileType.type === 'pdf') {
+                diagnostic = `
+                    ${typeBadge}
+                    <h4>✅ Fichier PDF valide détecté</h4>
+                    <p><strong>Confiance:</strong> ${fileType.confidence}</p>
+                    <p><strong>Signature:</strong> ${fileType.signature}</p>
+                    <p><strong>Description:</strong> ${fileType.description}</p>
+                    <p>Ce fichier est un PDF valide et devrait s'ouvrir correctement avec PDF.js.</p>
+                `;
+                typeClass = 'success';
+            } else if (fileType.type === 'zip') {
+                diagnostic = `
+                    ${typeBadge}
+                    <h4>⚠️ Fichier ZIP/DOCX détecté au lieu de PDF</h4>
+                    <p><strong>Confiance:</strong> ${fileType.confidence}</p>
+                    <p><strong>Signature:</strong> ${fileType.signature}</p>
+                    <p><strong>Description:</strong> ${fileType.description}</p>
+                    <p><strong>Problème identifié:</strong> Votre backend génère un fichier Word (.docx) au lieu d'un PDF !</p>
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Vérifier la configuration du backend</li>
+                        <li>S'assurer que le service PDF utilise iText et non Apache POI</li>
+                        <li>Contrôler les paramètres de génération</li>
+                    </ul>
+                `;
+                typeClass = 'warning';
+            } else if (fileType.type === 'corrupted') {
+                diagnostic = `
+                    ${typeBadge}
+                    <h4>❌ Fichier PDF corrompu détecté</h4>
+                    <p><strong>Confiance:</strong> ${fileType.confidence}</p>
+                    <p><strong>Signature:</strong> ${fileType.signature}</p>
+                    <p><strong>Description:</strong> ${fileType.description}</p>
+                    <p><strong>Problème identifié:</strong> Le fichier a l'extension .pdf mais n'est pas un PDF valide.</p>
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Régénérer le document depuis le backend</li>
+                        <li>Vérifier les logs du backend pour des erreurs</li>
+                        <li>Contrôler l'intégrité de la base de données</li>
+                    </ul>
+                `;
+                typeClass = 'error';
+            } else {
+                diagnostic = `
+                    ${typeBadge}
+                    <h4>❓ Type de fichier inconnu</h4>
+                    <p><strong>Confiance:</strong> ${fileType.confidence}</p>
+                    <p><strong>Signature:</strong> ${fileType.signature}</p>
+                    <p><strong>Description:</strong> ${fileType.description}</p>
+                    <p><strong>Recommandations:</strong></p>
+                    <ul>
+                        <li>Vérifier que le fichier n'est pas corrompu</li>
+                        <li>Essayer de le télécharger à nouveau</li>
+                        <li>Contacter l'administrateur système</li>
+                    </ul>
+                `;
+                typeClass = 'warning';
+            }
+            
+            // Ajouter des informations sur l'extension
+            if (extension !== fileType.type && fileType.type !== 'unknown') {
+                diagnostic += `
+                    <hr>
+                    <p><strong>Note:</strong> L'extension du fichier (.${extension}) ne correspond pas au type réel détecté (${fileType.type}).</p>
+                `;
+            }
+            
+            showResult('diagnostic', diagnostic, typeClass);
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('🚀 Détection type de fichier chargée');
+        log('📁 Glissez-déposez un fichier pour analyser son type réel');
+    </script>
+</body>
+</html>

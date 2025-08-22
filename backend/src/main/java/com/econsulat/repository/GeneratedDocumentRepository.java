@@ -23,6 +23,15 @@ public interface GeneratedDocumentRepository extends JpaRepository<GeneratedDocu
         Optional<GeneratedDocument> findByDemandeAndDocumentType(@Param("demandeId") Long demandeId,
                         @Param("documentTypeId") Long documentTypeId);
 
+        // Méthodes spécifiques pour éviter les conflits entre services
+        @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.demande.id = :demandeId AND gd.documentType.id = :documentTypeId AND gd.fileName LIKE '%.pdf'")
+        Optional<GeneratedDocument> findPdfDocumentByDemandeAndType(@Param("demandeId") Long demandeId,
+                        @Param("documentTypeId") Long documentTypeId);
+
+        @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.demande.id = :demandeId AND gd.documentType.id = :documentTypeId AND gd.fileName LIKE '%.docx'")
+        Optional<GeneratedDocument> findWordDocumentByDemandeAndType(@Param("demandeId") Long demandeId,
+                        @Param("documentTypeId") Long documentTypeId);
+
         @Query("SELECT gd FROM GeneratedDocument gd WHERE gd.status = :status")
         Page<GeneratedDocument> findByStatus(@Param("status") String status, Pageable pageable);
 

@@ -46,12 +46,16 @@ public class DocumentGenerationService {
         Demande demande = demandeRepository.findById(demandeId)
                 .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
 
+        // Récupérer le type de document
+        DocumentType documentType = documentTypeRepository.findById(documentTypeId)
+                .orElseThrow(() -> new RuntimeException("Type de document non trouvé"));
+
         // Validation des données de la demande
         validateDemandeData(demande);
 
-        // Vérifier si le document a déjà été généré
+        // Vérifier si le document a déjà été généré pour ce type
         GeneratedDocument existingDoc = generatedDocumentRepository
-                .findByDemandeAndDocumentType(demandeId, null)
+                .findWordDocumentByDemandeAndType(demandeId, documentTypeId)
                 .orElse(null);
 
         if (existingDoc != null) {
@@ -66,15 +70,16 @@ public class DocumentGenerationService {
             }
 
             // Générer le nom du fichier
-            String fileName = generateFileName(demande);
+            String fileName = generateFileName(demande, documentType);
             String filePath = documentsPath.resolve(fileName).toString();
 
             // Générer le document
             generateDocumentFromTemplate(demande, filePath);
 
-            // Créer l'enregistrement en base (sans DocumentType pour l'instant)
+            // Créer l'enregistrement en base avec le DocumentType
             GeneratedDocument generatedDocument = new GeneratedDocument();
             generatedDocument.setDemande(demande);
+            generatedDocument.setDocumentType(documentType);
             generatedDocument.setFileName(fileName);
             generatedDocument.setFilePath(filePath);
             generatedDocument.setCreatedBy(currentUser);
@@ -121,12 +126,13 @@ public class DocumentGenerationService {
         }
     }
 
-    private String generateFileName(Demande demande) {
+    private String generateFileName(Demande demande, DocumentType documentType) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
         String userInfo = demande.getFirstName() + "_" + demande.getLastName();
-        String docType = demande.getDocumentType().getDisplayName().replaceAll("[^a-zA-Z0-9]", "_");
+        String docType = documentType.getLibelle().replaceAll("[^a-zA-Z0-9]", "_");
 
-        return String.format("%s_%s_%s_%s.docx",
+        // Ajouter un préfixe "DOCX_" pour éviter les conflits avec PdfDocumentService
+        return String.format("DOCX_%s_%s_%s_%s.docx",
                 docType, userInfo, timestamp, UUID.randomUUID().toString().substring(0, 8));
     }
 
@@ -236,7 +242,7 @@ public class DocumentGenerationService {
             // Titre
             XWPFParagraph title = document.createParagraph();
             XWPFRun titleRun = title.createRun();
-            titleRun.setText(demande.getDocumentType().getDisplayName());
+            titleRun.setText(demande.getDocumentType().name());
             titleRun.setBold(true);
             titleRun.setFontSize(16);
 

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération PDF - Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-weight: bold;
+        }
+        input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Génération PDF - eConsulat</h1>
+        <p>Ce test permet de diagnostiquer les problèmes de génération de documents PDF.</p>
+
+        <div class="test-section">
+            <h3>1. Test de Connexion Backend</h3>
+            <button onclick="testBackendConnection()">Tester la Connexion</button>
+            <div id="backend-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test d'Authentification</h3>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="admin@econsulat.com" placeholder="admin@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="admin123" placeholder="admin123">
+            </div>
+            <button onclick="testAuthentication()">Tester l'Authentification</button>
+            <div id="auth-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test de Génération PDF</h3>
+            <div class="form-group">
+                <label>ID Demande:</label>
+                <input type="number" id="demandeId" value="1" placeholder="1">
+            </div>
+            <div class="form-group">
+                <label>ID Type Document:</label>
+                <input type="number" id="documentTypeId" value="1" placeholder="1">
+            </div>
+            <button onclick="testPdfGeneration()" id="generatePdfBtn" disabled>Générer PDF</button>
+            <div id="pdf-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test de Téléchargement PDF</h3>
+            <div class="form-group">
+                <label>ID Document:</label>
+                <input type="number" id="documentId" placeholder="ID du document généré">
+            </div>
+            <button onclick="testPdfDownload()" id="downloadPdfBtn" disabled>Télécharger PDF</button>
+            <div id="download-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Logs de Diagnostic</h3>
+            <button onclick="clearLogs()">Effacer les Logs</button>
+            <div id="logs" class="result info"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let generatedDocumentId = null;
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logsDiv.textContent += logEntry;
+            console.log(message);
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+        }
+
+        async function testBackendConnection() {
+            try {
+                log('Test de connexion au backend...');
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@econsulat.com',
+                        password: 'admin123'
+                    })
+                });
+
+                if (response.ok) {
+                    showResult('backend-result', '✅ Backend accessible et authentification fonctionnelle', 'success');
+                    log('✅ Backend accessible');
+                } else {
+                    showResult('backend-result', `❌ Erreur backend: ${response.status} ${response.statusText}`, 'error');
+                    log(`❌ Erreur backend: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                showResult('backend-result', `❌ Erreur de connexion: ${error.message}`, 'error');
+                log(`❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        async function testAuthentication() {
+            try {
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                log(`Authentification avec ${email}...`);
+                
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    showResult('auth-result', '✅ Authentification réussie', 'success');
+                    log('✅ Authentification réussie');
+                    
+                    // Activer les boutons de test
+                    document.getElementById('generatePdfBtn').disabled = false;
+                    document.getElementById('downloadPdfBtn').disabled = false;
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showResult('auth-result', `❌ Échec authentification: ${errorData.message || response.statusText}`, 'error');
+                    log(`❌ Échec authentification: ${errorData.message || response.statusText}`);
+                }
+            } catch (error) {
+                showResult('auth-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        async function testPdfGeneration() {
+            if (!authToken) {
+                showResult('pdf-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+
+            try {
+                const demandeId = document.getElementById('demandeId').value;
+                const documentTypeId = document.getElementById('documentTypeId').value;
+
+                log(`Génération PDF pour demande ${demandeId}, type ${documentTypeId}...`);
+
+                const response = await fetch(`http://localhost:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                log(`Réponse génération: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    generatedDocumentId = data.id;
+                    document.getElementById('documentId').value = data.id;
+                    
+                    showResult('pdf-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}\nChemin: ${data.filePath}`, 'success');
+                    log(`✅ PDF généré: ID=${data.id}, Nom=${data.fileName}`);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showResult('pdf-result', `❌ Erreur génération: ${errorData.message || response.statusText}`, 'error');
+                    log(`❌ Erreur génération: ${errorData.message || response.statusText}`);
+                }
+            } catch (error) {
+                showResult('pdf-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        async function testPdfDownload() {
+            if (!authToken) {
+                showResult('download-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+
+            try {
+                const documentId = document.getElementById('documentId').value;
+                if (!documentId) {
+                    showResult('download-result', '❌ Veuillez d\'abord générer un document', 'error');
+                    return;
+                }
+
+                log(`Téléchargement du document ${documentId}...`);
+
+                const response = await fetch(`http://localhost:8080/api/admin/pdf-documents/download/${documentId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                });
+
+                log(`Réponse téléchargement: ${response.status} ${response.statusText}`);
+
+                if (response.ok) {
+                    // Vérifier les headers
+                    const contentType = response.headers.get('content-type');
+                    const contentLength = response.headers.get('content-length');
+                    
+                    log(`Headers: Content-Type=${contentType}, Content-Length=${contentLength}`);
+
+                    if (contentType && contentType.includes('application/pdf')) {
+                        const blob = await response.blob();
+                        log(`Blob reçu: taille=${blob.size}, type=${blob.type}`);
+
+                        if (blob.size > 0) {
+                            // Créer le téléchargement
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `document_${documentId}.pdf`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(url);
+
+                            showResult('download-result', `✅ PDF téléchargé avec succès!\nTaille: ${blob.size} bytes\nType: ${blob.type}`, 'success');
+                            log(`✅ PDF téléchargé: ${blob.size} bytes`);
+                        } else {
+                            showResult('download-result', '❌ Le fichier téléchargé est vide (0 bytes)', 'error');
+                            log('❌ Fichier vide');
+                        }
+                    } else {
+                        showResult('download-result', `⚠️ Type de contenu inattendu: ${contentType}`, 'warning');
+                        log(`⚠️ Type de contenu inattendu: ${contentType}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    showResult('download-result', `❌ Erreur téléchargement: ${response.status} ${response.statusText}\n${errorText}`, 'error');
+                    log(`❌ Erreur téléchargement: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                showResult('download-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Erreur: ${error.message}`);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('Page de diagnostic chargée');
+        log('Veuillez commencer par tester la connexion backend');
+    </script>
+</body>
+</html>

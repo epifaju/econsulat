@@ -13,6 +13,7 @@ import UserDashboard from "./components/UserDashboard";
 import UserManagement from "./components/UserManagement";
 import CitizenForm from "./components/CitizenForm";
 import EmailVerification from "./components/EmailVerification";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Composant de protection des routes
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -95,12 +96,14 @@ const AppContent = () => {
   );
 };
 
-// Composant racine avec le provider d'authentification
+// Composant racine avec le provider d'authentification et l'ErrorBoundary
 const App = () => {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

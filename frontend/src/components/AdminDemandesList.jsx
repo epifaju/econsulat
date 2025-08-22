@@ -45,14 +45,14 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const fetchDemandes = async () => {
     try {
       setLoading(true);
-      let url = `http://localhost:8080/api/admin/demandes?page=${currentPage}&size=5&sortBy=${sortBy}&sortDir=${sortDir}`;
+      let url = `http://127.0.0.1:8080/api/admin/demandes?page=${currentPage}&size=5&sortBy=${sortBy}&sortDir=${sortDir}`;
 
       if (searchTerm) {
-        url = `http://localhost:8080/api/admin/demandes/search?q=${encodeURIComponent(
+        url = `http://127.0.0.1:8080/api/admin/demandes/search?q=${encodeURIComponent(
           searchTerm
         )}&page=${currentPage}&size=5`;
       } else if (statusFilter) {
-        url = `http://localhost:8080/api/admin/demandes/status/${statusFilter}?page=${currentPage}&size=5`;
+        url = `http://127.0.0.1:8080/api/admin/demandes/status/${statusFilter}?page=${currentPage}&size=5`;
       }
 
       const response = await fetch(url, {
@@ -82,7 +82,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       );
 
       const response = await fetch(
-        `http://localhost:8080/api/admin/demandes/${demandeId}/status?status=${newStatus}`,
+        `http://127.0.0.1:8080/api/admin/demandes/${demandeId}/status?status=${newStatus}`,
         {
           method: "PUT",
           headers: {
@@ -181,7 +181,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       );
 
       const response = await fetch(
-        `http://localhost:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+        `http://127.0.0.1:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
         {
           method: "POST",
           headers: {
@@ -202,7 +202,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
         // Télécharger le document PDF
         console.log(`Téléchargement du document ${generatedDocument.id}`);
         const downloadResponse = await fetch(
-          `http://localhost:8080/api/admin/pdf-documents/download/${generatedDocument.id}`,
+          `http://127.0.0.1:8080/api/admin/pdf-documents/download/${generatedDocument.id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

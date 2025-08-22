@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connexion IP Directe - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; font-family: monospace; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .url-input { width: 300px; padding: 5px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Connexion IP Directe - eConsulat</h1>
+    
+    <div class="test-section">
+        <h3>1. Configuration des URLs de Test</h3>
+        <div>
+            <label>URL Backend:</label>
+            <input type="text" id="backendUrl" class="url-input" value="http://127.0.0.1:8080">
+            <button onclick="testBackendUrl()">Tester</button>
+        </div>
+        <div>
+            <label>Alternative:</label>
+            <input type="text" id="altUrl" class="url-input" value="http://localhost:8080">
+            <button onclick="testAltUrl()">Tester</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Test de Connexion Simple</h3>
+        <button onclick="testSimpleConnection()">Test Connexion Simple</button>
+        <div id="simple-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test d'Authentification</h3>
+        <button onclick="testAuth()">Test Authentification</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test de Génération PDF</h3>
+        <button onclick="testPdfGeneration()" id="pdfBtn" disabled>Test Génération PDF</button>
+        <div id="pdf-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Logs Détaillés</h3>
+        <button onclick="clearLogs()">Effacer</button>
+        <div id="logs" class="result info"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let workingUrl = null;
+
+        function log(msg, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${msg}\n`;
+            console.log(msg);
+        }
+
+        function showResult(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = `result ${type}`;
+        }
+
+        async function testBackendUrl() {
+            const url = document.getElementById('backendUrl').value;
+            log(`🔍 Test de l'URL: ${url}`);
+            
+            try {
+                const response = await fetch(`${url}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test@test.com', password: 'test' })
+                });
+                
+                if (response.status === 401 || response.status === 400) {
+                    log(`✅ URL ${url} accessible - Réponse: ${response.status}`);
+                    workingUrl = url;
+                    showResult('simple-result', `✅ URL ${url} accessible!`, 'success');
+                } else {
+                    log(`⚠️ URL ${url} accessible mais réponse inattendue: ${response.status}`);
+                    showResult('simple-result', `⚠️ URL ${url} accessible mais réponse: ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Erreur avec ${url}: ${error.message}`);
+                showResult('simple-result', `❌ Erreur avec ${url}: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAltUrl() {
+            const url = document.getElementById('altUrl').value;
+            log(`🔍 Test de l'URL alternative: ${url}`);
+            
+            try {
+                const response = await fetch(`${url}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test@test.com', password: 'test' })
+                });
+                
+                if (response.status === 401 || response.status === 400) {
+                    log(`✅ URL alternative ${url} accessible - Réponse: ${response.status}`);
+                    workingUrl = url;
+                    showResult('simple-result', `✅ URL alternative ${url} accessible!`, 'success');
+                } else {
+                    log(`⚠️ URL alternative ${url} accessible mais réponse inattendue: ${response.status}`);
+                    showResult('simple-result', `⚠️ URL alternative ${url} accessible mais réponse: ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Erreur avec l'URL alternative ${url}: ${error.message}`);
+                showResult('simple-result', `❌ Erreur avec l'URL alternative ${url}: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSimpleConnection() {
+            log('🔍 Test de connexion simple...');
+            
+            // Test avec 127.0.0.1
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test@test.com', password: 'test' })
+                });
+                
+                log(`✅ Connexion 127.0.0.1:8080 réussie - Status: ${response.status}`);
+                workingUrl = 'http://127.0.0.1:8080';
+                showResult('simple-result', `✅ Connexion 127.0.0.1:8080 réussie!`, 'success');
+            } catch (error) {
+                log(`❌ Erreur avec 127.0.0.1:8080: ${error.message}`);
+                
+                // Test avec localhost
+                try {
+                    const response2 = await fetch('http://localhost:8080/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: 'test@test.com', password: 'test' })
+                    });
+                    
+                    log(`✅ Connexion localhost:8080 réussie - Status: ${response2.status}`);
+                    workingUrl = 'http://localhost:8080';
+                    showResult('simple-result', `✅ Connexion localhost:8080 réussie!`, 'success');
+                } catch (error2) {
+                    log(`❌ Erreur avec localhost:8080: ${error2.message}`);
+                    showResult('simple-result', `❌ Aucune connexion possible: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testAuth() {
+            if (!workingUrl) {
+                showResult('auth-result', '❌ Veuillez d\'abord tester la connexion', 'error');
+                return;
+            }
+
+            try {
+                log(`🔐 Test d'authentification avec ${workingUrl}...`);
+                
+                const response = await fetch(`${workingUrl}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'admin@econsulat.com', password: 'admin123' })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.token) {
+                        authToken = data.token;
+                        showResult('auth-result', `✅ Authentification réussie avec ${workingUrl}!`, 'success');
+                        log(`✅ Token reçu: ${data.token.substring(0, 20)}...`);
+                        
+                        // Activer le bouton PDF
+                        document.getElementById('pdfBtn').disabled = false;
+                    } else {
+                        showResult('auth-result', '⚠️ Pas de token dans la réponse', 'warning');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    showResult('auth-result', `❌ Échec: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Erreur d'authentification: ${error.message}`);
+            }
+        }
+
+        async function testPdfGeneration() {
+            if (!authToken || !workingUrl) {
+                showResult('pdf-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+
+            try {
+                log(`📄 Test de génération PDF avec ${workingUrl}...`);
+                
+                const response = await fetch(`${workingUrl}/api/admin/pdf-documents/generate?demandeId=1&documentTypeId=1`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('pdf-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}`, 'success');
+                    log(`✅ PDF généré: ID=${data.id}`);
+                } else {
+                    const errorText = await response.text();
+                    showResult('pdf-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                    log(`❌ Erreur de génération: ${response.status} - ${errorText}`);
+                }
+            } catch (error) {
+                showResult('pdf-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Exception: ${error.message}`);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('🚀 Test de connexion IP directe chargé');
+        log('🔍 Test des différentes méthodes de connexion');
+    </script>
+</body>
+</html>

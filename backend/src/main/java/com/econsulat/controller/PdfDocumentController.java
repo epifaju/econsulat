@@ -40,7 +40,7 @@ public class PdfDocumentController {
 
         try {
             User currentUser = getCurrentUser();
-            GeneratedDocument document = pdfDocumentService.generatePdfDocumentWithWatermark(
+            GeneratedDocument document = pdfDocumentService.generatePdfDocument(
                     demandeId, documentTypeId, currentUser);
 
             // Convertir en DTO pour éviter les problèmes de sérialisation

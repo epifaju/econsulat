@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Génération PDF Backend - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 150px; font-weight: bold; }
+        input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 300px; }
+        .pdf-preview { max-width: 100%; height: 400px; border: 1px solid #ddd; margin: 10px 0; background: #f8f9fa; }
+        .progress { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #007bff; width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Génération PDF Backend - eConsulat</h1>
+        
+        <div class="test-section">
+            <h3>1. Configuration</h3>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="email" value="admin@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="password" value="admin123">
+            </div>
+            <div class="form-group">
+                <label>ID Demande:</label>
+                <input type="number" id="demandeId" value="1">
+            </div>
+            <div class="form-group">
+                <label>ID Type Document:</label>
+                <input type="number" id="documentTypeId" value="1">
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test d'Authentification</h3>
+            <button onclick="testAuth()">S'authentifier</button>
+            <div id="auth-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test de Génération PDF</h3>
+            <button onclick="testPdfGeneration()" id="generateBtn" disabled>Générer PDF</button>
+            <div id="generate-result" class="result"></div>
+            <div class="progress" id="progressBar" style="display: none;">
+                <div class="progress-bar" id="progressBarFill"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test de Téléchargement et Validation</h3>
+            <button onclick="testPdfDownload()" id="downloadBtn" disabled>Télécharger et Valider</button>
+            <div id="download-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Aperçu du PDF</h3>
+            <div id="pdfPreview" class="pdf-preview" style="display: none;">
+                <div style="text-align: center; padding: 20px;">
+                    <p>L'aperçu du PDF apparaîtra ici après le téléchargement</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Logs détaillés</h3>
+            <button onclick="clearLogs()">Effacer</button>
+            <div id="logs" class="result info"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configuration PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        
+        let authToken = null;
+        let generatedPdfId = null;
+        let pdfData = null;
+
+        function log(msg, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.textContent += `[${timestamp}] ${msg}\n`;
+            console.log(msg);
+        }
+
+        function showResult(id, msg, type = 'info') {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = `result ${type}`;
+        }
+
+        function showProgress(show, percentage = 0) {
+            const progressBar = document.getElementById('progressBar');
+            const progressBarFill = document.getElementById('progressBarFill');
+            
+            if (show) {
+                progressBar.style.display = 'block';
+                progressBarFill.style.width = `${percentage}%`;
+            } else {
+                progressBar.style.display = 'none';
+                progressBarFill.style.width = '0%';
+            }
+        }
+
+        async function testAuth() {
+            try {
+                log('🔐 Début de l\'authentification...');
+                
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.token) {
+                        authToken = data.token;
+                        showResult('auth-result', `✅ Authentification réussie! Token reçu`, 'success');
+                        log(`✅ Token reçu: ${data.token.substring(0, 20)}...`);
+                        
+                        document.getElementById('generateBtn').disabled = false;
+                    } else {
+                        showResult('auth-result', `⚠️ Pas de token dans la réponse`, 'warning');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    showResult('auth-result', `❌ Échec: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Erreur d'authentification: ${error.message}`);
+            }
+        }
+
+        async function testPdfGeneration() {
+            if (!authToken) {
+                showResult('generate-result', '❌ Veuillez d\'abord vous authentifier', 'error');
+                return;
+            }
+
+            try {
+                log('📄 Test de génération PDF...');
+                showProgress(true, 10);
+                
+                const demandeId = document.getElementById('demandeId').value;
+                const documentTypeId = document.getElementById('documentTypeId').value;
+                
+                showProgress(true, 30);
+                
+                const response = await fetch(`http://127.0.0.1:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                showProgress(true, 70);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    generatedPdfId = data.id;
+                    
+                    showResult('generate-result', `✅ PDF généré avec succès!\nID: ${data.id}\nNom: ${data.fileName}\nChemin: ${data.filePath}`, 'success');
+                    log(`✅ PDF généré: ID=${data.id}, Nom=${data.fileName}`);
+                    
+                    document.getElementById('downloadBtn').disabled = false;
+                    showProgress(true, 100);
+                    
+                    setTimeout(() => showProgress(false), 1000);
+                } else {
+                    const errorText = await response.text();
+                    showResult('generate-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                    log(`❌ Erreur de génération: ${response.status} - ${errorText}`);
+                    showProgress(false);
+                }
+            } catch (error) {
+                showResult('generate-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Exception: ${error.message}`);
+                showProgress(false);
+            }
+        }
+
+        async function testPdfDownload() {
+            if (!authToken || !generatedPdfId) {
+                showResult('download-result', '❌ Veuillez d\'abord générer un PDF', 'error');
+                return;
+            }
+
+            try {
+                log('⬇️ Test de téléchargement et validation PDF...');
+                
+                const response = await fetch(`http://127.0.0.1:8080/api/admin/pdf-documents/download/${generatedPdfId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    const contentLength = response.headers.get('content-length');
+                    
+                    log(`Headers: Content-Type=${contentType}, Content-Length=${contentLength}`);
+                    
+                    if (contentType && contentType.includes('application/pdf')) {
+                        const blob = await response.blob();
+                        log(`Blob reçu: taille=${blob.size} bytes, type=${blob.type}`);
+                        
+                        if (blob.size > 0) {
+                            // Convertir en ArrayBuffer pour validation
+                            const arrayBuffer = await blob.arrayBuffer();
+                            pdfData = new Uint8Array(arrayBuffer);
+                            
+                            // Validation de l'intégrité
+                            const integrityResult = await validatePdfIntegrity(pdfData);
+                            
+                            if (integrityResult.isValid) {
+                                showResult('download-result', `✅ PDF téléchargé et validé!\nTaille: ${blob.size} bytes\nType: ${blob.type}\nIntégrité: ✅ Valide`, 'success');
+                                log(`✅ PDF validé avec succès`);
+                                
+                                // Afficher l'aperçu
+                                await displayPdfPreview(pdfData);
+                            } else {
+                                showResult('download-result', `⚠️ PDF téléchargé mais problèmes détectés:\nTaille: ${blob.size} bytes\nProblèmes: ${integrityResult.issues.join(', ')}`, 'warning');
+                                log(`⚠️ PDF avec problèmes: ${integrityResult.issues.join(', ')}`);
+                            }
+                        } else {
+                            showResult('download-result', '❌ Le fichier téléchargé est vide (0 bytes)', 'error');
+                        }
+                    } else {
+                        showResult('download-result', `⚠️ Type de contenu inattendu: ${contentType}`, 'warning');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    showResult('download-result', `❌ Erreur: ${response.status} - ${errorText}`, 'error');
+                }
+            } catch (error) {
+                showResult('download-result', `❌ Erreur: ${error.message}`, 'error');
+                log(`❌ Exception: ${error.message}`);
+            }
+        }
+
+        async function validatePdfIntegrity(pdfData) {
+            try {
+                log('🔍 Validation de l\'intégrité du PDF...');
+                
+                // Vérifier la signature PDF
+                const signature = String.fromCharCode(...pdfData.slice(0, 4));
+                if (signature !== '%PDF') {
+                    return { isValid: false, issues: ['Signature PDF invalide'] };
+                }
+                
+                // Vérifier la version
+                const version = String.fromCharCode(...pdfData.slice(5, 8));
+                if (!version.match(/^\d+\.\d+$/)) {
+                    return { isValid: false, issues: ['Version PDF invalide'] };
+                }
+                
+                // Vérifier la fin du fichier
+                const endMarker = String.fromCharCode(...pdfData.slice(-5));
+                if (!endMarker.includes('%%EOF')) {
+                    return { isValid: false, issues: ['Marqueur EOF manquant'] };
+                }
+                
+                // Vérifier la structure des objets
+                const content = String.fromCharCode(...pdfData);
+                const objectMatches = content.match(/\d+ \d+ obj/g) || [];
+                const endObjectMatches = content.match(/endobj/g) || [];
+                
+                if (objectMatches.length !== endObjectMatches.length) {
+                    return { 
+                        isValid: false, 
+                        issues: [`Structure des objets déséquilibrée: ${objectMatches.length} objets vs ${endObjectMatches.length} endobj`] 
+                    };
+                }
+                
+                // Test avec PDF.js
+                try {
+                    const loadingTask = pdfjsLib.getDocument({data: pdfData});
+                    const pdf = await loadingTask.promise;
+                    log(`✅ PDF.js peut lire le fichier: ${pdf.numPages} pages`);
+                    
+                    return { 
+                        isValid: true, 
+                        issues: [],
+                        pageCount: pdf.numPages
+                    };
+                } catch (pdfError) {
+                    return { 
+                        isValid: false, 
+                        issues: [`PDF.js ne peut pas lire le fichier: ${pdfError.message}`] 
+                    };
+                }
+                
+            } catch (error) {
+                log(`❌ Erreur lors de la validation: ${error.message}`);
+                return { isValid: false, issues: [`Erreur de validation: ${error.message}`] };
+            }
+        }
+
+        async function displayPdfPreview(pdfData) {
+            try {
+                log('📖 Affichage de l\'aperçu PDF...');
+                
+                const previewDiv = document.getElementById('pdfPreview');
+                previewDiv.style.display = 'block';
+                
+                // Créer un canvas pour l'aperçu
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                previewDiv.innerHTML = '';
+                previewDiv.appendChild(canvas);
+                
+                // Charger le PDF avec PDF.js
+                const loadingTask = pdfjsLib.getDocument({data: pdfData});
+                const pdf = await loadingTask.promise;
+                
+                // Afficher la première page
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({scale: 0.5});
+                
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                
+                await page.render(renderContext);
+                log(`✅ Aperçu PDF affiché: page 1/${pdf.numPages}`);
+                
+            } catch (error) {
+                log(`❌ Erreur lors de l'affichage de l'aperçu: ${error.message}`);
+                const previewDiv = document.getElementById('pdfPreview');
+                previewDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #721c24;">❌ Erreur lors de l'affichage: ${error.message}</div>`;
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = '';
+        }
+
+        // Initialisation
+        log('🚀 Test génération PDF backend chargé');
+        log('🔍 Test de la génération PDF corrigée du backend');
+    </script>
+</body>
+</html>
