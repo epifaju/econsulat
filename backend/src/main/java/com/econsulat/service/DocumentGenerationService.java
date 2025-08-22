@@ -7,6 +7,7 @@ import com.econsulat.model.User;
 import com.econsulat.repository.DemandeRepository;
 import com.econsulat.repository.DocumentTypeRepository;
 import com.econsulat.repository.GeneratedDocumentRepository;
+import com.econsulat.service.WatermarkService;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
@@ -35,6 +36,9 @@ public class DocumentGenerationService {
 
     @Autowired
     private GeneratedDocumentRepository generatedDocumentRepository;
+
+    @Autowired
+    private WatermarkService watermarkService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
@@ -148,12 +152,32 @@ public class DocumentGenerationService {
             // Remplacer les placeholders dans le document
             replacePlaceholders(document, demande);
 
-            // Ajouter le filigrane
-            addWatermark(document);
-
             // Sauvegarder le document
             try (FileOutputStream out = new FileOutputStream(outputPath)) {
                 document.write(out);
+            }
+
+            // Ajouter le watermark au document Word
+            try {
+                System.out.println("Ajout du watermark au document Word...");
+                byte[] docxBytes = Files.readAllBytes(Paths.get(outputPath));
+
+                // Générer le texte du watermark personnalisé
+                String watermarkText = watermarkService.generateCustomWatermark(
+                        "Document Word",
+                        demande.getFirstName() + " " + demande.getLastName());
+
+                // Ajouter le watermark en en-tête
+                byte[] watermarkedDocx = watermarkService.addWatermarkToWord(docxBytes, watermarkText);
+
+                // Remplacer le fichier original par la version avec watermark
+                Files.write(Paths.get(outputPath), watermarkedDocx);
+
+                System.out.println("Watermark ajouté avec succès au document Word");
+            } catch (Exception watermarkError) {
+                System.err.println("⚠️ Erreur lors de l'ajout du watermark: " + watermarkError.getMessage());
+                System.err.println("Le document Word sera généré sans watermark");
+                // Ne pas faire échouer la génération si le watermark échoue
             }
 
         } catch (FileNotFoundException e) {
@@ -220,20 +244,6 @@ public class DocumentGenerationService {
         return placeholders;
     }
 
-    private void addWatermark(XWPFDocument document) {
-        // Ajouter un filigrane visible
-        for (XWPFParagraph paragraph : document.getParagraphs()) {
-            if (paragraph.getText().isEmpty()) {
-                XWPFRun run = paragraph.createRun();
-                run.setText("Document émis par le eConsulat - République de Guinée-Bissau");
-                run.setColor("808080"); // Gris
-                run.setFontSize(10);
-                run.setItalic(true);
-                break;
-            }
-        }
-    }
-
     private void createSimpleDocument(Demande demande, String outputPath)
             throws IOException {
 
@@ -264,9 +274,6 @@ public class DocumentGenerationService {
             birthPlaceRun.setText("Lieu de naissance: " + demande.getBirthPlace() + ", " +
                     demande.getBirthCountry().getLibelle());
             birthPlaceRun.setFontSize(12);
-
-            // Filigrane
-            addWatermark(document);
 
             // Sauvegarder
             try (FileOutputStream out = new FileOutputStream(outputPath)) {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import API_CONFIG from "../config/api";
 import Step1PersonalInfo from "./demande/Step1PersonalInfo";
 import Step2Address from "./demande/Step2Address";
 import Step3Filiation from "./demande/Step3Filiation";
@@ -59,30 +60,51 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
     const loadReferenceData = async () => {
       try {
         const [civilitesRes, paysRes, typesRes] = await Promise.all([
-          fetch("http://localhost:8080/api/demandes/civilites", {
+          fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.DEMANDES.CIVILITES}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("http://localhost:8080/api/demandes/pays", {
+          fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.DEMANDES.PAYS}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          fetch("http://localhost:8080/api/demandes/document-types", {
+          fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.DEMANDES.DOCUMENT_TYPES}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
 
         if (civilitesRes.ok) {
           const civilitesData = await civilitesRes.json();
+          console.log("Civilités reçues:", civilitesData);
           setCivilites(civilitesData);
+        } else {
+          console.error(
+            "Erreur lors du chargement des civilités:",
+            civilitesRes.status,
+            civilitesRes.statusText
+          );
         }
 
         if (paysRes.ok) {
           const paysData = await paysRes.json();
+          console.log("Pays reçus:", paysData);
           setPays(paysData);
+        } else {
+          console.error(
+            "Erreur lors du chargement des pays:",
+            paysRes.status,
+            paysRes.statusText
+          );
         }
 
         if (typesRes.ok) {
           const typesData = await typesRes.json();
+          console.log("Types de documents reçus:", typesData);
           setDocumentTypes(typesData);
+        } else {
+          console.error(
+            "Erreur lors du chargement des types de documents:",
+            typesRes.status,
+            typesRes.statusText
+          );
         }
       } catch (err) {
         setError("Erreur lors du chargement des données de référence");
@@ -114,14 +136,17 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:8080/api/demandes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.DEMANDES.CREATE}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(formData),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();

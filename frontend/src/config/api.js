@@ -41,6 +41,32 @@ const API_CONFIG = {
     STATS: "/api/admin/stats",
   },
 
+  // Endpoints de demandes
+  DEMANDES: {
+    CREATE: "/api/demandes",
+    MY_DEMANDES: "/api/demandes/my",
+    DEMANDE_UPDATE: (id) => `/api/demandes/${id}`,
+    DEMANDE_DELETE: (id) => `/api/demandes/${id}`,
+    GENERATE_DOCUMENT: (id) => `/api/demandes/${id}/generate-document`,
+    DOWNLOAD_DOCUMENT: (id) => `/api/demandes/${id}/download-document`,
+    CIVILITES: "/api/demandes/civilites",
+    PAYS: "/api/demandes/pays",
+    DOCUMENT_TYPES: "/api/demandes/document-types",
+  },
+
+  // Endpoints utilisateurs
+  USERS: {
+    PROFILE: "/api/users",
+    USER_UPDATE: (id) => `/api/users/${id}`,
+    USER_DELETE: (id) => `/api/users/${id}`,
+  },
+
+  // Endpoints de documents utilisateur
+  USER_DOCUMENTS: {
+    GENERATE: "/api/user/documents/generate",
+    DOWNLOAD: (id) => `/api/user/documents/download/${id}`,
+  },
+
   // Endpoints citoyens
   CITIZEN: {
     DEMANDES: "/api/citizens/my-requests",

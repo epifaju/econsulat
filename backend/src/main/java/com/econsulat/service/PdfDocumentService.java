@@ -7,6 +7,7 @@ import com.econsulat.model.User;
 import com.econsulat.repository.DemandeRepository;
 import com.econsulat.repository.DocumentTypeRepository;
 import com.econsulat.repository.GeneratedDocumentRepository;
+import com.econsulat.service.WatermarkService;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
@@ -40,6 +41,9 @@ public class PdfDocumentService {
 
     @Autowired
     private GeneratedDocumentRepository generatedDocumentRepository;
+
+    @Autowired
+    private WatermarkService watermarkService;
 
     @Value("${app.documents.dir:documents}")
     private String documentsDir;
@@ -233,6 +237,29 @@ public class PdfDocumentService {
             } catch (Exception e) {
                 System.err.println("Erreur lors de la validation du PDF: " + e.getMessage());
                 throw new IOException("Le PDF généré n'est pas valide: " + e.getMessage(), e);
+            }
+
+            // Ajouter le watermark au PDF
+            try {
+                System.out.println("Ajout du watermark au PDF...");
+                byte[] pdfBytes = Files.readAllBytes(Paths.get(outputPath));
+
+                // Générer le texte du watermark personnalisé
+                String watermarkText = watermarkService.generateCustomWatermark(
+                        documentType != null ? documentType.getLibelle() : "Document",
+                        demande.getFirstName() + " " + demande.getLastName());
+
+                // Ajouter le watermark simple (en bas de page)
+                byte[] watermarkedPdf = watermarkService.addSimpleWatermarkToPdf(pdfBytes, watermarkText);
+
+                // Remplacer le fichier original par la version avec watermark
+                Files.write(Paths.get(outputPath), watermarkedPdf);
+
+                System.out.println("Watermark ajouté avec succès au PDF");
+            } catch (Exception watermarkError) {
+                System.err.println("⚠️ Erreur lors de l'ajout du watermark: " + watermarkError.getMessage());
+                System.err.println("Le PDF sera généré sans watermark");
+                // Ne pas faire échouer la génération si le watermark échoue
             }
 
         } catch (Exception e) {

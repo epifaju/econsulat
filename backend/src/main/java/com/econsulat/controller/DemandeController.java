@@ -7,9 +7,11 @@ import com.econsulat.model.Demande;
 import com.econsulat.model.GeneratedDocument;
 import com.econsulat.model.Pays;
 import com.econsulat.model.User;
+import com.econsulat.model.DocumentType;
 import com.econsulat.repository.CiviliteRepository;
 import com.econsulat.repository.GeneratedDocumentRepository;
 import com.econsulat.repository.PaysRepository;
+import com.econsulat.repository.DocumentTypeRepository;
 import com.econsulat.repository.UserRepository;
 import com.econsulat.service.DemandeService;
 import com.econsulat.service.PdfDocumentService;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
+import com.econsulat.repository.DemandeRepository;
 
 @RestController
 @RequestMapping("/api/demandes")
@@ -49,6 +52,12 @@ public class DemandeController {
 
     @Autowired
     private PaysRepository paysRepository;
+
+    @Autowired
+    private DocumentTypeRepository documentTypeRepository;
+
+    @Autowired
+    private DemandeRepository demandeRepository;
 
     @PostMapping
     public ResponseEntity<DemandeResponse> createDemande(@RequestBody DemandeRequest request) {
@@ -123,14 +132,78 @@ public class DemandeController {
             // Vérifier que la demande appartient à l'utilisateur
             DemandeResponse demande = demandeService.getDemandeById(id, userEmail);
 
-            // Récupérer le document généré
-            GeneratedDocument generatedDocument = generatedDocumentRepository
-                    .findByDemandeAndDocumentType(id, 1L)
-                    .orElse(null);
+            // Récupérer la demande originale pour accéder au type de document
+            Demande originalDemande = demandeRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
+
+            // Log pour debug
+            System.out.println("🔍 Recherche document pour demande ID: " + id);
+            System.out.println("🔍 Type de document de la demande: " + originalDemande.getDocumentType());
+            System.out.println("🔍 Ordinal du type: " + originalDemande.getDocumentType().ordinal());
+
+            // Récupérer le document généré en utilisant le vrai type de document de la
+            // demande
+            // Essayer d'abord avec l'ordinal + 1, puis avec l'ordinal direct
+            GeneratedDocument generatedDocument = null;
+
+            // Première tentative : ordinal + 1 (comme avant)
+            try {
+                generatedDocument = generatedDocumentRepository
+                        .findPdfDocumentByDemandeAndType(id, originalDemande.getDocumentType().ordinal() + 1L)
+                        .orElse(null);
+                System.out.println("🔍 Première tentative avec ordinal + 1: "
+                        + (originalDemande.getDocumentType().ordinal() + 1L));
+            } catch (Exception e) {
+                System.out.println("⚠️ Erreur première tentative: " + e.getMessage());
+            }
+
+            // Si pas trouvé, essayer avec l'ordinal direct
+            if (generatedDocument == null) {
+                try {
+                    generatedDocument = generatedDocumentRepository
+                            .findPdfDocumentByDemandeAndType(id, (long) originalDemande.getDocumentType().ordinal())
+                            .orElse(null);
+                    System.out.println("🔍 Deuxième tentative avec ordinal direct: "
+                            + originalDemande.getDocumentType().ordinal());
+                } catch (Exception e) {
+                    System.out.println("⚠️ Erreur deuxième tentative: " + e.getMessage());
+                }
+            }
+
+            // Si toujours pas trouvé, essayer de trouver n'importe quel document PDF pour
+            // cette demande
+            if (generatedDocument == null) {
+                try {
+                    List<GeneratedDocument> allDocs = generatedDocumentRepository.findByDemandeId(id);
+                    System.out.println("🔍 Documents trouvés pour la demande: " + allDocs.size());
+                    for (GeneratedDocument doc : allDocs) {
+                        System.out.println("  - ID: " + doc.getId() + ", Nom: " + doc.getFileName() + ", Type: "
+                                + (doc.getDocumentType() != null ? doc.getDocumentType().getId() : "null"));
+                    }
+
+                    // Chercher le premier document PDF
+                    generatedDocument = allDocs.stream()
+                            .filter(doc -> doc.getFileName() != null
+                                    && doc.getFileName().toLowerCase().endsWith(".pdf"))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (generatedDocument != null) {
+                        System.out.println(
+                                "✅ Document PDF trouvé par recherche alternative: " + generatedDocument.getFileName());
+                    }
+                } catch (Exception e) {
+                    System.out.println("⚠️ Erreur recherche alternative: " + e.getMessage());
+                }
+            }
 
             if (generatedDocument == null) {
-                return ResponseEntity.notFound().build();
+                System.out.println("❌ Aucun document PDF trouvé pour la demande " + id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Aucun document PDF trouvé pour cette demande"));
             }
+
+            System.out.println("✅ Document trouvé: " + generatedDocument.getFileName());
 
             // Télécharger le document PDF
             byte[] documentBytes = pdfDocumentService.downloadPdfDocument(generatedDocument.getId());
@@ -144,6 +217,8 @@ public class DemandeController {
                     .body(documentBytes);
 
         } catch (Exception e) {
+            System.err.println("❌ Erreur lors du téléchargement: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Erreur lors du téléchargement: " + e.getMessage()));
         }
@@ -163,14 +238,30 @@ public class DemandeController {
 
     @GetMapping("/document-types")
     public ResponseEntity<List<Map<String, String>>> getDocumentTypes() {
-        List<Map<String, String>> types = new ArrayList<>();
-        for (Demande.DocumentType type : Demande.DocumentType.values()) {
-            Map<String, String> typeMap = new HashMap<>();
-            typeMap.put("value", type.name());
-            typeMap.put("label", type.getDisplayName());
-            types.add(typeMap);
+        try {
+            // ✅ Récupérer les types de documents depuis la base de données
+            List<DocumentType> documentTypes = documentTypeRepository.findByIsActiveTrue();
+
+            List<Map<String, String>> types = new ArrayList<>();
+            for (DocumentType docType : documentTypes) {
+                Map<String, String> typeMap = new HashMap<>();
+                typeMap.put("value", docType.getId().toString());
+                typeMap.put("label", docType.getLibelle());
+                types.add(typeMap);
+            }
+
+            return ResponseEntity.ok(types);
+        } catch (Exception e) {
+            // En cas d'erreur, retourner l'enum comme fallback
+            List<Map<String, String>> types = new ArrayList<>();
+            for (Demande.DocumentType type : Demande.DocumentType.values()) {
+                Map<String, String> typeMap = new HashMap<>();
+                typeMap.put("value", type.name());
+                typeMap.put("label", type.getDisplayName());
+                types.add(typeMap);
+            }
+            return ResponseEntity.ok(types);
         }
-        return ResponseEntity.ok(types);
     }
 
     private String getCurrentUserEmail() {

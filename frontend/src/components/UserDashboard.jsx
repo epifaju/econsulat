@@ -62,7 +62,7 @@ const UserDashboard = () => {
   const handleViewDetails = async (demandeId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/demandes/${demandeId}`,
+        `http://127.0.0.1:8080/api/demandes/${demandeId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -148,7 +148,7 @@ const UserDashboard = () => {
   const handleGenerateDocument = async (demandeId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/demandes/${demandeId}/generate-document`,
+        `http://127.0.0.1:8080/api/demandes/${demandeId}/generate-document`,
         {
           method: "POST",
           headers: {
@@ -163,7 +163,7 @@ const UserDashboard = () => {
 
         // Télécharger le document
         const downloadResponse = await fetch(
-          `http://localhost:8080/api/demandes/${demandeId}/download-document`,
+          `http://127.0.0.1:8080/api/demandes/${demandeId}/download-document`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
