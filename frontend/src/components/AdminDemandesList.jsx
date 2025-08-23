@@ -45,10 +45,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [lastNotifications, setLastNotifications] = useState({});
   const [loadingNotifications, setLoadingNotifications] = useState(false);
 
-  // Nouveaux états pour la gestion des types de documents
-  const [documentTypes, setDocumentTypes] = useState([]);
-  const [selectedDocumentType, setSelectedDocumentType] = useState({});
-
   useEffect(() => {
     fetchDemandes();
   }, [currentPage, searchTerm, statusFilter, sortBy, sortDir]);
@@ -59,82 +55,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
       fetchNotificationsForAllDemandes();
     }
   }, [demandes]);
-
-  // Charger les types de documents quand les demandes sont chargées
-  useEffect(() => {
-    if (demandes.length > 0) {
-      fetchDocumentTypes();
-    }
-  }, [demandes]);
-
-  const fetchDocumentTypes = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:8080/api/demandes/document-types",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
-        // Vérification de sécurité : s'assurer que les données ont la bonne structure
-        if (!Array.isArray(data) || data.length === 0) {
-          console.warn("Aucun type de document trouvé ou structure invalide");
-          setDocumentTypes([]);
-          setSelectedDocumentType({});
-          return;
-        }
-
-        // Vérifier que chaque type a les propriétés requises
-        const validTypes = data.filter(
-          (type) => type && typeof type === "object" && type.value && type.label
-        );
-
-        if (validTypes.length === 0) {
-          console.warn("Aucun type de document valide trouvé");
-          setDocumentTypes([]);
-          setSelectedDocumentType({});
-          return;
-        }
-
-        setDocumentTypes(validTypes);
-
-        // Créer un mapping initial basé sur les types de demandes
-        const initialSelection = {};
-        demandes.forEach((demande) => {
-          // Mapping intelligent entre le type de la demande et le type en base
-          const matchingType = validTypes.find(
-            (type) =>
-              type.label?.toLowerCase() ===
-                demande.documentTypeDisplay?.toLowerCase() ||
-              type.label
-                ?.toLowerCase()
-                .includes(demande.documentTypeDisplay?.toLowerCase()) ||
-              demande.documentTypeDisplay
-                ?.toLowerCase()
-                .includes(type.label?.toLowerCase())
-          );
-
-          if (matchingType) {
-            initialSelection[demande.id] = matchingType.value;
-          } else {
-            // Fallback : utiliser le premier type disponible
-            initialSelection[demande.id] = validTypes[0]?.value || null;
-          }
-        });
-
-        setSelectedDocumentType(initialSelection);
-      }
-    } catch (err) {
-      console.error("Erreur lors du chargement des types de documents:", err);
-      setDocumentTypes([]);
-      setSelectedDocumentType({});
-    }
-  };
 
   const fetchDemandes = async () => {
     try {
@@ -337,17 +257,8 @@ const AdminDemandesList = ({ token, onNotification }) => {
     // Récupérer la demande à partir de l'ID
     const demande = demandes.find((d) => d.id === demandeId);
 
-    // Utiliser le mapping intelligent des types de documents
-    const documentTypeId = selectedDocumentType[demandeId];
-
-    if (!documentTypeId) {
-      onNotification(
-        "error",
-        "Erreur",
-        "Veuillez sélectionner un type de document pour cette demande"
-      );
-      return;
-    }
+    // Utiliser l'ID du type de document de la demande
+    const documentTypeId = demande?.documentTypeId || 1; // Fallback vers ID 1 si pas d'ID
 
     try {
       const response = await fetch(
@@ -407,28 +318,12 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
-  const handleDocumentTypeChange = (demandeId, newDocumentTypeId) => {
-    setSelectedDocumentType((prev) => ({
-      ...prev,
-      [demandeId]: newDocumentTypeId,
-    }));
-  };
-
   const handleGeneratePdfDocument = async (demandeId) => {
     // Récupérer la demande à partir de l'ID
     const demande = demandes.find((d) => d.id === demandeId);
 
-    // Utiliser le mapping intelligent des types de documents
-    const documentTypeId = selectedDocumentType[demandeId];
-
-    if (!documentTypeId) {
-      onNotification(
-        "error",
-        "Erreur",
-        "Veuillez sélectionner un type de document pour cette demande"
-      );
-      return;
-    }
+    // Utiliser l'ID du type de document de la demande
+    const documentTypeId = demande?.documentTypeId || 1; // Fallback vers ID 1 si pas d'ID
 
     setGeneratingPdf(true);
     try {
@@ -1011,23 +906,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
-
-                    {/* Sélecteur de type de document pour la génération */}
-                    <select
-                      value={selectedDocumentType[demande.id] || ""}
-                      onChange={(e) =>
-                        handleDocumentTypeChange(demande.id, e.target.value)
-                      }
-                      className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
-                      title="Sélectionner le type de document à générer"
-                    >
-                      <option value="">Type...</option>
-                      {documentTypes.map((type) => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
-                        </option>
-                      ))}
-                    </select>
 
                     <button
                       onClick={() => handleGenerateDocument(demande.id)}

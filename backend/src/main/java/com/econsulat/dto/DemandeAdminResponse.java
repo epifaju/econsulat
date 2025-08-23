@@ -13,6 +13,7 @@ public class DemandeAdminResponse {
     private String lastName;
     private String documentType;
     private String documentTypeDisplay;
+    private Long documentTypeId; // ID numérique du type de document en base
     private String status;
     private String statusDisplay;
     private LocalDateTime createdAt;
@@ -126,6 +127,9 @@ public class DemandeAdminResponse {
                 : List.of();
         this.hasGeneratedDocuments = false; // Sera mis à jour par le service
 
+        // Récupérer l'ID numérique du type de document en base
+        this.documentTypeId = getDocumentTypeIdFromEnum(demande.getDocumentType());
+
         // Champs pour l'édition
         this.civiliteId = demande.getCivilite().getId();
         this.civilite = demande.getCivilite().getLibelle();
@@ -193,6 +197,36 @@ public class DemandeAdminResponse {
 
     public void setDocumentTypeDisplay(String documentTypeDisplay) {
         this.documentTypeDisplay = documentTypeDisplay;
+    }
+
+    public Long getDocumentTypeId() {
+        return documentTypeId;
+    }
+
+    public void setDocumentTypeId(Long documentTypeId) {
+        this.documentTypeId = documentTypeId;
+    }
+
+    /**
+     * Récupère l'ID numérique du type de document en base à partir de l'enum
+     * Mapping entre l'enum Demande.DocumentType et les IDs de la table
+     * document_types
+     */
+    private Long getDocumentTypeIdFromEnum(Demande.DocumentType documentType) {
+        switch (documentType) {
+            case PASSEPORT:
+                return 1L; // ID du type "Passeport" en base
+            case ACTE_NAISSANCE:
+                return 2L; // ID du type "Acte de naissance" en base
+            case CERTIFICAT_MARIAGE:
+                return 3L; // ID du type "Certificat de mariage" en base
+            case CARTE_IDENTITE:
+                return 4L; // ID du type "Carte d'identité" en base
+            case AUTRE:
+                return 5L; // ID du type "Autre" en base
+            default:
+                return 1L; // Fallback vers Passeport
+        }
     }
 
     public String getStatus() {

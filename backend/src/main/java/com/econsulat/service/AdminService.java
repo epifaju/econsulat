@@ -32,6 +32,9 @@ public class AdminService {
     @Autowired
     private PaysRepository paysRepository;
 
+    @Autowired
+    private DocumentTypeRepository documentTypeRepository;
+
     // Gestion des demandes
     public Page<DemandeAdminResponse> getAllDemandes(Pageable pageable) {
         Page<Demande> demandes = demandeRepository.findAll(pageable);
