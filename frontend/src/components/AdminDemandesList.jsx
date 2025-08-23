@@ -41,24 +41,100 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [deletingDemande, setDeletingDemande] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [demandeToDelete, setDemandeToDelete] = useState(null);
-  const [documentTypes, setDocumentTypes] = useState([]);
-  const [selectedDocumentType, setSelectedDocumentType] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [lastNotifications, setLastNotifications] = useState({});
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  // Nouveaux états pour la gestion des types de documents
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [selectedDocumentType, setSelectedDocumentType] = useState({});
 
   useEffect(() => {
     fetchDemandes();
   }, [currentPage, searchTerm, statusFilter, sortBy, sortDir]);
 
-  // Charger les types de documents après les demandes pour pouvoir faire le mapping
+  // Charger les notifications pour toutes les demandes
   useEffect(() => {
     if (demandes.length > 0) {
-      fetchDocumentTypes();
-      // Récupérer les notifications pour toutes les demandes
       fetchNotificationsForAllDemandes();
     }
   }, [demandes]);
+
+  // Charger les types de documents quand les demandes sont chargées
+  useEffect(() => {
+    if (demandes.length > 0) {
+      fetchDocumentTypes();
+    }
+  }, [demandes]);
+
+  const fetchDocumentTypes = async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:8080/api/demandes/document-types",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Vérification de sécurité : s'assurer que les données ont la bonne structure
+        if (!Array.isArray(data) || data.length === 0) {
+          console.warn("Aucun type de document trouvé ou structure invalide");
+          setDocumentTypes([]);
+          setSelectedDocumentType({});
+          return;
+        }
+
+        // Vérifier que chaque type a les propriétés requises
+        const validTypes = data.filter(
+          (type) => type && typeof type === "object" && type.value && type.label
+        );
+
+        if (validTypes.length === 0) {
+          console.warn("Aucun type de document valide trouvé");
+          setDocumentTypes([]);
+          setSelectedDocumentType({});
+          return;
+        }
+
+        setDocumentTypes(validTypes);
+
+        // Créer un mapping initial basé sur les types de demandes
+        const initialSelection = {};
+        demandes.forEach((demande) => {
+          // Mapping intelligent entre le type de la demande et le type en base
+          const matchingType = validTypes.find(
+            (type) =>
+              type.label?.toLowerCase() ===
+                demande.documentTypeDisplay?.toLowerCase() ||
+              type.label
+                ?.toLowerCase()
+                .includes(demande.documentTypeDisplay?.toLowerCase()) ||
+              demande.documentTypeDisplay
+                ?.toLowerCase()
+                .includes(type.label?.toLowerCase())
+          );
+
+          if (matchingType) {
+            initialSelection[demande.id] = matchingType.value;
+          } else {
+            // Fallback : utiliser le premier type disponible
+            initialSelection[demande.id] = validTypes[0]?.value || null;
+          }
+        });
+
+        setSelectedDocumentType(initialSelection);
+      }
+    } catch (err) {
+      console.error("Erreur lors du chargement des types de documents:", err);
+      setDocumentTypes([]);
+      setSelectedDocumentType({});
+    }
+  };
 
   const fetchDemandes = async () => {
     try {
@@ -90,55 +166,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
       onNotification("error", "Erreur", "Problème de connexion au serveur");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchDocumentTypes = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:8080/api/admin/document-types",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setDocumentTypes(data);
-
-        // Initialiser le type sélectionné pour chaque demande
-        // en mappant le type de document de la demande avec le type correspondant en base
-        if (demandes.length > 0 && data.length > 0) {
-          const initialSelection = {};
-          demandes.forEach((demande) => {
-            // Chercher le type de document correspondant en base
-            const matchingType = data.find(
-              (type) =>
-                type.libelle.toLowerCase() ===
-                  demande.documentTypeDisplay?.toLowerCase() ||
-                type.libelle
-                  .toLowerCase()
-                  .includes(demande.documentTypeDisplay?.toLowerCase()) ||
-                demande.documentTypeDisplay
-                  ?.toLowerCase()
-                  .includes(type.libelle.toLowerCase())
-            );
-
-            if (matchingType) {
-              initialSelection[demande.id] = matchingType.id;
-            } else {
-              // Fallback : utiliser le premier type disponible
-              initialSelection[demande.id] = data[0]?.id || null;
-            }
-          });
-
-          setSelectedDocumentType(initialSelection);
-        }
-      }
-    } catch (err) {
-      console.error("Erreur lors du chargement des types de documents:", err);
     }
   };
 
@@ -252,13 +279,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
-  const handleDocumentTypeChange = (demandeId, documentTypeId) => {
-    setSelectedDocumentType((prev) => ({
-      ...prev,
-      [demandeId]: parseInt(documentTypeId),
-    }));
-  };
-
   const handleStatusChange = async (demandeId, newStatus) => {
     try {
       console.log(
@@ -314,12 +334,17 @@ const AdminDemandesList = ({ token, onNotification }) => {
   };
 
   const handleGenerateDocument = async (demandeId) => {
+    // Récupérer la demande à partir de l'ID
+    const demande = demandes.find((d) => d.id === demandeId);
+
+    // Utiliser le mapping intelligent des types de documents
     const documentTypeId = selectedDocumentType[demandeId];
+
     if (!documentTypeId) {
       onNotification(
         "error",
         "Erreur",
-        "Veuillez sélectionner un type de document"
+        "Veuillez sélectionner un type de document pour cette demande"
       );
       return;
     }
@@ -382,13 +407,25 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
+  const handleDocumentTypeChange = (demandeId, newDocumentTypeId) => {
+    setSelectedDocumentType((prev) => ({
+      ...prev,
+      [demandeId]: newDocumentTypeId,
+    }));
+  };
+
   const handleGeneratePdfDocument = async (demandeId) => {
+    // Récupérer la demande à partir de l'ID
+    const demande = demandes.find((d) => d.id === demandeId);
+
+    // Utiliser le mapping intelligent des types de documents
     const documentTypeId = selectedDocumentType[demandeId];
+
     if (!documentTypeId) {
       onNotification(
         "error",
         "Erreur",
-        "Veuillez sélectionner un type de document"
+        "Veuillez sélectionner un type de document pour cette demande"
       );
       return;
     }
@@ -916,9 +953,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Type à générer
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center space-x-2">
                   <EnvelopeIcon className="h-4 w-4" />
                   <span>Notification envoyée</span>
@@ -944,7 +978,9 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className="text-sm text-gray-900">
-                    {demande.documentTypeDisplay}
+                    {demande.documentTypeDisplay ||
+                      demande.documentType ||
+                      "Non spécifié"}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -952,31 +988,6 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(demande.createdAt).toLocaleDateString("fr-FR")}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="space-y-1">
-                    <select
-                      value={selectedDocumentType[demande.id] || ""}
-                      onChange={(e) =>
-                        handleDocumentTypeChange(demande.id, e.target.value)
-                      }
-                      className="text-xs border border-gray-300 rounded px-2 py-1 min-w-[120px]"
-                      title="Sélectionner le type de document à générer"
-                    >
-                      <option value="">Sélectionner...</option>
-                      {documentTypes.map((type) => (
-                        <option key={type.id} value={type.id}>
-                          {type.libelle}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedDocumentType[demande.id] && (
-                      <div className="text-xs text-gray-500">
-                        <span className="text-green-600">✓</span>{" "}
-                        Pré-sélectionné
-                      </div>
-                    )}
-                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {getNotificationIndicator(demande.id)}
@@ -1001,29 +1012,41 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       <PencilIcon className="h-4 w-4" />
                     </button>
 
+                    {/* Sélecteur de type de document pour la génération */}
+                    <select
+                      value={selectedDocumentType[demande.id] || ""}
+                      onChange={(e) =>
+                        handleDocumentTypeChange(demande.id, e.target.value)
+                      }
+                      className="text-xs border border-gray-300 rounded px-2 py-1 bg-white"
+                      title="Sélectionner le type de document à générer"
+                    >
+                      <option value="">Type...</option>
+                      {documentTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+
                     <button
                       onClick={() => handleGenerateDocument(demande.id)}
                       className="text-green-600 hover:text-green-900"
                       title="Générer document Word"
-                      disabled={!selectedDocumentType[demande.id]}
                     >
                       <DocumentArrowDownIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleGeneratePdfDocument(demande.id)}
-                      disabled={
-                        generatingPdf || !selectedDocumentType[demande.id]
-                      }
+                      disabled={generatingPdf}
                       className={`${
-                        generatingPdf || !selectedDocumentType[demande.id]
+                        generatingPdf
                           ? "text-gray-400 cursor-not-allowed"
                           : "text-blue-600 hover:text-blue-900"
                       }`}
                       title={
                         generatingPdf
                           ? "Génération en cours..."
-                          : !selectedDocumentType[demande.id]
-                          ? "Sélectionnez d'abord un type de document"
                           : "Générer document PDF"
                       }
                     >
@@ -1139,7 +1162,9 @@ const AdminDemandesList = ({ token, onNotification }) => {
               <div>
                 <h4 className="font-medium text-gray-900">Type de document</h4>
                 <p className="text-sm text-gray-600">
-                  {selectedDemande.documentTypeDisplay}
+                  {selectedDemande.documentTypeDisplay ||
+                    selectedDemande.documentType ||
+                    "Non spécifié"}
                 </p>
               </div>
 

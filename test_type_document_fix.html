@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Correction Type de Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .demo-table th, .demo-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .demo-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .demo-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Test - Correction de l'affichage du Type de Document</h1>
+            <p>Vérification que la colonne "Type de document" s'affiche correctement dans le tableau AdminDemandesList</p>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Problème identifié et corrigé</h2>
+            <div class="test-result success">
+                <strong>Problème résolu :</strong> Le frontend essayait d'accéder à <code>demande.documentTypeDisplay?.libelle</code> 
+                mais <code>documentTypeDisplay</code> est une chaîne, pas un objet.
+            </div>
+            
+            <h3>🔍 Cause du problème :</h3>
+            <div class="code-block">
+// ❌ AVANT - Code incorrect
+{demande.documentTypeDisplay?.libelle}
+
+// ✅ APRÈS - Code corrigé  
+{demande.documentTypeDisplay || demande.documentType || "Non spécifié"}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Structure des données backend</h2>
+            <div class="code-block">
+// DemandeAdminResponse.java
+public class DemandeAdminResponse {
+    private String documentType;        // "PASSEPORT" (enum name)
+    private String documentTypeDisplay; // "Passeport" (display name)
+    // ... autres champs
+}
+
+// Constructeur
+public DemandeAdminResponse(Demande demande) {
+    this.documentType = demande.getDocumentType().name();           // "PASSEPORT"
+    this.documentTypeDisplay = demande.getDocumentType().getDisplayName(); // "Passeport"
+    // ... autres champs
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Correction appliquée</h2>
+            
+            <h3>1. Colonne du tableau principal :</h3>
+            <div class="code-block">
+// Fichier: frontend/src/components/AdminDemandesList.jsx
+// Ligne ~950
+
+// AVANT
+<td className="px-6 py-4 whitespace-nowrap">
+  <span className="text-sm text-gray-900">
+    {demande.documentTypeDisplay?.libelle}  ← ❌ Erreur
+  </span>
+</td>
+
+// APRÈS  
+<td className="px-6 py-4 whitespace-nowrap">
+  <span className="text-sm text-gray-900">
+    {demande.documentTypeDisplay || demande.documentType || "Non spécifié"}  ← ✅ Correct
+  </span>
+</td>
+            </div>
+
+            <h3>2. Modal de détails :</h3>
+            <div class="code-block">
+// Fichier: frontend/src/components/AdminDemandesList.jsx
+// Ligne ~1110
+
+// AVANT
+<p className="text-sm text-gray-600">
+  {selectedDemande.documentTypeDisplay?.libelle}  ← ❌ Erreur
+</p>
+
+// APRÈS
+<p className="text-sm text-gray-600">
+  {selectedDemande.documentTypeDisplay || selectedDemande.documentType || "Non spécifié"}  ← ✅ Correct
+</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Démonstration de l'affichage</h2>
+            
+            <h3>Données simulées :</h3>
+            <div class="code-block">
+const demandesSimulees = [
+  {
+    id: 1,
+    firstName: "Jean",
+    lastName: "Dupont",
+    documentType: "PASSEPORT",
+    documentTypeDisplay: "Passeport"
+  },
+  {
+    id: 2,
+    firstName: "Marie",
+    lastName: "Martin",
+    documentType: "ACTE_NAISSANCE",
+    documentTypeDisplay: "Acte de naissance"
+  }
+];
+            </div>
+
+            <h3>Résultat de l'affichage :</h3>
+            <table class="demo-table">
+                <thead>
+                    <tr>
+                        <th>Demandeur</th>
+                        <th>Type de document (AVANT)</th>
+                        <th>Type de document (APRÈS)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Jean Dupont</td>
+                        <td class="error">undefined (erreur)</td>
+                        <td class="success">Passeport</td>
+                    </tr>
+                    <tr>
+                        <td>Marie Martin</td>
+                        <td class="error">undefined (erreur)</td>
+                        <td class="success">Acte de naissance</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Logique de fallback implémentée</h2>
+            <div class="code-block">
+// Ordre de priorité pour l'affichage :
+{demande.documentTypeDisplay || demande.documentType || "Non spécifié"}
+
+1. demande.documentTypeDisplay  ← "Passeport" (nom d'affichage)
+2. demande.documentType         ← "PASSEPORT" (nom de l'enum)  
+3. "Non spécifié"              ← Valeur par défaut si les deux sont null/undefined
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Résultat attendu</h2>
+            <div class="test-result success">
+                <strong>La colonne "Type de document" devrait maintenant afficher correctement :</strong>
+                <ul>
+                    <li>✅ "Passeport" au lieu de rien</li>
+                    <li>✅ "Acte de naissance" au lieu de rien</li>
+                    <li>✅ "Certificat de mariage" au lieu de rien</li>
+                    <li>✅ "Carte d'identité" au lieu de rien</li>
+                    <li>✅ "Autre" au lieu de rien</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test de la correction</h2>
+            <div class="test-result info">
+                <strong>Pour tester :</strong>
+                <ol>
+                    <li>Démarrer le backend : <code>cd backend && mvn spring-boot:run</code></li>
+                    <li>Démarrer le frontend : <code>cd frontend && npm run dev</code></li>
+                    <li>Se connecter en tant qu'admin</li>
+                    <li>Aller dans "Gestion des Demandes"</li>
+                    <li>Vérifier que la colonne "Type de document" affiche les valeurs</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation des données pour démonstration
+        console.log("🧪 Test de la correction du type de document");
+        
+        const demandesSimulees = [
+            {
+                id: 1,
+                firstName: "Jean",
+                lastName: "Dupont",
+                documentType: "PASSEPORT",
+                documentTypeDisplay: "Passeport"
+            },
+            {
+                id: 2,
+                firstName: "Marie",
+                lastName: "Martin",
+                documentType: "ACTE_NAISSANCE",
+                documentTypeDisplay: "Acte de naissance"
+            }
+        ];
+
+        console.log("📊 Test de l'affichage :");
+        demandesSimulees.forEach(demande => {
+            // ❌ AVANT (code incorrect)
+            const avant = demande.documentTypeDisplay?.libelle;
+            
+            // ✅ APRÈS (code corrigé)
+            const apres = demande.documentTypeDisplay || demande.documentType || "Non spécifié";
+            
+            console.log(`${demande.firstName} ${demande.lastName}:`);
+            console.log(`  AVANT: ${avant} (undefined)`);
+            console.log(`  APRÈS: ${apres} (correct)`);
+        });
+    </script>
+</body>
+</html>

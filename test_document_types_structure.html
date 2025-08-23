@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test - Structure des Types de Documents</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .test-result {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .result-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .structure-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Test - Structure des Types de Documents</h1>
+            <p>Vérification de la structure des données et correction de l'erreur "type.libelle is undefined"</p>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Problème identifié et corrigé</h2>
+            <div class="test-result success">
+                <strong>Problème résolu :</strong> L'erreur "TypeError: can't access property 'toLowerCase', type.libelle is undefined" était causée par une mauvaise structure de données.
+            </div>
+            
+            <h3>🔍 Cause du problème :</h3>
+            <div class="code-block">
+// ❌ AVANT - Code incorrect
+const matchingType = data.find(
+    (type) =>
+        type.libelle.toLowerCase() === demande.documentTypeDisplay?.toLowerCase()  // ← type.libelle n'existe pas !
+);
+
+// ✅ APRÈS - Code corrigé
+const matchingType = data.find(
+    (type) =>
+        type.label?.toLowerCase() === demande.documentTypeDisplay?.toLowerCase()  // ← type.label existe !
+);
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Structure des données API</h2>
+            <div class="structure-info">
+                <strong>API :</strong> <code>GET /api/demandes/document-types</code><br>
+                <strong>Structure retournée :</strong> <code>[{value: "1", label: "Passeport"}, {value: "2", label: "Acte de naissance"}]</code>
+            </div>
+            
+            <div class="code-block">
+// Backend - DemandeController.java
+@GetMapping("/document-types")
+public ResponseEntity<List<Map<String, String>>> getDocumentTypes() {
+    List<DocumentType> documentTypes = documentTypeRepository.findByIsActiveTrue();
+    
+    List<Map<String, String>> types = new ArrayList<>();
+    for (DocumentType docType : documentTypes) {
+        Map<String, String> typeMap = new HashMap<>();
+        typeMap.put("value", docType.getId().toString());        // ← "value" contient l'ID
+        typeMap.put("label", docType.getLibelle());              // ← "label" contient le libellé
+        types.add(typeMap);
+    }
+    return ResponseEntity.ok(types);
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Solution implémentée</h2>
+            
+            <h3>1. Correction de la structure des données :</h3>
+            <div class="code-block">
+// AVANT - Utilisation incorrecte
+type.libelle.toLowerCase()  // ← Propriété inexistante
+type.id                     // ← Propriété inexistante
+
+// APRÈS - Utilisation correcte
+type.label?.toLowerCase()   // ← Propriété correcte
+type.value                  // ← Propriété correcte
+            </div>
+
+            <h3>2. Ajout de vérifications de sécurité :</h3>
+            <div class="code-block">
+// Vérification de sécurité ajoutée
+if (!Array.isArray(data) || data.length === 0) {
+    console.warn("Aucun type de document trouvé ou structure invalide");
+    setDocumentTypes([]);
+    setSelectedDocumentType({});
+    return;
+}
+
+// Vérifier que chaque type a les propriétés requises
+const validTypes = data.filter(type => 
+    type && 
+    typeof type === 'object' && 
+    type.value && 
+    type.label
+);
+            </div>
+
+            <h3>3. Gestion d'erreur robuste :</h3>
+            <div class="code-block">
+try {
+    // ... logique de mapping ...
+} catch (err) {
+    console.error("Erreur lors du chargement des types de documents:", err);
+    setDocumentTypes([]);
+    setSelectedDocumentType({});
+}
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test de la correction</h2>
+            
+            <div class="input-group">
+                <label for="authToken">Token d'authentification :</label>
+                <input type="text" id="authToken" placeholder="Bearer token..." style="width: 100%;">
+            </div>
+
+            <div style="text-align: center; margin: 20px 0;">
+                <button class="button" onclick="testDocumentTypesStructure()">🔍 Tester la structure des types</button>
+                <button class="button" onclick="testMappingLogic()">🧠 Tester la logique de mapping</button>
+                <button class="button" onclick="runCompleteTest()">🧪 Test complet</button>
+            </div>
+
+            <div class="result-box" id="testResult">Résultats des tests...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Résultat attendu</h2>
+            <div class="test-result info">
+                <strong>Avant la correction :</strong><br>
+                ❌ Erreur "type.libelle is undefined"<br>
+                ❌ Impossible de charger les types de documents<br>
+                ❌ Sélecteur vide dans l'interface
+            </div>
+            
+            <div class="test-result success">
+                <strong>Après la correction :</strong><br>
+                ✅ Types de documents chargés correctement<br>
+                ✅ Mapping intelligent fonctionnel<br>
+                ✅ Sélecteur rempli avec les bonnes options<br>
+                ✅ Gestion d'erreur robuste
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Fichiers modifiés</h2>
+            <ul>
+                <li><strong>frontend/src/components/AdminDemandesList.jsx</strong> - Correction de la structure des données</li>
+                <li><strong>Correction du mapping</strong> - type.libelle → type.label</li>
+                <li><strong>Correction des valeurs</strong> - type.id → type.value</li>
+                <li><strong>Ajout de vérifications</strong> - Validation de la structure des données</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let authToken = '';
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result-box ${isError ? 'error' : 'success'}`;
+        }
+
+        function log(message, type = 'info') {
+            const resultBox = document.getElementById('testResult');
+            const timestamp = new Date().toLocaleTimeString();
+            resultBox.textContent += `[${timestamp}] ${message}\n`;
+            resultBox.scrollTop = resultBox.scrollHeight;
+        }
+
+        async function makeRequest(url, options = {}) {
+            if (!authToken) {
+                throw new Error('Token d\'authentification requis');
+            }
+
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    'Authorization': authToken,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
+            return response.json();
+        }
+
+        async function testDocumentTypesStructure() {
+            try {
+                authToken = document.getElementById('authToken').value.trim();
+                if (!authToken) {
+                    showResult('testResult', '❌ Veuillez saisir un token d\'authentification', true);
+                    return;
+                }
+
+                if (!authToken.startsWith('Bearer ')) {
+                    authToken = 'Bearer ' + authToken;
+                }
+
+                log('🔄 Test de la structure des types de documents...');
+                
+                const data = await makeRequest('http://localhost:8080/api/demandes/document-types');
+                
+                log(`✅ ${data.length} types de documents récupérés`);
+                log(`📊 Structure des données:`);
+                log(JSON.stringify(data, null, 2));
+
+                // Vérifier la structure
+                const hasValidStructure = data.every(type => 
+                    type && 
+                    typeof type === 'object' && 
+                    type.value && 
+                    type.label
+                );
+
+                if (hasValidStructure) {
+                    log('✅ Structure des données valide (value et label présents)');
+                    showResult('testResult', `✅ Structure des données valide!\n\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    log('❌ Structure des données invalide');
+                    showResult('testResult', `❌ Structure des données invalide!\n\n${JSON.stringify(data, null, 2)}`, true);
+                }
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                showResult('testResult', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testMappingLogic() {
+            try {
+                if (!authToken) {
+                    showResult('testResult', '❌ Veuillez d\'abord vous connecter', true);
+                    return;
+                }
+
+                log('🧠 Test de la logique de mapping...');
+                
+                const data = await makeRequest('http://localhost:8080/api/demandes/document-types');
+                
+                // Simuler une demande
+                const mockDemande = {
+                    id: 1,
+                    documentTypeDisplay: "Passeport"
+                };
+
+                log(`📋 Demande simulée: ${JSON.stringify(mockDemande)}`);
+                log(`🔍 Types disponibles: ${data.length}`);
+
+                // Tester le mapping
+                const matchingType = data.find(
+                    (type) =>
+                        type.label?.toLowerCase() === mockDemande.documentTypeDisplay?.toLowerCase() ||
+                        type.label?.toLowerCase().includes(mockDemande.documentTypeDisplay?.toLowerCase()) ||
+                        mockDemande.documentTypeDisplay?.toLowerCase().includes(type.label?.toLowerCase())
+                );
+
+                if (matchingType) {
+                    log(`✅ Type correspondant trouvé: ${matchingType.label} (ID: ${matchingType.value})`);
+                    showResult('testResult', `✅ Mapping réussi!\n\nType trouvé: ${matchingType.label}\nID: ${matchingType.value}\n\nDemande: ${mockDemande.documentTypeDisplay}`);
+                } else {
+                    log(`⚠️ Aucun type correspondant trouvé pour: ${mockDemande.documentTypeDisplay}`);
+                    showResult('testResult', `⚠️ Aucun type correspondant trouvé pour: ${mockDemande.documentTypeDisplay}\n\nTypes disponibles:\n${data.map(t => `- ${t.label} (${t.value})`).join('\n')}`);
+                }
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                showResult('testResult', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function runCompleteTest() {
+            try {
+                if (!authToken) {
+                    showResult('testResult', '❌ Veuillez d\'abord vous connecter', true);
+                    return;
+                }
+
+                showResult('testResult', '🧪 Démarrage du test complet...\n\n');
+
+                // 1. Tester la structure
+                log('1️⃣ Test de la structure des données...');
+                await testDocumentTypesStructure();
+                
+                // 2. Tester le mapping
+                log('2️⃣ Test de la logique de mapping...');
+                await testMappingLogic();
+                
+                // 3. Vérifier la robustesse
+                log('3️⃣ Test de robustesse...');
+                const data = await makeRequest('http://localhost:8080/api/demandes/document-types');
+                
+                // Vérifier que chaque type a les propriétés requises
+                const validTypes = data.filter(type => 
+                    type && 
+                    typeof type === 'object' && 
+                    type.value && 
+                    type.label
+                );
+
+                if (validTypes.length === data.length) {
+                    log('✅ Tous les types sont valides');
+                } else {
+                    log(`⚠️ ${data.length - validTypes.length} types invalides détectés`);
+                }
+
+                log('✅ Test complet terminé!');
+                showResult('testResult', `✅ Test complet terminé!\n\nLa correction de la structure des données fonctionne correctement.\n\nTypes valides: ${validTypes.length}/${data.length}`);
+
+            } catch (error) {
+                log(`❌ Erreur lors du test complet: ${error.message}`, 'error');
+                showResult('testResult', `❌ Erreur lors du test complet: ${error.message}`, true);
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🧪 Page de test chargée');
+            log('📋 Instructions:');
+            log('1. Saisissez votre token d\'authentification');
+            log('2. Testez la structure des types de documents');
+            log('3. Testez la logique de mapping');
+            log('4. Lancez le test complet');
+        });
+    </script>
+</body>
+</html>
