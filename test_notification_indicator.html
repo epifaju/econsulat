@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Indicateur Notification Envoyée</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .notification-example {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-envoye {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-echec {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .status-encours {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        .icon {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+        }
+        .icon-success { color: #10b981; }
+        .icon-error { color: #ef4444; }
+        .icon-warning { color: #f59e0b; }
+        .icon-info { color: #6b7280; }
+        .btn-resend {
+            background: #fee2e2;
+            color: #991b1b;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-resend:hover {
+            background: #fecaca;
+        }
+        .indicator-notified {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test - Indicateur "Notification Envoyée"</h1>
+        
+        <div class="test-section">
+            <h2>✅ Fonctionnalités Implémentées</h2>
+            <ul>
+                <li><strong>Indicateur visuel clair</strong> : Icônes et couleurs distinctes pour chaque statut</li>
+                <li><strong>Colonne "Notification envoyée"</strong> : Affichage amélioré avec icône d'enveloppe</li>
+                <li><strong>Statuts visuels</strong> : Envoyé (✓), Échec (✗), En cours (⏳)</li>
+                <li><strong>Date et heure</strong> : Affichage formaté en français</li>
+                <li><strong>Bouton de renvoi</strong> : Pour les notifications en échec</li>
+                <li><strong>Indicateur "Notifié"</strong> : Dans la colonne des actions</li>
+                <li><strong>Chargement automatique</strong> : Récupération des notifications pour toutes les demandes</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>📧 Exemples d'Affichage des Notifications</h2>
+            
+            <h3>1. Notification envoyée avec succès</h3>
+            <div class="notification-example">
+                <span class="icon icon-success">✓</span>
+                <span style="font-size: 12px; font-weight: 600;">Notification envoyée</span>
+                <div style="margin-left: auto; text-align: right;">
+                    <div style="font-size: 12px; color: #6b7280;">23/01/2025 à 14:30</div>
+                    <div class="status-badge status-envoye">✓ Envoyé</div>
+                </div>
+            </div>
+
+            <h3>2. Échec d'envoi avec bouton de renvoi</h3>
+            <div class="notification-example">
+                <span class="icon icon-error">✗</span>
+                <span style="font-size: 12px; font-weight: 600;">Échec d'envoi</span>
+                <div style="margin-left: auto; text-align: right;">
+                    <div style="font-size: 12px; color: #6b7280;">23/01/2025 à 14:25</div>
+                    <div class="status-badge status-echec">✗ Échec</div>
+                    <button class="btn-resend">
+                        <span style="font-size: 10px;">✉</span>
+                        Renvoyer
+                    </button>
+                </div>
+            </div>
+
+            <h3>3. Envoi en cours</h3>
+            <div class="notification-example">
+                <span class="icon icon-warning">⏳</span>
+                <span style="font-size: 12px; font-weight: 600;">Envoi en cours</span>
+                <div style="margin-left: auto; text-align: right;">
+                    <div style="font-size: 12px; color: #6b7280;">23/01/2025 à 14:35</div>
+                    <div class="status-badge status-encours">⏳ En cours</div>
+                </div>
+            </div>
+
+            <h3>4. Aucune notification</h3>
+            <div class="notification-example">
+                <span class="icon icon-info">✉</span>
+                <span style="font-size: 12px; color: #6b7280;">Aucune notification</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Indicateur "Notifié" dans les Actions</h2>
+            <p>Quand une notification est envoyée avec succès, un indicateur vert "Notifié" apparaît dans la colonne des actions :</p>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f0f9ff; border-radius: 5px;">
+                <span>Actions:</span>
+                <button style="padding: 4px; background: #3b82f6; color: white; border: none; border-radius: 3px;">👁</button>
+                <button style="padding: 4px; background: #f59e0b; color: white; border: none; border-radius: 3px;">✏</button>
+                <button style="padding: 4px; background: #10b981; color: white; border: none; border-radius: 3px;">📄</button>
+                <button style="padding: 4px; background: #3b82f6; color: white; border: none; border-radius: 3px;">📊</button>
+                <select style="padding: 2px; border: 1px solid #d1d5db; border-radius: 3px;">
+                    <option>En attente</option>
+                </select>
+                <button style="padding: 4px; background: #ef4444; color: white; border: none; border-radius: 3px;">🗑</button>
+                <span class="indicator-notified">✓ Notifié</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Améliorations Techniques</h2>
+            <ul>
+                <li><strong>Chargement automatique</strong> : Les notifications sont récupérées pour toutes les demandes au chargement de la page</li>
+                <li><strong>Gestion des erreurs</strong> : Affichage approprié en cas d'échec de récupération</li>
+                <li><strong>États de chargement</strong> : Indicateurs visuels pendant le chargement des notifications</li>
+                <li><strong>Renvoi manuel</strong> : Possibilité de renvoyer une notification en échec</li>
+                <li><strong>Mise à jour en temps réel</strong> : Les notifications sont rechargées après changement de statut</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>📱 Responsive Design</h2>
+            <p>L'indicateur s'adapte aux différentes tailles d'écran :</p>
+            <ul>
+                <li><strong>Desktop</strong> : Affichage complet avec toutes les informations</li>
+                <li><strong>Tablet</strong> : Adaptation de la taille des éléments</li>
+                <li><strong>Mobile</strong> : Affichage compact avec icônes principales</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🎨 Codes Couleurs</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                <div style="padding: 10px; background: #d1fae5; color: #065f46; border-radius: 5px;">
+                    <strong>Succès (Envoyé)</strong><br>
+                    Vert: #d1fae5 / #065f46
+                </div>
+                <div style="padding: 10px; background: #fee2e2; color: #991b1b; border-radius: 5px;">
+                    <strong>Erreur (Échec)</strong><br>
+                    Rouge: #fee2e2 / #991b1b
+                </div>
+                <div style="padding: 10px; background: #fef3c7; color: #92400e; border-radius: 5px;">
+                    <strong>Attention (En cours)</strong><br>
+                    Jaune: #fef3c7 / #92400e
+                </div>
+                <div style="padding: 10px; background: #f3f4f6; color: #374151; border-radius: 5px;">
+                    <strong>Info (Aucune)</strong><br>
+                    Gris: #f3f4f6 / #374151
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>✅ Test de Validation</h2>
+            <p>Pour tester cette fonctionnalité :</p>
+            <ol>
+                <li>Connectez-vous en tant qu'administrateur</li>
+                <li>Allez dans "Gestion des Demandes"</li>
+                <li>Vérifiez que la colonne "Notification envoyée" s'affiche correctement</li>
+                <li>Changez le statut d'une demande pour déclencher l'envoi d'une notification</li>
+                <li>Vérifiez que l'indicateur se met à jour</li>
+                <li>Testez le bouton de renvoi en cas d'échec</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

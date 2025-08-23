@@ -9,6 +9,10 @@ import {
   FunnelIcon,
   ArrowUpIcon,
   ArrowDownIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import {
   downloadBlob,
@@ -41,6 +45,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [selectedDocumentType, setSelectedDocumentType] = useState({});
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [lastNotifications, setLastNotifications] = useState({});
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   useEffect(() => {
     fetchDemandes();
@@ -50,6 +55,8 @@ const AdminDemandesList = ({ token, onNotification }) => {
   useEffect(() => {
     if (demandes.length > 0) {
       fetchDocumentTypes();
+      // Récupérer les notifications pour toutes les demandes
+      fetchNotificationsForAllDemandes();
     }
   }, [demandes]);
 
@@ -199,13 +206,49 @@ const AdminDemandesList = ({ token, onNotification }) => {
             ...prev,
             [demandeId]: notifications[0],
           }));
+        } else {
+          // Marquer explicitement qu'aucune notification n'existe pour cette demande
+          setLastNotifications((prev) => ({
+            ...prev,
+            [demandeId]: null,
+          }));
         }
+      } else {
+        console.warn(
+          `Erreur ${response.status} lors de la récupération des notifications pour la demande ${demandeId}`
+        );
+        // Marquer qu'il n'y a pas de notification en cas d'erreur
+        setLastNotifications((prev) => ({
+          ...prev,
+          [demandeId]: null,
+        }));
       }
     } catch (err) {
       console.error(
         "Erreur lors de la récupération de la dernière notification:",
         err
       );
+      // Marquer qu'il n'y a pas de notification en cas d'erreur
+      setLastNotifications((prev) => ({
+        ...prev,
+        [demandeId]: null,
+      }));
+    }
+  };
+
+  const fetchNotificationsForAllDemandes = async () => {
+    try {
+      setLoadingNotifications(true);
+      const notificationPromises = demandes.map((demande) =>
+        fetchLastNotification(demande.id)
+      );
+
+      // Attendre que toutes les notifications soient récupérées
+      await Promise.all(notificationPromises);
+    } catch (err) {
+      console.error("Erreur lors de la récupération des notifications:", err);
+    } finally {
+      setLoadingNotifications(false);
     }
   };
 
@@ -639,6 +682,148 @@ const AdminDemandesList = ({ token, onNotification }) => {
     );
   };
 
+  const handleResendNotification = async (notificationId, demandeId) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8080/api/notifications/${notificationId}/resend`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        onNotification(
+          "success",
+          "Succès",
+          "Notification renvoyée avec succès"
+        );
+        // Recharger la notification pour cette demande
+        await fetchLastNotification(demandeId);
+      } else {
+        const errorData = await response.json();
+        onNotification(
+          "error",
+          "Erreur",
+          errorData.error || "Erreur lors du renvoi de la notification"
+        );
+      }
+    } catch (err) {
+      onNotification("error", "Erreur", "Problème de connexion au serveur");
+    }
+  };
+
+  const getNotificationIndicator = (demandeId) => {
+    const notification = lastNotifications[demandeId];
+
+    // Si les notifications sont en cours de chargement
+    if (loadingNotifications) {
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <span className="text-xs text-gray-500">Chargement...</span>
+        </div>
+      );
+    }
+
+    // Si aucune notification n'existe pour cette demande
+    if (notification === null) {
+      return (
+        <div className="flex items-center space-x-2">
+          <EnvelopeIcon className="h-4 w-4 text-gray-400" />
+          <span className="text-xs text-gray-500">Aucune notification</span>
+        </div>
+      );
+    }
+
+    // Si la notification n'est pas encore chargée
+    if (!notification) {
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
+          <span className="text-xs text-gray-500">Chargement...</span>
+        </div>
+      );
+    }
+
+    const getStatusIcon = (statut) => {
+      switch (statut) {
+        case "ENVOYE":
+          return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
+        case "ECHEC":
+          return <XCircleIcon className="h-4 w-4 text-red-500" />;
+        case "EN_COURS":
+          return <ClockIcon className="h-4 w-4 text-yellow-500" />;
+        default:
+          return <EnvelopeIcon className="h-4 w-4 text-gray-400" />;
+      }
+    };
+
+    const getStatusColor = (statut) => {
+      switch (statut) {
+        case "ENVOYE":
+          return "text-green-700 bg-green-100";
+        case "ECHEC":
+          return "text-red-700 bg-red-100";
+        case "EN_COURS":
+          return "text-yellow-700 bg-yellow-100";
+        default:
+          return "text-gray-700 bg-gray-100";
+      }
+    };
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center space-x-2">
+          {getStatusIcon(notification.statut)}
+          <span className="text-xs font-medium">
+            {notification.statut === "ENVOYE"
+              ? "Notification envoyée"
+              : notification.statut === "ECHEC"
+              ? "Échec d'envoi"
+              : notification.statut === "EN_COURS"
+              ? "Envoi en cours"
+              : "Notification"}
+          </span>
+        </div>
+        <div className="text-xs text-gray-600">
+          {new Date(notification.dateEnvoi).toLocaleDateString("fr-FR")} à{" "}
+          {new Date(notification.dateEnvoi).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </div>
+        <div
+          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+            notification.statut
+          )}`}
+        >
+          {notification.statut === "ENVOYE"
+            ? "✓ Envoyé"
+            : notification.statut === "ECHEC"
+            ? "✗ Échec"
+            : notification.statut === "EN_COURS"
+            ? "⏳ En cours"
+            : notification.statut}
+        </div>
+
+        {/* Bouton de renvoi en cas d'échec */}
+        {notification.statut === "ECHEC" && (
+          <button
+            onClick={() => handleResendNotification(notification.id, demandeId)}
+            className="mt-1 inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full hover:bg-red-200 transition-colors"
+            title="Renvoyer la notification"
+          >
+            <EnvelopeIcon className="h-3 w-3 mr-1" />
+            Renvoyer
+          </button>
+        )}
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="p-6">
@@ -734,7 +919,10 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 Type à générer
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Dernière Notification
+                <div className="flex items-center space-x-2">
+                  <EnvelopeIcon className="h-4 w-4" />
+                  <span>Notification envoyée</span>
+                </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -791,32 +979,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {lastNotifications[demande.id] ? (
-                    <div className="space-y-1">
-                      <div className="text-xs text-gray-600">
-                        {new Date(
-                          lastNotifications[demande.id].dateEnvoi
-                        ).toLocaleDateString("fr-FR")}
-                      </div>
-                      <div className="text-xs">
-                        <span
-                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            lastNotifications[demande.id].statut === "ENVOYE"
-                              ? "bg-green-100 text-green-800"
-                              : lastNotifications[demande.id].statut === "ECHEC"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {lastNotifications[demande.id].statut}
-                        </span>
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-xs">
-                      Aucune notification
-                    </span>
-                  )}
+                  {getNotificationIndicator(demande.id)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
@@ -902,6 +1065,15 @@ const AdminDemandesList = ({ token, onNotification }) => {
                         <TrashIcon className="h-4 w-4" />
                       )}
                     </button>
+
+                    {/* Indicateur de notification dans les actions */}
+                    {lastNotifications[demande.id] &&
+                      lastNotifications[demande.id].statut === "ENVOYE" && (
+                        <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          <CheckCircleIcon className="h-3 w-3 mr-1" />
+                          Notifié
+                        </div>
+                      )}
                   </div>
                 </td>
               </tr>
