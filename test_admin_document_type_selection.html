@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Sélection Type de Document - Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom-color: #007bff;
+            color: #007bff;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Sélection Type de Document - Interface Admin</h1>
+    
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('auth')">Authentification</button>
+        <button class="tab" onclick="showTab('types')">Types de Documents</button>
+        <button class="tab" onclick="showTab('generation')">Génération</button>
+        <button class="tab" onclick="showTab('test')">Test Complet</button>
+    </div>
+
+    <!-- Authentification -->
+    <div id="auth" class="tab-content active">
+        <div class="container">
+            <h2>🔐 Authentification Admin</h2>
+            <div class="form-group">
+                <label>Email admin:</label>
+                <input type="email" id="adminEmail" value="admin@econsulat.com" placeholder="Email administrateur">
+            </div>
+            <div class="form-group">
+                <label>Mot de passe:</label>
+                <input type="password" id="adminPassword" value="admin123" placeholder="Mot de passe">
+            </div>
+            <button onclick="authenticate()">Se connecter</button>
+            <div id="authResult"></div>
+        </div>
+    </div>
+
+    <!-- Types de Documents -->
+    <div id="types" class="tab-content">
+        <div class="container">
+            <h2>📋 Types de Documents Disponibles</h2>
+            <button onclick="fetchDocumentTypes()">Charger les types de documents</button>
+            <div id="typesResult"></div>
+        </div>
+    </div>
+
+    <!-- Génération -->
+    <div id="generation" class="tab-content">
+        <div class="container">
+            <h2>🖨️ Génération de Document</h2>
+            <div class="form-group">
+                <label>ID de la demande:</label>
+                <input type="number" id="demandeId" placeholder="ID de la demande">
+            </div>
+            <div class="form-group">
+                <label>Type de document:</label>
+                <select id="documentTypeSelect">
+                    <option value="">Sélectionner un type...</option>
+                </select>
+            </div>
+            <button onclick="generateDocument()">Générer le document</button>
+            <div id="generationResult"></div>
+        </div>
+    </div>
+
+    <!-- Test Complet -->
+    <div id="test" class="tab-content">
+        <div class="container">
+            <h2>🧪 Test Complet de la Sélection</h2>
+            <button onclick="runCompleteTest()">Lancer le test complet</button>
+            <div id="testResult"></div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('adminToken');
+
+        function showTab(tabName) {
+            // Masquer tous les contenus
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Afficher le contenu sélectionné
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = isError ? 'error' : 'success';
+            div.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            
+            element.appendChild(div);
+        }
+
+        async function makeRequest(url, options = {}) {
+            if (authToken) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${authToken}`
+                };
+            }
+
+            try {
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function authenticate() {
+            try {
+                const email = document.getElementById('adminEmail').value;
+                const password = document.getElementById('adminPassword').value;
+
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('adminToken', authToken);
+                    showResult('authResult', '✅ Connexion réussie! Token sauvegardé.', false);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showResult('authResult', `❌ Erreur de connexion: ${errorData.message || response.statusText}`, true);
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function fetchDocumentTypes() {
+            try {
+                if (!authToken) {
+                    showResult('typesResult', '❌ Veuillez d\'abord vous connecter', true);
+                    return;
+                }
+
+                const data = await makeRequest('http://localhost:8080/api/admin/document-types');
+                showResult('typesResult', data);
+
+                // Mettre à jour le select de génération
+                const select = document.getElementById('documentTypeSelect');
+                select.innerHTML = '<option value="">Sélectionner un type...</option>';
+                data.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.id;
+                    option.textContent = `${type.id} - ${type.libelle}`;
+                    select.appendChild(option);
+                });
+
+            } catch (error) {
+                showResult('typesResult', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function generateDocument() {
+            try {
+                if (!authToken) {
+                    showResult('generationResult', '❌ Veuillez d\'abord vous connecter', true);
+                    return;
+                }
+
+                const demandeId = document.getElementById('demandeId').value;
+                const documentTypeId = document.getElementById('documentTypeSelect').value;
+
+                if (!demandeId || !documentTypeId) {
+                    showResult('generationResult', '❌ Veuillez saisir l\'ID de la demande et sélectionner un type de document', true);
+                    return;
+                }
+
+                showResult('generationResult', `🔄 Génération en cours pour demande ${demandeId}, type ${documentTypeId}...`, false);
+
+                const data = await makeRequest(
+                    `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+                    { method: 'POST' }
+                );
+
+                showResult('generationResult', `✅ Document généré avec succès!\n\n${JSON.stringify(data, null, 2)}`, false);
+
+            } catch (error) {
+                showResult('generationResult', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function runCompleteTest() {
+            try {
+                if (!authToken) {
+                    showResult('testResult', '❌ Veuillez d\'abord vous connecter', true);
+                    return;
+                }
+
+                showResult('testResult', '🧪 Démarrage du test complet...', false);
+
+                // 1. Charger les types de documents
+                showResult('testResult', '📋 1. Chargement des types de documents...', false);
+                const types = await makeRequest('http://localhost:8080/api/admin/document-types');
+                showResult('testResult', `✅ Types chargés: ${types.length} types disponibles\n\n${JSON.stringify(types, null, 2)}`, false);
+
+                // 2. Charger quelques demandes
+                showResult('testResult', '📝 2. Chargement des demandes...', false);
+                const demandes = await makeRequest('http://localhost:8080/api/admin/demandes?page=0&size=3');
+                showResult('testResult', `✅ Demandes chargées: ${demandes.content.length} demandes\n\n${JSON.stringify(demandes.content, null, 2)}`, false);
+
+                // 3. Tester la sélection de type
+                if (demandes.content.length > 0 && types.length > 0) {
+                    const demande = demandes.content[0];
+                    const type = types[0];
+                    
+                    showResult('testResult', `🔍 3. Test de sélection:\nDemande: ${demande.id} (${demande.firstName} ${demande.lastName})\nType sélectionné: ${type.id} - ${type.libelle}`, false);
+                }
+
+                showResult('testResult', '🎉 Test complet terminé avec succès!', false);
+
+            } catch (error) {
+                showResult('testResult', `❌ Erreur lors du test: ${error.message}`, true);
+            }
+        }
+
+        // Vérifier si un token existe au chargement
+        if (authToken) {
+            document.getElementById('authResult').innerHTML = '<div class="success">✅ Token trouvé en cache</div>';
+        }
+    </script>
+</body>
+</html>

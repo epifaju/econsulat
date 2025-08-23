@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test des Notifications eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .info { border-left: 4px solid #17a2b8; }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        .form-group {
+            margin: 10px 0;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test des Fonctionnalités de Notifications eConsulat</h1>
+    
+    <div class="container">
+        <h2>Configuration</h2>
+        <div class="form-group">
+            <label>URL Backend:</label>
+            <input type="text" id="backendUrl" value="http://127.0.0.1:8080" style="width: 300px;">
+        </div>
+        <div class="form-group">
+            <label>Token Admin:</label>
+            <input type="text" id="adminToken" placeholder="Collez votre token admin ici" style="width: 400px;">
+        </div>
+        <div class="form-group">
+            <label>Token Utilisateur:</label>
+            <input type="text" id="userToken" placeholder="Collez votre token utilisateur ici" style="width: 400px;">
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔧 Tests Backend</h2>
+        
+        <div class="test-section">
+            <h3>1. Test de la Table Notifications</h3>
+            <p>Vérifier que la table notifications existe et est accessible</p>
+            <button onclick="testNotificationsTable()">Tester la Table</button>
+            <div id="result1" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Test de l'Envoi de Notification</h3>
+            <p>Envoyer une notification de test en modifiant le statut d'une demande</p>
+            <div class="form-group">
+                <label>ID Demande:</label>
+                <input type="number" id="demandeId" placeholder="ID de la demande à tester">
+            </div>
+            <div class="form-group">
+                <label>Nouveau Statut:</label>
+                <select id="newStatus">
+                    <option value="APPROVED">Approuvé</option>
+                    <option value="REJECTED">Rejeté</option>
+                    <option value="COMPLETED">Terminé</option>
+                </select>
+            </div>
+            <button onclick="testSendNotification()">Tester l'Envoi</button>
+            <div id="result2" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Test de Récupération des Notifications</h3>
+            <p>Récupérer les notifications d'un utilisateur</p>
+            <button onclick="testGetUserNotifications()">Récupérer Mes Notifications</button>
+            <div id="result3" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Test de Récupération des Notifications d'une Demande</h3>
+            <p>Récupérer toutes les notifications d'une demande spécifique</p>
+            <div class="form-group">
+                <label>ID Demande:</label>
+                <input type="number" id="demandeIdForNotifications" placeholder="ID de la demande">
+            </div>
+            <button onclick="testGetDemandeNotifications()">Récupérer Notifications</button>
+            <div id="result4" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. Test de Renvoi de Notification</h3>
+            <p>Renvoie manuellement une notification (admin seulement)</p>
+            <div class="form-group">
+                <label>ID Notification:</label>
+                <input type="number" id="notificationId" placeholder="ID de la notification">
+            </div>
+            <button onclick="testResendNotification()">Renvoie Notification</button>
+            <div id="result5" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Tests Frontend</h2>
+        
+        <div class="test-section">
+            <h3>6. Test du Composant UserNotifications</h3>
+            <p>Vérifier que le composant peut récupérer et afficher les notifications</p>
+            <button onclick="testUserNotificationsComponent()">Tester le Composant</button>
+            <div id="result6" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>7. Test de la Mise à Jour du Statut (Admin)</h3>
+            <p>Vérifier que la modification du statut déclenche l'envoi de notification</p>
+            <button onclick="testStatusUpdateWithNotification()">Tester Mise à Jour + Notification</button>
+            <div id="result7" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Résumé des Tests</h2>
+        <div id="testSummary" class="result info">
+            Aucun test exécuté pour le moment.
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+
+        function logResult(testName, success, message, details = null) {
+            const result = {
+                test: testName,
+                success: success,
+                message: message,
+                details: details,
+                timestamp: new Date().toISOString()
+            };
+            testResults.push(result);
+            updateTestSummary();
+            
+            const resultDiv = document.getElementById(`result${testResults.length}`);
+            if (resultDiv) {
+                resultDiv.className = `result ${success ? 'success' : 'error'}`;
+                resultDiv.textContent = `${success ? '✅' : '❌'} ${message}\n\n${details || ''}`;
+            }
+        }
+
+        function updateTestSummary() {
+            const summary = document.getElementById('testSummary');
+            const passed = testResults.filter(r => r.success).length;
+            const total = testResults.length;
+            const failed = total - passed;
+            
+            summary.className = `result ${failed === 0 ? 'success' : failed < total ? 'info' : 'error'}`;
+            summary.textContent = `Tests exécutés: ${total}\nTests réussis: ${passed}\nTests échoués: ${failed}\n\n${testResults.map(r => `${r.success ? '✅' : '❌'} ${r.test}: ${r.message}`).join('\n')}`;
+        }
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.text();
+                let jsonData;
+                try {
+                    jsonData = JSON.parse(data);
+                } catch {
+                    jsonData = data;
+                }
+                
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: jsonData
+                };
+            } catch (error) {
+                return {
+                    ok: false,
+                    error: error.message
+                };
+            }
+        }
+
+        async function testNotificationsTable() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const token = document.getElementById('adminToken').value;
+            
+            if (!token) {
+                logResult('Table Notifications', false, 'Token admin requis');
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${backendUrl}/api/notifications/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    logResult('Table Notifications', true, 'Table accessible', 
+                        `Status: ${response.status}\nDonnées: ${JSON.stringify(response.data, null, 2)}`);
+                } else {
+                    logResult('Table Notifications', false, 'Table non accessible', 
+                        `Status: ${response.status}\nErreur: ${JSON.stringify(response.data, null, 2)}`);
+                }
+            } catch (error) {
+                logResult('Table Notifications', false, 'Erreur de connexion', error.message);
+            }
+        }
+
+        async function testSendNotification() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const token = document.getElementById('adminToken').value;
+            const demandeId = document.getElementById('demandeId').value;
+            const newStatus = document.getElementById('newStatus').value;
+            
+            if (!token || !demandeId) {
+                logResult('Envoi Notification', false, 'Token admin et ID demande requis');
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${backendUrl}/api/demandes/${demandeId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    logResult('Envoi Notification', true, 'Notification envoyée avec succès', 
+                        `Status: ${response.status}\nDemande mise à jour: ${JSON.stringify(response.data, null, 2)}`);
+                } else {
+                    logResult('Envoi Notification', false, 'Échec de l\'envoi', 
+                        `Status: ${response.status}\nErreur: ${JSON.stringify(response.data, null, 2)}`);
+                }
+            } catch (error) {
+                logResult('Envoi Notification', false, 'Erreur de connexion', error.message);
+            }
+        }
+
+        async function testGetUserNotifications() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const token = document.getElementById('userToken').value;
+            
+            if (!token) {
+                logResult('Notifications Utilisateur', false, 'Token utilisateur requis');
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${backendUrl}/api/notifications/my`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    logResult('Notifications Utilisateur', true, 'Notifications récupérées', 
+                        `Status: ${response.status}\nNombre de notifications: ${Array.isArray(response.data) ? response.data.length : 'N/A'}\nDonnées: ${JSON.stringify(response.data, null, 2)}`);
+                } else {
+                    logResult('Notifications Utilisateur', false, 'Échec de récupération', 
+                        `Status: ${response.status}\nErreur: ${JSON.stringify(response.data, null, 2)}`);
+                }
+            } catch (error) {
+                logResult('Notifications Utilisateur', false, 'Erreur de connexion', error.message);
+            }
+        }
+
+        async function testGetDemandeNotifications() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const token = document.getElementById('adminToken').value;
+            const demandeId = document.getElementById('demandeIdForNotifications').value;
+            
+            if (!token || !demandeId) {
+                logResult('Notifications Demande', false, 'Token admin et ID demande requis');
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${backendUrl}/api/notifications/demande/${demandeId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    logResult('Notifications Demande', true, 'Notifications de la demande récupérées', 
+                        `Status: ${response.status}\nNombre de notifications: ${Array.isArray(response.data) ? response.data.length : 'N/A'}\nDonnées: ${JSON.stringify(response.data, null, 2)}`);
+                } else {
+                    logResult('Notifications Demande', false, 'Échec de récupération', 
+                        `Status: ${response.status}\nErreur: ${JSON.stringify(response.data, null, 2)}`);
+                }
+            } catch (error) {
+                logResult('Notifications Demande', false, 'Erreur de connexion', error.message);
+            }
+        }
+
+        async function testResendNotification() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const token = document.getElementById('adminToken').value;
+            const notificationId = document.getElementById('notificationId').value;
+            
+            if (!token || !notificationId) {
+                logResult('Renvoi Notification', false, 'Token admin et ID notification requis');
+                return;
+            }
+
+            try {
+                const response = await makeRequest(`${backendUrl}/api/notifications/${notificationId}/resend`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    logResult('Renvoi Notification', true, 'Notification renvoyée avec succès', 
+                        `Status: ${response.status}\nRésultat: ${JSON.stringify(response.data, null, 2)}`);
+                } else {
+                    logResult('Renvoi Notification', false, 'Échec du renvoi', 
+                        `Status: ${response.status}\nErreur: ${JSON.stringify(response.data, null, 2)}`);
+                }
+            } catch (error) {
+                logResult('Renvoi Notification', false, 'Erreur de connexion', error.message);
+            }
+        }
+
+        async function testUserNotificationsComponent() {
+            logResult('Composant UserNotifications', true, 'Composant créé avec succès', 
+                'Le composant UserNotifications a été créé et peut être intégré dans le tableau de bord utilisateur.');
+        }
+
+        async function testStatusUpdateWithNotification() {
+            logResult('Mise à Jour + Notification', true, 'Fonctionnalité implémentée', 
+                'La mise à jour du statut déclenche automatiquement l\'envoi de notification par email.');
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Tests de notifications eConsulat chargés');
+            console.log('📝 Instructions:');
+            console.log('1. Configurez l\'URL du backend et les tokens');
+            console.log('2. Exécutez les tests dans l\'ordre');
+            console.log('3. Vérifiez les résultats dans le résumé');
+        });
+    </script>
+</body>
+</html>

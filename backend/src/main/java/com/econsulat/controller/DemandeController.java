@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -261,6 +262,48 @@ public class DemandeController {
                 types.add(typeMap);
             }
             return ResponseEntity.ok(types);
+        }
+    }
+
+    /**
+     * Met à jour le statut d'une demande (admin/agent seulement)
+     */
+    @PutMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
+    public ResponseEntity<DemandeResponse> updateDemandeStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> statusUpdate) {
+        try {
+            // Log de debug
+            System.out.println("🔍 DemandeController - Mise à jour statut pour demande ID: " + id);
+            System.out.println("🔍 DemandeController - Payload reçu: " + statusUpdate);
+
+            String newStatusStr = statusUpdate.get("status");
+            if (newStatusStr == null) {
+                System.out.println("❌ DemandeController - Statut manquant dans le payload");
+                return ResponseEntity.badRequest().body(null);
+            }
+
+            Demande.Status newStatus;
+            try {
+                newStatus = Demande.Status.valueOf(newStatusStr);
+                System.out.println("✅ DemandeController - Nouveau statut valide: " + newStatus);
+            } catch (IllegalArgumentException e) {
+                System.out.println("❌ DemandeController - Statut invalide: " + newStatusStr);
+                return ResponseEntity.badRequest().body(null);
+            }
+
+            String adminEmail = getCurrentUserEmail();
+            System.out.println("👤 DemandeController - Email utilisateur connecté: " + adminEmail);
+
+            DemandeResponse updatedDemande = demandeService.updateDemandeStatus(id, newStatus, adminEmail);
+            System.out.println("✅ DemandeController - Statut mis à jour avec succès");
+
+            return ResponseEntity.ok(updatedDemande);
+        } catch (Exception e) {
+            System.err.println("💥 DemandeController - Erreur lors de la mise à jour: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(null);
         }
     }
 

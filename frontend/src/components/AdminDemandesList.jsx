@@ -37,10 +37,21 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const [deletingDemande, setDeletingDemande] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [demandeToDelete, setDemandeToDelete] = useState(null);
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [selectedDocumentType, setSelectedDocumentType] = useState({});
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [lastNotifications, setLastNotifications] = useState({});
 
   useEffect(() => {
     fetchDemandes();
   }, [currentPage, searchTerm, statusFilter, sortBy, sortDir]);
+
+  // Charger les types de documents après les demandes pour pouvoir faire le mapping
+  useEffect(() => {
+    if (demandes.length > 0) {
+      fetchDocumentTypes();
+    }
+  }, [demandes]);
 
   const fetchDemandes = async () => {
     try {
@@ -75,28 +86,173 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
-  const handleStatusChange = async (demandeId, newStatus) => {
+  const fetchDocumentTypes = async () => {
     try {
-      console.log(
-        `Mise à jour du statut: demande ${demandeId} -> ${newStatus}`
+      const response = await fetch(
+        "http://localhost:8080/api/admin/document-types",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
+      if (response.ok) {
+        const data = await response.json();
+        setDocumentTypes(data);
+
+        // Initialiser le type sélectionné pour chaque demande
+        // en mappant le type de document de la demande avec le type correspondant en base
+        if (demandes.length > 0 && data.length > 0) {
+          const initialSelection = {};
+          demandes.forEach((demande) => {
+            // Chercher le type de document correspondant en base
+            const matchingType = data.find(
+              (type) =>
+                type.libelle.toLowerCase() ===
+                  demande.documentTypeDisplay?.toLowerCase() ||
+                type.libelle
+                  .toLowerCase()
+                  .includes(demande.documentTypeDisplay?.toLowerCase()) ||
+                demande.documentTypeDisplay
+                  ?.toLowerCase()
+                  .includes(type.libelle.toLowerCase())
+            );
+
+            if (matchingType) {
+              initialSelection[demande.id] = matchingType.id;
+            } else {
+              // Fallback : utiliser le premier type disponible
+              initialSelection[demande.id] = data[0]?.id || null;
+            }
+          });
+
+          setSelectedDocumentType(initialSelection);
+        }
+      }
+    } catch (err) {
+      console.error("Erreur lors du chargement des types de documents:", err);
+    }
+  };
+
+  const updateDemandeStatus = async (demandeId, newStatus) => {
+    try {
+      setUpdatingStatus(true);
       const response = await fetch(
-        `http://127.0.0.1:8080/api/admin/demandes/${demandeId}/status?status=${newStatus}`,
+        `http://127.0.0.1:8080/api/demandes/${demandeId}/status`,
         {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedDemande = await response.json();
+
+        // Mettre à jour la liste des demandes
+        setDemandes((prevDemandes) =>
+          prevDemandes.map((d) => (d.id === demandeId ? updatedDemande : d))
+        );
+
+        // Récupérer la dernière notification pour cette demande
+        await fetchLastNotification(demandeId);
+
+        onNotification(
+          "success",
+          "Succès",
+          `Statut de la demande mis à jour vers ${newStatus}`
+        );
+      } else {
+        const errorData = await response.json();
+        onNotification(
+          "error",
+          "Erreur",
+          errorData.message || "Erreur lors de la mise à jour du statut"
+        );
+      }
+    } catch (err) {
+      onNotification("error", "Erreur", "Problème de connexion au serveur");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const fetchLastNotification = async (demandeId) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8080/api/notifications/demande/${demandeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const notifications = await response.json();
+        if (notifications.length > 0) {
+          setLastNotifications((prev) => ({
+            ...prev,
+            [demandeId]: notifications[0],
+          }));
+        }
+      }
+    } catch (err) {
+      console.error(
+        "Erreur lors de la récupération de la dernière notification:",
+        err
+      );
+    }
+  };
+
+  const handleDocumentTypeChange = (demandeId, documentTypeId) => {
+    setSelectedDocumentType((prev) => ({
+      ...prev,
+      [demandeId]: parseInt(documentTypeId),
+    }));
+  };
+
+  const handleStatusChange = async (demandeId, newStatus) => {
+    try {
+      console.log(
+        `Mise à jour du statut: demande ${demandeId} -> ${newStatus}`
+      );
+
+      // Utiliser la nouvelle API qui déclenche automatiquement l'envoi de notifications
+      const response = await fetch(
+        `http://127.0.0.1:8080/api/demandes/${demandeId}/status`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: newStatus }),
         }
       );
 
       console.log(`Réponse status: ${response.status} ${response.statusText}`);
 
       if (response.ok) {
-        onNotification("success", "Succès", "Statut mis à jour avec succès");
-        fetchDemandes();
+        const updatedDemande = await response.json();
+
+        // Mettre à jour la liste des demandes
+        setDemandes((prevDemandes) =>
+          prevDemandes.map((d) => (d.id === demandeId ? updatedDemande : d))
+        );
+
+        // Récupérer la dernière notification pour cette demande
+        await fetchLastNotification(demandeId);
+
+        onNotification(
+          "success",
+          "Succès",
+          `Statut mis à jour vers ${newStatus} et notification envoyée`
+        );
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage =
@@ -114,7 +270,17 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
-  const handleGenerateDocument = async (demandeId, documentTypeId) => {
+  const handleGenerateDocument = async (demandeId) => {
+    const documentTypeId = selectedDocumentType[demandeId];
+    if (!documentTypeId) {
+      onNotification(
+        "error",
+        "Erreur",
+        "Veuillez sélectionner un type de document"
+      );
+      return;
+    }
+
     try {
       const response = await fetch(
         `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
@@ -173,7 +339,17 @@ const AdminDemandesList = ({ token, onNotification }) => {
     }
   };
 
-  const handleGeneratePdfDocument = async (demandeId, documentTypeId) => {
+  const handleGeneratePdfDocument = async (demandeId) => {
+    const documentTypeId = selectedDocumentType[demandeId];
+    if (!documentTypeId) {
+      onNotification(
+        "error",
+        "Erreur",
+        "Veuillez sélectionner un type de document"
+      );
+      return;
+    }
+
     setGeneratingPdf(true);
     try {
       console.log(
@@ -555,6 +731,12 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Type à générer
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Dernière Notification
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
@@ -584,6 +766,59 @@ const AdminDemandesList = ({ token, onNotification }) => {
                   {new Date(demande.createdAt).toLocaleDateString("fr-FR")}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="space-y-1">
+                    <select
+                      value={selectedDocumentType[demande.id] || ""}
+                      onChange={(e) =>
+                        handleDocumentTypeChange(demande.id, e.target.value)
+                      }
+                      className="text-xs border border-gray-300 rounded px-2 py-1 min-w-[120px]"
+                      title="Sélectionner le type de document à générer"
+                    >
+                      <option value="">Sélectionner...</option>
+                      {documentTypes.map((type) => (
+                        <option key={type.id} value={type.id}>
+                          {type.libelle}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedDocumentType[demande.id] && (
+                      <div className="text-xs text-gray-500">
+                        <span className="text-green-600">✓</span>{" "}
+                        Pré-sélectionné
+                      </div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {lastNotifications[demande.id] ? (
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-600">
+                        {new Date(
+                          lastNotifications[demande.id].dateEnvoi
+                        ).toLocaleDateString("fr-FR")}
+                      </div>
+                      <div className="text-xs">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            lastNotifications[demande.id].statut === "ENVOYE"
+                              ? "bg-green-100 text-green-800"
+                              : lastNotifications[demande.id].statut === "ECHEC"
+                              ? "bg-red-100 text-red-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {lastNotifications[demande.id].statut}
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">
+                      Aucune notification
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => {
@@ -602,24 +837,30 @@ const AdminDemandesList = ({ token, onNotification }) => {
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
+
                     <button
-                      onClick={() => handleGenerateDocument(demande.id, 1)} // ID du type de document
+                      onClick={() => handleGenerateDocument(demande.id)}
                       className="text-green-600 hover:text-green-900"
                       title="Générer document Word"
+                      disabled={!selectedDocumentType[demande.id]}
                     >
                       <DocumentArrowDownIcon className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleGeneratePdfDocument(demande.id, 1)} // ID du type de document
-                      disabled={generatingPdf}
+                      onClick={() => handleGeneratePdfDocument(demande.id)}
+                      disabled={
+                        generatingPdf || !selectedDocumentType[demande.id]
+                      }
                       className={`${
-                        generatingPdf
+                        generatingPdf || !selectedDocumentType[demande.id]
                           ? "text-gray-400 cursor-not-allowed"
                           : "text-blue-600 hover:text-blue-900"
                       }`}
                       title={
                         generatingPdf
                           ? "Génération en cours..."
+                          : !selectedDocumentType[demande.id]
+                          ? "Sélectionnez d'abord un type de document"
                           : "Générer document PDF"
                       }
                     >

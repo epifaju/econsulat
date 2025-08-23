@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mapping Type de Document - Demande</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .mapping-result {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+        }
+        .mapping-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #ffeaa7;
+        }
+        .mapping-item:last-child {
+            border-bottom: none;
+        }
+        .match {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .no-match {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .partial-match {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Mapping Type de Document - Demande</h1>
+    
+    <div class="container">
+        <h2>🔐 Authentification Admin</h2>
+        <div class="form-group">
+            <label>Email admin:</label>
+            <input type="email" id="adminEmail" value="admin@econsulat.com" placeholder="Email administrateur">
+        </div>
+        <div class="form-group">
+            <label>Mot de passe:</label>
+            <input type="password" id="adminPassword" value="admin123" placeholder="Mot de passe">
+        </div>
+        <button onclick="authenticate()">Se connecter</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Test de Mapping</h2>
+        <button onclick="testMapping()" id="testBtn" disabled>Tester le Mapping</button>
+        <div id="mappingResult"></div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Résultats Détaillés</h2>
+        <div id="detailedResult"></div>
+    </div>
+
+    <script>
+        let authToken = localStorage.getItem('adminToken');
+
+        function showResult(elementId, data, isError = false, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+            
+            element.appendChild(div);
+        }
+
+        async function makeRequest(url, options = {}) {
+            if (authToken) {
+                options.headers = {
+                    ...options.headers,
+                    'Authorization': `Bearer ${authToken}`
+                };
+            }
+
+            try {
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function authenticate() {
+            try {
+                const email = document.getElementById('adminEmail').value;
+                const password = document.getElementById('adminPassword').value;
+
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    localStorage.setItem('adminToken', authToken);
+                    showResult('authResult', '✅ Connexion réussie! Token sauvegardé.', false, 'success');
+                    document.getElementById('testBtn').disabled = false;
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showResult('authResult', `❌ Erreur de connexion: ${errorData.message || response.statusText}`, true, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Erreur: ${error.message}`, true, 'error');
+            }
+        }
+
+        async function testMapping() {
+            try {
+                showResult('mappingResult', '🔄 Test de mapping en cours...', false, 'info');
+
+                // 1. Charger les types de documents
+                const documentTypes = await makeRequest('http://localhost:8080/api/admin/document-types');
+                
+                // 2. Charger quelques demandes
+                const demandes = await makeRequest('http://localhost:8080/api/admin/demandes?page=0&size=5');
+
+                // 3. Tester le mapping
+                const mappingResults = [];
+                const detailedResults = [];
+
+                demandes.content.forEach(demande => {
+                    const demandeType = demande.documentTypeDisplay;
+                    
+                    // Chercher le type correspondant en base
+                    const matchingType = documentTypes.find(type => {
+                        const typeLibelle = type.libelle.toLowerCase();
+                        const demandeTypeLower = demandeType?.toLowerCase();
+                        
+                        if (!demandeTypeLower) return false;
+                        
+                        // Correspondance exacte
+                        if (typeLibelle === demandeTypeLower) {
+                            return { match: 'exact', score: 100 };
+                        }
+                        
+                        // Correspondance partielle
+                        if (typeLibelle.includes(demandeTypeLower) || demandeTypeLower.includes(typeLibelle)) {
+                            return { match: 'partial', score: 75 };
+                        }
+                        
+                        // Correspondance par mots-clés
+                        const demandeWords = demandeTypeLower.split(/\s+/);
+                        const typeWords = typeLibelle.split(/\s+/);
+                        const commonWords = demandeWords.filter(word => 
+                            typeWords.some(typeWord => typeWord.includes(word) || word.includes(typeWord))
+                        );
+                        
+                        if (commonWords.length > 0) {
+                            return { match: 'keyword', score: 50 };
+                        }
+                        
+                        return false;
+                    });
+
+                    if (matchingType) {
+                        mappingResults.push({
+                            demande: demande,
+                            type: matchingType,
+                            status: '✅ Correspondance trouvée'
+                        });
+                    } else {
+                        mappingResults.push({
+                            demande: demande,
+                            type: null,
+                            status: '❌ Aucune correspondance'
+                        });
+                    }
+
+                    // Résultats détaillés
+                    detailedResults.push({
+                        demandeId: demande.id,
+                        demandeName: `${demande.firstName} ${demande.lastName}`,
+                        demandeType: demandeType,
+                        matchingType: matchingType ? `${matchingType.id} - ${matchingType.libelle}` : 'Aucun',
+                        status: matchingType ? '✅' : '❌'
+                    });
+                });
+
+                // Afficher les résultats
+                const successCount = mappingResults.filter(r => r.type).length;
+                const totalCount = mappingResults.length;
+                
+                let resultHtml = `
+                    <div class="mapping-result">
+                        <h3>📊 Résultats du Mapping</h3>
+                        <p><strong>Total des demandes:</strong> ${totalCount}</p>
+                        <p><strong>Correspondances trouvées:</strong> ${successCount}</p>
+                        <p><strong>Taux de réussite:</strong> ${Math.round((successCount/totalCount)*100)}%</p>
+                    </div>
+                `;
+
+                mappingResults.forEach(result => {
+                    const statusClass = result.type ? 'match' : 'no-match';
+                    resultHtml += `
+                        <div class="mapping-item">
+                            <div>
+                                <strong>Demande ${result.demande.id}:</strong> ${result.demande.firstName} ${result.demande.lastName}<br>
+                                <small>Type demandé: ${result.demande.documentTypeDisplay}</small>
+                            </div>
+                            <div class="${statusClass}">
+                                ${result.status}<br>
+                                ${result.type ? `→ ${result.type.libelle} (ID: ${result.type.id})` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('mappingResult').innerHTML = resultHtml;
+
+                // Afficher les résultats détaillés
+                showResult('detailedResult', detailedResults, false, 'info');
+
+            } catch (error) {
+                showResult('mappingResult', `❌ Erreur lors du test: ${error.message}`, true, 'error');
+            }
+        }
+
+        // Vérifier si un token existe au chargement
+        if (authToken) {
+            document.getElementById('authResult').innerHTML = '<div class="success">✅ Token trouvé en cache</div>';
+            document.getElementById('testBtn').disabled = false;
+        }
+    </script>
+</body>
+</html>

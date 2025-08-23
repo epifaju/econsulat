@@ -16,6 +16,7 @@ import Pagination from "./Pagination";
 import Notification from "./Notification";
 import NewDemandeForm from "./NewDemandeForm";
 import DemandesList from "./DemandesList";
+import UserNotifications from "./UserNotifications";
 
 const UserDashboard = () => {
   const { user, token } = useAuth();
@@ -515,6 +516,11 @@ const UserDashboard = () => {
               </button>
             </div>
           )}
+        </div>
+
+        {/* Section Notifications */}
+        <div className="mt-8">
+          <UserNotifications />
         </div>
       </div>
 

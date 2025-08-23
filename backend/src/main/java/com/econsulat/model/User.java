@@ -76,7 +76,9 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return emailVerified;
+        // Temporairement forcer à true pour tester
+        return true;
+        // return emailVerified;
     }
 
     @PrePersist

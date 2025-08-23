@@ -14,20 +14,31 @@ import java.util.List;
 @Repository
 public interface DemandeRepository extends JpaRepository<Demande, Long> {
 
-    List<Demande> findByUserOrderByCreatedAtDesc(User user);
+        List<Demande> findByUserOrderByCreatedAtDesc(User user);
 
-    @Query("SELECT d FROM Demande d WHERE d.user.id = :userId ORDER BY d.createdAt DESC")
-    List<Demande> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
+        @Query("SELECT d FROM Demande d WHERE d.user.id = :userId ORDER BY d.createdAt DESC")
+        List<Demande> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
 
-    List<Demande> findByStatusOrderByCreatedAtDesc(Demande.Status status);
+        List<Demande> findByStatusOrderByCreatedAtDesc(Demande.Status status);
 
-    // Méthodes pour l'interface admin
-    Page<Demande> findByStatus(Demande.Status status, Pageable pageable);
+        // Méthodes pour l'interface admin
+        Page<Demande> findByStatus(Demande.Status status, Pageable pageable);
 
-    Page<Demande> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
-            String firstName, String lastName, Pageable pageable);
+        Page<Demande> findByFirstNameContainingIgnoreCaseOrLastNameContainingIgnoreCase(
+                        String firstName, String lastName, Pageable pageable);
 
-    long countByStatus(Demande.Status status);
+        long countByStatus(Demande.Status status);
 
-    long countByUser(User user);
+        long countByUser(User user);
+
+        // Méthode pour récupérer une demande avec toutes ses relations initialisées
+        @Query("SELECT d FROM Demande d " +
+                        "LEFT JOIN FETCH d.civilite " +
+                        "LEFT JOIN FETCH d.birthCountry " +
+                        "LEFT JOIN FETCH d.adresse " +
+                        "LEFT JOIN FETCH d.fatherBirthCountry " +
+                        "LEFT JOIN FETCH d.motherBirthCountry " +
+                        "LEFT JOIN FETCH d.user " +
+                        "WHERE d.id = :id")
+        Demande findByIdWithAllRelations(@Param("id") Long id);
 }

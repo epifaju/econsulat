@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mise à Jour Statut - Corrigé</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Mise à Jour Statut - Version Corrigée</h1>
+        <p>Ce test vérifie que la correction du problème de transaction fonctionne.</p>
+        
+        <div class="form-group">
+            <label for="token">Token JWT (Admin):</label>
+            <input type="text" id="token" placeholder="Collez votre token JWT admin ici">
+        </div>
+        
+        <div class="form-group">
+            <label for="demandeId">ID de la Demande:</label>
+            <input type="number" id="demandeId" placeholder="Entrez l'ID de la demande à modifier">
+        </div>
+        
+        <div class="form-group">
+            <label for="newStatus">Nouveau Statut:</label>
+            <select id="newStatus">
+                <option value="PENDING">En attente</option>
+                <option value="APPROVED">Approuvé</option>
+                <option value="REJECTED">Rejeté</option>
+                <option value="COMPLETED">Terminé</option>
+            </select>
+        </div>
+        
+        <button onclick="testStatusUpdate()">🔄 Tester la Mise à Jour</button>
+        <button onclick="clearResults()">🗑️ Effacer les Résultats</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function testStatusUpdate() {
+            const token = document.getElementById('token').value.trim();
+            const demandeId = document.getElementById('demandeId').value.trim();
+            const newStatus = document.getElementById('newStatus').value;
+            
+            if (!token || !demandeId) {
+                showResult('❌ Veuillez remplir tous les champs', 'error');
+                return;
+            }
+            
+            showResult('🔄 Test en cours...', 'info');
+            
+            try {
+                console.log(`🔍 Test de mise à jour du statut: demande ${demandeId} -> ${newStatus}`);
+                
+                const response = await fetch(`http://127.0.0.1:8080/api/demandes/${demandeId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                
+                console.log(`📊 Réponse reçue: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const updatedDemande = await response.json();
+                    console.log('✅ Demande mise à jour avec succès:', updatedDemande);
+                    
+                    showResult(`✅ SUCCÈS! Statut mis à jour vers ${newStatus}
+
+📋 Détails de la demande:
+- ID: ${updatedDemande.id}
+- Nom: ${updatedDemande.firstName} ${updatedDemande.lastName}
+- Type: ${updatedDemande.documentType}
+- Statut: ${updatedDemande.status}
+- Mise à jour: ${updatedDemande.updatedAt}
+
+🎉 La correction du problème de transaction fonctionne!`, 'success');
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('❌ Erreur lors de la mise à jour:', errorData);
+                    
+                    showResult(`❌ ERREUR ${response.status}: ${response.statusText}
+
+🔍 Détails de l'erreur:
+${JSON.stringify(errorData, null, 2)}
+
+💡 Vérifiez que:
+- Le token est valide et a les droits admin
+- L'ID de la demande existe
+- Le statut est valide`, 'error');
+                }
+            } catch (error) {
+                console.error('💥 Erreur de connexion:', error);
+                showResult(`💥 ERREUR DE CONNEXION:
+
+${error.message}
+
+💡 Vérifiez que:
+- Le backend est démarré sur le port 8080
+- La base de données est accessible
+- Le réseau fonctionne`, 'error');
+            }
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        function clearResults() {
+            document.getElementById('result').style.display = 'none';
+        }
+        
+        // Instructions automatiques
+        window.onload = function() {
+            showResult(`📋 INSTRUCTIONS DE TEST:
+
+1. Assurez-vous que le backend est démarré (port 8080)
+2. Connectez-vous en tant qu'admin et récupérez votre token JWT
+3. Collez le token dans le champ "Token JWT"
+4. Entrez l'ID d'une demande existante
+5. Sélectionnez le nouveau statut
+6. Cliquez sur "Tester la Mise à Jour"
+
+🔧 Ce test vérifie que la correction du problème de transaction fonctionne.`, 'info');
+        };
+    </script>
+</body>
+</html>

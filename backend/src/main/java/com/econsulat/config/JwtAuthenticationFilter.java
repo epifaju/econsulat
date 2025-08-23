@@ -62,21 +62,44 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userService.loadUserByUsername(username);
+            try {
+                UserDetails userDetails = this.userService.loadUserByUsername(username);
+                System.out.println("🔍 JWT Filter - UserDetails chargé: " + userDetails.getUsername());
+                System.out.println("🔍 JWT Filter - UserDetails enabled: " + userDetails.isEnabled());
+                System.out.println("🔍 JWT Filter - UserDetails authorities: " + userDetails.getAuthorities());
+                System.out.println("🔍 JWT Filter - UserDetails accountNonExpired: " + userDetails.isAccountNonExpired());
+                System.out.println("🔍 JWT Filter - UserDetails accountNonLocked: " + userDetails.isAccountNonLocked());
+                System.out.println("🔍 JWT Filter - UserDetails credentialsNonExpired: " + userDetails.isCredentialsNonExpired());
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                System.out.println("✅ JWT Filter - Token valide pour: " + username);
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            } else {
-                System.out.println("❌ JWT Filter - Token invalide pour: " + username);
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    System.out.println("✅ JWT Filter - Token valide pour: " + username);
+                    System.out.println("🔓 JWT Filter - Autorités: " + userDetails.getAuthorities());
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    System.out.println("🔐 JWT Filter - Authentification établie dans SecurityContext");
+                    System.out.println("🔐 JWT Filter - SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
+                    System.out.println("🔐 JWT Filter - SecurityContext Authorities: " + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+                } else {
+                    System.out.println("❌ JWT Filter - Token invalide pour: " + username);
+                }
+            } catch (Exception e) {
+                System.out.println("❌ JWT Filter - Erreur lors du chargement de l'utilisateur: " + e.getMessage());
+                e.printStackTrace();
             }
         } else {
-            System.out.println("❌ JWT Filter - Username null ou déjà authentifié");
+            if (username == null) {
+                System.out.println("❌ JWT Filter - Username null");
+            } else {
+                System.out.println("ℹ️ JWT Filter - Déjà authentifié pour: " + username);
+                System.out.println("🔓 JWT Filter - Autorités actuelles: "
+                        + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+            }
         }
         filterChain.doFilter(request, response);
     }

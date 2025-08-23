@@ -38,6 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/demandes/document-types").permitAll()
                         .requestMatchers("/api/demandes/civilites").permitAll()
                         .requestMatchers("/api/demandes/pays").permitAll()
+                        .requestMatchers("/api/demandes/*/status").hasAnyRole("ADMIN", "AGENT")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "AGENT")
                         .requestMatchers("/api/passport/**").hasRole("ADMIN")
@@ -47,6 +48,10 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // Ajouter des logs de débogage
+        System.out.println("🔧 SecurityConfig - Configuration de sécurité créée");
+        System.out.println("🔧 SecurityConfig - Endpoints admin configurés avec hasAnyRole('ADMIN', 'AGENT')");
 
         return http.build();
     }
