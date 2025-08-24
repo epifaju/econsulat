@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnostic Rapide Erreur 403</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        .info { border-color: #17a2b8; background: #d1ecf1; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 15px; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; background: #f8f9fa; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Rapide Erreur 403</h1>
+        
+        <div class="section info">
+            <h3>📊 Analyse des Logs</h3>
+            <p><strong>✅ Authentification JWT :</strong> Fonctionne correctement</p>
+            <p><strong>✅ Utilisateur :</strong> Epifanio Gonçalves (ROLE_USER)</p>
+            <p><strong>✅ Endpoints accessibles :</strong> /api/notifications/my</p>
+            <p><strong>❌ Problème :</strong> /api/demandes retourne 403</p>
+        </div>
+
+        <!-- Test Rapide -->
+        <div class="section">
+            <h3>🧪 Test Rapide des Endpoints</h3>
+            <button onclick="testAllEndpoints()">🔍 Tester tous les endpoints</button>
+            <button onclick="testDemandeSpecific()">📝 Test spécifique /api/demandes</button>
+            <div id="testResult" class="result"></div>
+        </div>
+
+        <!-- Diagnostic Sécurité -->
+        <div class="section">
+            <h3>🔐 Diagnostic de Sécurité</h3>
+            <button onclick="checkSecurityRules()">🔍 Vérifier les règles de sécurité</button>
+            <button onclick="checkUserPermissions()">👤 Vérifier les permissions utilisateur</div>
+            <div id="securityResult" class="result"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h3>📊 Logs de Test</h3>
+            <button onclick="clearLogs()">🗑️ Effacer</button>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logsDiv.innerHTML += `[${timestamp}] <span class="${statusClass}">${type.toUpperCase()}</span> ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        // Connexion automatique avec les identifiants des logs
+        async function autoLogin() {
+            try {
+                log('🔐 Connexion automatique...', 'info');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: 'guinebissauanuncios@gmail.com', 
+                        password: 'password123' 
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    log('✅ Connexion réussie', 'success');
+                    log(`📧 Email: ${data.email}`, 'info');
+                    log(`👑 Rôle: ${data.role}`, 'info');
+                    return true;
+                } else {
+                    log(`❌ Erreur de connexion: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testAllEndpoints() {
+            if (!currentToken) {
+                const connected = await autoLogin();
+                if (!connected) {
+                    showResult('testResult', 'error', '❌ Impossible de se connecter');
+                    return;
+                }
+            }
+
+            try {
+                log('🌐 Test de tous les endpoints...', 'info');
+                
+                const endpoints = [
+                    { name: 'GET /api/notifications/my', url: '/api/notifications/my', method: 'GET' },
+                    { name: 'GET /api/demandes/civilites', url: '/api/demandes/civilites', method: 'GET' },
+                    { name: 'GET /api/demandes/pays', url: '/api/demandes/pays', method: 'GET' },
+                    { name: 'GET /api/demandes/document-types', url: '/api/demandes/document-types', method: 'GET' },
+                    { name: 'GET /api/demandes/my', url: '/api/demandes/my', method: 'GET' },
+                    { name: 'POST /api/demandes', url: '/api/demandes', method: 'POST' }
+                ];
+
+                let results = `🌐 Test des Endpoints\n\n`;
+
+                for (const endpoint of endpoints) {
+                    try {
+                        let response;
+                        if (endpoint.method === 'POST') {
+                            const testData = {
+                                civiliteId: 1, firstName: "Test", lastName: "User",
+                                birthDate: "1990-01-01", birthPlace: "Test", birthCountryId: 1,
+                                streetName: "Test", streetNumber: "123", postalCode: "12345", city: "Test",
+                                countryId: 1, fatherFirstName: "Test", fatherLastName: "Father",
+                                fatherBirthDate: "1960-01-01", fatherBirthPlace: "Test", fatherBirthCountryId: 1,
+                                motherFirstName: "Test", motherLastName: "Mother", motherBirthDate: "1965-01-01",
+                                motherBirthPlace: "Test", motherBirthCountryId: 1, documentTypeId: 1, documentFiles: []
+                            };
+
+                            response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${currentToken}`
+                                },
+                                body: JSON.stringify(testData)
+                            });
+                        } else {
+                            response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, {
+                                headers: { 'Authorization': `Bearer ${currentToken}` }
+                            });
+                        }
+
+                        const status = response.status;
+                        if (status === 200 || status === 201) {
+                            results += `✅ ${endpoint.name}: ${status}\n`;
+                            log(`✅ ${endpoint.name}: ${status}`, 'success');
+                        } else if (status === 403) {
+                            results += `❌ ${endpoint.name}: ${status} (FORBIDDEN)\n`;
+                            log(`❌ ${endpoint.name}: ${status} (FORBIDDEN)`, 'error');
+                        } else if (status === 401) {
+                            results += `🔒 ${endpoint.name}: ${status} (UNAUTHORIZED)\n`;
+                            log(`🔒 ${endpoint.name}: ${status} (UNAUTHORIZED)`, 'warning');
+                        } else {
+                            results += `⚠️ ${endpoint.name}: ${status}\n`;
+                            log(`⚠️ ${endpoint.name}: ${status}`, 'warning');
+                        }
+
+                    } catch (error) {
+                        results += `💥 ${endpoint.name}: Erreur - ${error.message}\n`;
+                        log(`💥 ${endpoint.name}: Erreur - ${error.message}`, 'error');
+                    }
+                }
+
+                showResult('testResult', 'info', results);
+                log('🌐 Test terminé', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                showResult('testResult', 'error', `❌ Erreur: ${error.message}`);
+            }
+        }
+
+        async function testDemandeSpecific() {
+            if (!currentToken) {
+                const connected = await autoLogin();
+                if (!connected) {
+                    showResult('testResult', 'error', '❌ Impossible de se connecter');
+                    return;
+                }
+            }
+
+            try {
+                log('📝 Test spécifique /api/demandes...', 'info');
+                
+                const testDemande = {
+                    civiliteId: 1, firstName: "Test", lastName: "User",
+                    birthDate: "1990-01-01", birthPlace: "Test", birthCountryId: 1,
+                    streetName: "Test", streetNumber: "123", postalCode: "12345", city: "Test",
+                    countryId: 1, fatherFirstName: "Test", fatherLastName: "Father",
+                    fatherBirthDate: "1960-01-01", fatherBirthPlace: "Test", fatherBirthCountryId: 1,
+                    motherFirstName: "Test", motherLastName: "Mother", motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Test", motherBirthCountryId: 1, documentTypeId: 1, documentFiles: []
+                };
+
+                log(`📤 Données: ${JSON.stringify(testDemande, null, 2)}`, 'info');
+
+                const response = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                let result = `📝 Test /api/demandes\n\n`;
+                result += `📤 Données envoyées: ${JSON.stringify(testDemande, null, 2)}\n\n`;
+                result += `📥 Réponse: ${response.status} ${response.statusText}\n`;
+                result += `🔑 Token: ${currentToken.substring(0, 50)}...\n`;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    result += `\n✅ Succès! ID: ${data.id}`;
+                    log('✅ Demande créée avec succès!', 'success');
+                } else if (response.status === 403) {
+                    result += `\n❌ 403 Forbidden - Problème d'autorisation`;
+                    log('❌ 403 Forbidden', 'error');
+                    
+                    try {
+                        const errorData = await response.text();
+                        if (errorData) {
+                            result += `\n📄 Détails: ${errorData}`;
+                        }
+                    } catch (parseError) {
+                        result += `\n📄 Réponse vide`;
+                    }
+                } else {
+                    result += `\n⚠️ Erreur ${response.status}: ${response.statusText}`;
+                }
+
+                showResult('testResult', 'info', result);
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                showResult('testResult', 'error', `❌ Erreur: ${error.message}`);
+            }
+        }
+
+        async function checkSecurityRules() {
+            try {
+                log('🔐 Vérification des règles de sécurité...', 'info');
+                
+                let result = `🔐 Règles de Sécurité\n\n`;
+                
+                // Test des endpoints publics
+                const publicEndpoints = [
+                    '/api/demandes/civilites',
+                    '/api/demandes/pays',
+                    '/api/demandes/document-types'
+                ];
+
+                for (const endpoint of publicEndpoints) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:8080${endpoint}`);
+                        if (response.ok) {
+                            result += `✅ ${endpoint}: Public (accessible sans token)\n`;
+                        } else {
+                            result += `❌ ${endpoint}: ${response.status} ${response.statusText}\n`;
+                        }
+                    } catch (error) {
+                        result += `💥 ${endpoint}: Erreur - ${error.message}\n`;
+                    }
+                }
+
+                // Test des endpoints protégés
+                if (currentToken) {
+                    result += `\n🔒 Endpoints protégés:\n`;
+                    
+                    const protectedEndpoints = [
+                        '/api/demandes',
+                        '/api/demandes/my'
+                    ];
+
+                    for (const endpoint of protectedEndpoints) {
+                        try {
+                            const response = await fetch(`http://127.0.0.1:8080${endpoint}`, {
+                                headers: { 'Authorization': `Bearer ${currentToken}` }
+                            });
+                            
+                            if (response.status === 200 || response.status === 201) {
+                                result += `✅ ${endpoint}: Accessible avec token\n`;
+                            } else if (response.status === 403) {
+                                result += `❌ ${endpoint}: 403 Forbidden\n`;
+                            } else {
+                                result += `⚠️ ${endpoint}: ${response.status} ${response.statusText}\n`;
+                            }
+                        } catch (error) {
+                            result += `💥 ${endpoint}: Erreur - ${error.message}\n`;
+                        }
+                    }
+                }
+
+                showResult('securityResult', 'info', result);
+                log('🔐 Vérification terminée', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                showResult('securityResult', 'error', `❌ Erreur: ${error.message}`);
+            }
+        }
+
+        async function checkUserPermissions() {
+            if (!currentToken) {
+                showResult('securityResult', 'error', '❌ Aucun token disponible');
+                return;
+            }
+
+            try {
+                log('👤 Vérification des permissions utilisateur...', 'info');
+                
+                let result = `👤 Permissions Utilisateur\n\n`;
+                
+                // Test /api/auth/me
+                try {
+                    const meResponse = await fetch('http://127.0.0.1:8080/api/auth/me', {
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    });
+                    
+                    if (meResponse.ok) {
+                        const meData = await meResponse.json();
+                        result += `✅ /api/auth/me accessible\n`;
+                        result += `• ID: ${meData.id}\n`;
+                        result += `• Email: ${meData.email}\n`;
+                        result += `• Rôle: ${meData.role}\n`;
+                        result += `• Compte actif: ${meData.enabled}\n`;
+                        result += `• Email vérifié: ${meData.emailVerified}\n`;
+                        
+                        if (meData.authorities) {
+                            result += `• Autorités: ${JSON.stringify(meData.authorities)}\n`;
+                        }
+                    } else {
+                        result += `❌ /api/auth/me: ${meResponse.status} ${meResponse.statusText}\n`;
+                    }
+                } catch (error) {
+                    result += `💥 /api/auth/me: Erreur - ${error.message}\n`;
+                }
+
+                // Test des permissions sur les demandes
+                result += `\n🔍 Permissions sur les demandes:\n`;
+                
+                try {
+                    const demandesResponse = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    });
+                    
+                    if (demandesResponse.ok) {
+                        const demandes = await demandesResponse.json();
+                        result += `✅ /api/demandes/my: Accessible (${demandes.length} demandes)\n`;
+                    } else if (demandesResponse.status === 403) {
+                        result += `❌ /api/demandes/my: 403 Forbidden\n`;
+                    } else {
+                        result += `⚠️ /api/demandes/my: ${demandesResponse.status} ${demandesResponse.statusText}\n`;
+                    }
+                } catch (error) {
+                    result += `💥 /api/demandes/my: Erreur - ${error.message}\n`;
+                }
+
+                showResult('securityResult', 'info', result);
+                log('👤 Vérification terminée', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+                showResult('securityResult', 'error', `❌ Erreur: ${error.message}`);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('🗑️ Logs effacés', 'warning');
+        }
+
+        // Initialisation
+        log('🚀 Diagnostic rapide démarré', 'info');
+        log('💡 Utilisation des identifiants des logs serveur', 'info');
+    </script>
+</body>
+</html>

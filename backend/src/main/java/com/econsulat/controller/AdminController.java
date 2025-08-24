@@ -85,7 +85,7 @@ public class AdminController {
                 demande.getId(),
                 demande.getFirstName(),
                 demande.getLastName(),
-                demande.getDocumentType().getDisplayName(),
+                demande.getDocumentType().getLibelle(), // ✅ CORRIGÉ : getLibelle() au lieu de getDisplayName()
                 demande.getStatus().name(),
                 demande.getUpdatedAt(),
                 "Statut mis à jour avec succès");

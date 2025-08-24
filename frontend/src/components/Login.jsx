@@ -7,9 +7,11 @@ import {
   UserIcon,
 } from "@heroicons/react/24/outline";
 import Notification from "./Notification";
+import RegisterForm from "./RegisterForm";
 
 const Login = () => {
   const { login } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -62,6 +64,19 @@ const Login = () => {
     setNotification({ type, title, message });
     setTimeout(() => setNotification(null), 5000);
   };
+
+  const handleSwitchToRegister = () => {
+    setShowRegister(true);
+  };
+
+  const handleSwitchToLogin = () => {
+    setShowRegister(false);
+  };
+
+  // Si on affiche le formulaire d'inscription
+  if (showRegister) {
+    return <RegisterForm onSwitchToLogin={handleSwitchToLogin} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -206,7 +221,10 @@ const Login = () => {
             </div>
 
             <div className="mt-6">
-              <button className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+              <button
+                onClick={handleSwitchToRegister}
+                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
                 Créer un compte
               </button>
             </div>

@@ -18,9 +18,11 @@ const Step6Summary = ({
     return paysItem ? paysItem.libelle : "Non spécifié";
   };
 
-  const getDocumentTypeLabel = (type) => {
-    const docType = documentTypes.find((t) => (t.value || t) === type);
-    return docType ? docType.label || docType.displayName || type : type;
+  const getDocumentTypeLabel = (typeId) => {
+    const docType = documentTypes.find((t) => (t.id || t.value) == typeId);
+    return docType
+      ? docType.libelle || docType.label || docType.displayName
+      : "Non spécifié";
   };
 
   const formatDate = (dateString) => {
@@ -294,7 +296,7 @@ const Step6Summary = ({
               Document demandé:
             </span>
             <p className="text-gray-800 text-lg font-medium">
-              {getDocumentTypeLabel(formData.documentType)}
+              {getDocumentTypeLabel(formData.documentTypeId)}
             </p>
           </div>
         </div>

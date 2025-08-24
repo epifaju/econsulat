@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
 // Configuration de l'URL de base pour axios
-axios.defaults.baseURL = "http://localhost:8080";
+axios.defaults.baseURL = "http://127.0.0.1:8080";
 
 const AuthContext = createContext();
 
@@ -55,6 +55,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (userData) => {
+    try {
+      const response = await axios.post("/api/auth/register", {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        email: userData.email,
+        password: userData.password,
+      });
+
+      return {
+        success: true,
+        message: response.data.message,
+        userId: response.data.userId,
+        email: response.data.email,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error:
+          error.response?.data?.error || "Erreur lors de la création du compte",
+      };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -67,6 +91,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     token: localStorage.getItem("token"),
     login,
+    register,
     logout,
     loading,
   };

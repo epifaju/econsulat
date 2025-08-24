@@ -1,12 +1,34 @@
 package com.econsulat.dto;
 
 import com.econsulat.model.User;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Pattern;
 
 public class UserRequest {
+    @NotBlank(message = "Le prénom est obligatoire")
+    @Size(min = 2, max = 50, message = "Le prénom doit contenir entre 2 et 50 caractères")
+    @Pattern(regexp = "^[a-zA-ZÀ-ÿ\\s'-]+$", message = "Le prénom ne peut contenir que des lettres, espaces, tirets et apostrophes")
     private String firstName;
+
+    @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 2, max = 50, message = "Le nom doit contenir entre 2 et 50 caractères")
+    @Pattern(regexp = "^[a-zA-ZÀ-ÿ\\s'-]+$", message = "Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes")
     private String lastName;
+
+    @NotBlank(message = "L'email est obligatoire")
+    @Email(message = "Format d'email invalide")
+    @Size(max = 150, message = "L'email ne peut pas dépasser 150 caractères")
     private String email;
+
+    @NotBlank(message = "Le mot de passe est obligatoire")
+    @Size(min = 6, max = 100, message = "Le mot de passe doit contenir entre 6 et 100 caractères")
+    // Validation plus réaliste : au moins 6 caractères avec au moins une lettre et
+    // un chiffre
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).{6,}$", message = "Le mot de passe doit contenir au moins 6 caractères avec au moins une lettre et un chiffre")
     private String password;
+
     private String role;
     private Boolean emailVerified;
 
@@ -33,10 +55,6 @@ public class UserRequest {
 
     public String getLastName() {
         return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 
     public String getEmail() {
@@ -77,5 +95,16 @@ public class UserRequest {
         } catch (IllegalArgumentException e) {
             return User.Role.USER;
         }
+    }
+
+    @Override
+    public String toString() {
+        return "UserRequest{" +
+                "firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", email='" + email + '\'' +
+                ", role='" + role + '\'' +
+                ", emailVerified=" + emailVerified +
+                '}';
     }
 }

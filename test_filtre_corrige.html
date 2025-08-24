@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Test - Filtre Type de Document Corrigé</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-info { color: #0066cc; }
+        .log-success { color: #28a745; }
+        .log-warning { color: #ffc107; }
+        .log-error { color: #dc3545; }
+        .filter-demo {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .filter-select {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin: 5px;
+            min-width: 200px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .test-section {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>✅ Test - Filtre Type de Document Corrigé</h1>
+    
+    <div class="container">
+        <h2>🔧 Corrections Implémentées</h2>
+        <div class="test-section">
+            <h3>✅ Problèmes Résolus :</h3>
+            <ul>
+                <li><strong>Mismatch de valeurs :</strong> Ajout de correspondance par ID numérique et label</li>
+                <li><strong>Alias de correspondance :</strong> Gestion des variations et accents</li>
+                <li><strong>Logique de filtrage :</strong> Correspondance multiple (exacte, insensible à la casse, partielle, par alias)</li>
+                <li><strong>Gestion des erreurs :</strong> Fallback robuste avec types par défaut</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📋 Test de l'API des Types de Documents</h2>
+        <p>Vérification de la récupération et normalisation des types de documents.</p>
+        
+        <button class="btn" onclick="testDocumentTypesAPI()">Test API Types de Documents</button>
+        <button class="btn btn-success" onclick="testNormalization()">Test Normalisation</button>
+        
+        <div id="apiResult" class="result-box"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Test du Filtrage Corrigé</h2>
+        <p>Simulation du comportement du filtre avec la nouvelle logique.</p>
+        
+        <div class="filter-demo">
+            <label><strong>Type de document :</strong></label>
+            <select id="documentTypeFilter" class="filter-select" onchange="applyFilter()">
+                <option value="">Tous les types</option>
+                <option value="">Chargement des types...</option>
+            </select>
+            
+            <br><br>
+            <label><strong>Statut :</strong></label>
+            <select id="statusFilter" class="filter-select" onchange="applyFilter()">
+                <option value="">Tous les statuts</option>
+                <option value="PENDING">En attente</option>
+                <option value="APPROVED">Approuvé</option>
+                <option value="REJECTED">Rejeté</option>
+            </select>
+        </div>
+        
+        <div id="filterResult" class="result-box">
+            <div class="log-entry log-info">Sélectionnez des filtres pour tester la nouvelle logique...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Données de Test Simulées</h2>
+        <p>Données qui simulent la structure réelle des demandes avec différents formats.</p>
+        
+        <div id="testData" class="result-box"></div>
+        
+        <button class="btn btn-success" onclick="loadTestData()">Charger Données de Test</button>
+        <button class="btn btn-warning" onclick="testFilterLogic()">Test Logique de Filtrage</button>
+        <button class="btn" onclick="clearResults()">Effacer Résultats</button>
+    </div>
+
+    <script>
+        // Données de test et d'analyse
+        let testDemandes = [];
+        let documentTypes = [];
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            element.appendChild(entry);
+            element.scrollTop = element.scrollHeight;
+        }
+
+        async function testDocumentTypesAPI() {
+            const resultBox = document.getElementById('apiResult');
+            resultBox.innerHTML = '';
+            
+            log('apiResult', '🔄 Test de l\'API /api/demandes/document-types...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('apiResult', `✅ ${data.length} types de documents récupérés`, 'success');
+                    
+                    data.forEach((type, index) => {
+                        log('apiResult', `   ${index + 1}. value: "${type.value}", label: "${type.label}"`, 'info');
+                    });
+                    
+                    // Mettre à jour le select de démonstration
+                    updateFilterSelect(data);
+                    documentTypes = data;
+                    
+                } else {
+                    log('apiResult', `❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log('apiResult', `❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        function testNormalization() {
+            const resultBox = document.getElementById('apiResult');
+            
+            log('apiResult', '🔧 Test de la normalisation des types de documents...', 'info');
+            
+            // Simuler la normalisation comme dans le composant
+            const mockData = [
+                { value: "1", label: "Passeport" },
+                { id: 2, libelle: "Acte de naissance" },
+                { libelle: "Certificat de mariage" },
+                "Carte d'identité"
+            ];
+            
+            const normalizedTypes = mockData.map((type) => {
+                // Gérer le format { value, label } de l'API demandes
+                if (type.value && type.label) {
+                    return { 
+                        value: type.value, 
+                        label: type.label,
+                        aliases: [
+                            type.label.toLowerCase(),
+                            type.value.toLowerCase(),
+                            type.label.replace(/\s+/g, '').toLowerCase(),
+                            type.label.replace(/[éèê]/g, 'e').toLowerCase(),
+                            type.label.replace(/[àâ]/g, 'a').toLowerCase()
+                        ]
+                    };
+                }
+                // Gérer le format { id, libelle } de l'API admin
+                else if (type.id && type.libelle) {
+                    return { 
+                        value: type.libelle, 
+                        label: type.libelle,
+                        aliases: [
+                            type.libelle.toLowerCase(),
+                            type.id.toString().toLowerCase(),
+                            type.libelle.replace(/\s+/g, '').toLowerCase(),
+                            type.libelle.replace(/[éèê]/g, 'e').toLowerCase(),
+                            type.libelle.replace(/[àâ]/g, 'a').toLowerCase()
+                        ]
+                    };
+                }
+                // Gérer le format { libelle } simple
+                else if (type.libelle) {
+                    return { 
+                        value: type.libelle, 
+                        label: type.libelle,
+                        aliases: [
+                            type.libelle.toLowerCase(),
+                            type.libelle.replace(/\s+/g, '').toLowerCase(),
+                            type.libelle.replace(/[éèê]/g, 'e').toLowerCase(),
+                            type.libelle.replace(/[àâ]/g, 'a').toLowerCase()
+                        ]
+                    };
+                }
+                // Fallback pour les autres formats
+                else {
+                    const fallbackValue = String(type);
+                    return { 
+                        value: fallbackValue, 
+                        label: fallbackValue,
+                        aliases: [fallbackValue.toLowerCase()]
+                    };
+                }
+            });
+            
+            log('apiResult', '✅ Types normalisés avec aliases:', 'success');
+            normalizedTypes.forEach((type, index) => {
+                log('apiResult', `   ${index + 1}. "${type.label}" (${type.value}) - Aliases: [${type.aliases.join(', ')}]`, 'info');
+            });
+            
+            // Mettre à jour le select avec les types normalisés
+            updateFilterSelect(normalizedTypes);
+            documentTypes = normalizedTypes;
+        }
+
+        function updateFilterSelect(types) {
+            const select = document.getElementById('documentTypeFilter');
+            select.innerHTML = '<option value="">Tous les types</option>';
+            
+            if (types && types.length > 0) {
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.value;
+                    option.textContent = type.label;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function loadTestData() {
+            // Simuler des données de demandes avec différents formats
+            testDemandes = [
+                {
+                    id: 1,
+                    firstName: 'Jean',
+                    lastName: 'Dupont',
+                    documentType: 'PASSEPORT',
+                    documentTypeDisplay: 'Passeport',
+                    status: 'PENDING',
+                    statusDisplay: 'En attente',
+                    createdAt: '2024-01-15T10:30:00'
+                },
+                {
+                    id: 2,
+                    firstName: 'Marie',
+                    lastName: 'Martin',
+                    documentType: 'ACTE_NAISSANCE',
+                    documentTypeDisplay: 'Acte de naissance',
+                    status: 'APPROVED',
+                    statusDisplay: 'Approuvé',
+                    createdAt: '2024-01-14T14:20:00'
+                },
+                {
+                    id: 3,
+                    firstName: 'Pierre',
+                    lastName: 'Bernard',
+                    documentType: 'CERTIFICAT_MARIAGE',
+                    documentTypeDisplay: 'Certificat de mariage',
+                    status: 'REJECTED',
+                    statusDisplay: 'Rejeté',
+                    createdAt: '2024-01-13T09:15:00'
+                },
+                {
+                    id: 4,
+                    firstName: 'Sophie',
+                    lastName: 'Leroy',
+                    documentType: 'CARTE_IDENTITE',
+                    documentTypeDisplay: 'Carte d\'identité',
+                    status: 'PENDING',
+                    statusDisplay: 'En attente',
+                    createdAt: '2024-01-12T16:45:00'
+                }
+            ];
+            
+            const resultBox = document.getElementById('testData');
+            resultBox.innerHTML = '';
+            
+            log('testData', '📊 Données de test chargées:', 'success');
+            testDemandes.forEach(demande => {
+                log('testData', `   Demande #${demande.id}: ${demande.firstName} ${demande.lastName}`, 'info');
+                log('testData', `     documentType: "${demande.documentType}"`, 'debug');
+                log('testData', `     documentTypeDisplay: "${demande.documentTypeDisplay}"`, 'debug');
+                log('testData', `     status: "${demande.status}" (${demande.statusDisplay})`, 'debug');
+            });
+            
+            applyFilter();
+        }
+
+        function applyFilter() {
+            if (testDemandes.length === 0) {
+                log('filterResult', '⚠️ Chargez d\'abord les données de test', 'warning');
+                return;
+            }
+            
+            const documentTypeFilter = document.getElementById('documentTypeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const resultBox = document.getElementById('filterResult');
+            resultBox.innerHTML = '';
+            
+            log('filterResult', `🔍 Application des filtres:`, 'info');
+            log('filterResult', `   Type de document: "${documentTypeFilter || 'Tous'}"`, 'info');
+            log('filterResult', `   Statut: "${statusFilter || 'Tous'}"`, 'info');
+            
+            // NOUVELLE LOGIQUE DE FILTRAGE CORRIGÉE
+            const filteredDemandes = testDemandes.filter(demande => {
+                // Filtre par type de document
+                let matchesDocumentType = true;
+                if (documentTypeFilter) {
+                    const demandeType = demande.documentTypeDisplay || demande.documentType;
+                    
+                    // Correspondance exacte
+                    if (demandeType === documentTypeFilter) {
+                        matchesDocumentType = true;
+                    }
+                    // Correspondance insensible à la casse
+                    else if (demandeType && documentTypeFilter && 
+                             demandeType.toLowerCase() === documentTypeFilter.toLowerCase()) {
+                        matchesDocumentType = true;
+                    }
+                    // Correspondance partielle
+                    else if (demandeType && documentTypeFilter && 
+                             (demandeType.toLowerCase().includes(documentTypeFilter.toLowerCase()) ||
+                              documentTypeFilter.toLowerCase().includes(demandeType.toLowerCase()))) {
+                        matchesDocumentType = true;
+                    }
+                    // NOUVELLE : Correspondance par alias
+                    else {
+                        const matchingDocumentType = documentTypes.find(type => 
+                            type.label === documentTypeFilter || type.value === documentTypeFilter
+                        );
+                        
+                        if (matchingDocumentType) {
+                            const demandeMatchesType = 
+                                demande.documentTypeDisplay === matchingDocumentType.label ||
+                                demande.documentType === matchingDocumentType.value ||
+                                demande.documentType === matchingDocumentType.label ||
+                                demande.documentTypeDisplay === matchingDocumentType.value;
+                            
+                            if (demandeMatchesType) {
+                                matchesDocumentType = true;
+                            } else {
+                                matchesDocumentType = false;
+                            }
+                        } else {
+                            matchesDocumentType = false;
+                        }
+                    }
+                }
+                
+                // Filtre par statut
+                const matchesStatus = !statusFilter || demande.status === statusFilter;
+                
+                // Debug du filtrage
+                if (documentTypeFilter) {
+                    log('filterResult', `🔍 Demande #${demande.id}:`, 'debug');
+                    log('filterResult', `   documentType: "${demande.documentType}"`, 'debug');
+                    log('filterResult', `   documentTypeDisplay: "${demande.documentTypeDisplay}"`, 'debug');
+                    log('filterResult', `   filterValue: "${documentTypeFilter}"`, 'debug');
+                    log('filterResult', `   match: ${matchesDocumentType}`, matchesDocumentType ? 'success' : 'error');
+                }
+                
+                return matchesDocumentType && matchesStatus;
+            });
+            
+            log('filterResult', `📊 Résultats: ${filteredDemandes.length}/${testDemandes.length} demandes`, 'success');
+            
+            filteredDemandes.forEach(demande => {
+                const statusClass = `status-${demande.status.toLowerCase()}`;
+                log('filterResult', `   ✅ #${demande.id} ${demande.firstName} ${demande.lastName} - ${demande.documentTypeDisplay} <span class="status-badge ${statusClass}">${demande.statusDisplay}</span>`, 'success');
+            });
+        }
+
+        function testFilterLogic() {
+            const resultBox = document.getElementById('filterResult');
+            
+            log('filterResult', '🧪 Test de la logique de filtrage...', 'info');
+            
+            if (testDemandes.length === 0 || documentTypes.length === 0) {
+                log('filterResult', '⚠️ Données insuffisantes pour le test', 'warning');
+                return;
+            }
+            
+            // Tester différents scénarios de filtrage
+            const testScenarios = [
+                { name: 'Filtre par label exact', filterValue: 'Passeport' },
+                { name: 'Filtre par enum', filterValue: 'PASSEPORT' },
+                { name: 'Filtre par valeur numérique', filterValue: '1' },
+                { name: 'Filtre par label avec espace', filterValue: 'Acte de naissance' },
+                { name: 'Filtre par enum avec underscore', filterValue: 'CERTIFICAT_MARIAGE' }
+            ];
+            
+            testScenarios.forEach(scenario => {
+                log('filterResult', `\n🔍 Test: ${scenario.name}`, 'info');
+                log('filterResult', `   Valeur du filtre: "${scenario.filterValue}"`, 'debug');
+                
+                const matchingDemandes = testDemandes.filter(demande => {
+                    const demandeType = demande.documentTypeDisplay || demande.documentType;
+                    
+                    // Logique de correspondance
+                    if (demandeType === scenario.filterValue) return true;
+                    if (demandeType && scenario.filterValue && 
+                        demandeType.toLowerCase() === scenario.filterValue.toLowerCase()) return true;
+                    if (demandeType && scenario.filterValue && 
+                        (demandeType.toLowerCase().includes(scenario.filterValue.toLowerCase()) ||
+                         scenario.filterValue.toLowerCase().includes(demandeType.toLowerCase()))) return true;
+                    
+                    // Correspondance par alias
+                    const matchingDocumentType = documentTypes.find(type => 
+                        type.label === scenario.filterValue || type.value === scenario.filterValue
+                    );
+                    
+                    if (matchingDocumentType) {
+                        return demande.documentTypeDisplay === matchingDocumentType.label ||
+                               demande.documentType === matchingDocumentType.value ||
+                               demande.documentType === matchingDocumentType.label ||
+                               demande.documentTypeDisplay === matchingDocumentType.value;
+                    }
+                    
+                    return false;
+                });
+                
+                log('filterResult', `   ✅ ${matchingDemandes.length} demandes correspondent`, 'success');
+                matchingDemandes.forEach(demande => {
+                    log('filterResult', `     - #${demande.id} ${demande.documentTypeDisplay}`, 'debug');
+                });
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('apiResult').innerHTML = '';
+            document.getElementById('filterResult').innerHTML = '';
+            document.getElementById('testData').innerHTML = '';
+            testDemandes = [];
+            documentTypes = [];
+        }
+
+        // Initialisation
+        log('apiResult', '🚀 Test du filtre corrigé initialisé.', 'info');
+        log('apiResult', '💡 Ordre recommandé: 1) Types de documents, 2) Données de test, 3) Test du filtrage', 'info');
+    </script>
+</body>
+</html>

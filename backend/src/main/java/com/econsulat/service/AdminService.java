@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -113,7 +112,13 @@ public class AdminService {
         demande.setMotherBirthDate(request.getMotherBirthDate());
         demande.setMotherBirthPlace(request.getMotherBirthPlace());
         demande.setMotherBirthCountry(motherBirthCountry);
-        demande.setDocumentType(request.getDocumentType());
+
+        // ✅ CORRIGÉ : Utiliser documentTypeId et récupérer l'entité DocumentType
+        DocumentType documentType = documentTypeRepository.findById(request.getDocumentTypeId())
+                .orElseThrow(() -> new RuntimeException(
+                        "Type de document non trouvé avec l'ID: " + request.getDocumentTypeId()));
+        demande.setDocumentType(documentType);
+
         demande.setDocumentsPath(String.join(",", request.getDocumentFiles()));
 
         Demande savedDemande = demandeRepository.save(demande);

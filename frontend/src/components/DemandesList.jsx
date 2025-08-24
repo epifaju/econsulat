@@ -17,11 +17,19 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
   const loadDemandes = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8080/api/demandes/my", {
+      console.log("🔍 Debug - Token utilisé pour loadDemandes:", token);
+
+      const response = await fetch("http://127.0.0.1:8080/api/demandes/my", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      console.log(
+        "🔍 Debug - Réponse loadDemandes:",
+        response.status,
+        response.statusText
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -30,12 +38,30 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
         if (onRefresh) {
           onRefresh(data);
         }
+      } else if (response.status === 403) {
+        setError("Erreur d'authentification. Veuillez vous reconnecter.");
+        // Rediriger vers la page de connexion
+        window.location.href = "/login";
       } else {
-        setError("Erreur lors du chargement des demandes");
+        // Essayer de récupérer le message d'erreur, sinon utiliser un message par défaut
+        let errorMessage = "Erreur lors du chargement des demandes";
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          console.warn(
+            "⚠️ Impossible de parser la réponse d'erreur:",
+            parseError
+          );
+          // Utiliser le message par défaut
+        }
+        setError(errorMessage);
       }
     } catch (err) {
-      setError("Erreur de connexion");
-      console.error(err);
+      console.error("❌ Erreur de connexion dans loadDemandes:", err);
+      setError("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
     }
@@ -43,8 +69,10 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
 
   const handleViewDetails = async (demandeId) => {
     try {
+      console.log("🔍 Debug - Token utilisé pour handleViewDetails:", token);
+
       const response = await fetch(
-        `http://localhost:8080/api/demandes/${demandeId}`,
+        `http://127.0.0.1:8080/api/demandes/${demandeId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,16 +80,40 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
         }
       );
 
+      console.log(
+        "🔍 Debug - Réponse handleViewDetails:",
+        response.status,
+        response.statusText
+      );
+
       if (response.ok) {
         const demande = await response.json();
         setSelectedDemande(demande);
         setShowModal(true);
+      } else if (response.status === 403) {
+        alert("Erreur d'authentification. Veuillez vous reconnecter.");
+        window.location.href = "/login";
       } else {
-        alert("Erreur lors du chargement des détails de la demande");
+        // Essayer de récupérer le message d'erreur, sinon utiliser un message par défaut
+        let errorMessage =
+          "Erreur lors du chargement des détails de la demande";
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          console.warn(
+            "⚠️ Impossible de parser la réponse d'erreur:",
+            parseError
+          );
+          // Utiliser le message par défaut
+        }
+        alert(errorMessage);
       }
     } catch (err) {
-      console.error("Erreur:", err);
-      alert("Erreur de connexion");
+      console.error("❌ Erreur dans handleViewDetails:", err);
+      alert("Erreur de connexion au serveur");
     }
   };
 

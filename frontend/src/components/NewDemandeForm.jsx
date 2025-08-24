@@ -43,7 +43,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
     motherBirthCountryId: "",
 
     // Étape 4: Type de document
-    documentType: "",
+    documentTypeId: "",
 
     // Étape 5: Documents
     documentFiles: [],
@@ -136,6 +136,20 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
     setError("");
 
     try {
+      console.log("🔍 Debug - Token utilisé:", token);
+      console.log(
+        "🔍 Debug - URL de soumission:",
+        `${API_CONFIG.BASE_URL}${API_CONFIG.DEMANDES.CREATE}`
+      );
+      console.log("🔍 Debug - Données à envoyer:", formData);
+
+      // ✅ Vérification que documentTypeId est présent
+      if (!formData.documentTypeId) {
+        setError("Veuillez sélectionner un type de document");
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch(
         `${API_CONFIG.BASE_URL}${API_CONFIG.DEMANDES.CREATE}`,
         {
@@ -148,19 +162,79 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
         }
       );
 
+      console.log(
+        "🔍 Debug - Réponse reçue:",
+        response.status,
+        response.statusText
+      );
+
       if (response.ok) {
         const result = await response.json();
+        console.log("✅ Demande créée avec succès:", result);
         onSuccess(result);
         onClose();
       } else {
-        const errorData = await response.json();
-        setError(
-          errorData.message || "Erreur lors de la soumission de la demande"
+        console.error(
+          "❌ Erreur lors de la soumission:",
+          response.status,
+          response.statusText
         );
+
+        // ✅ Gestion améliorée des erreurs
+        let errorMessage = "Erreur lors de la soumission de la demande";
+        let errorDetails = "";
+
+        try {
+          const errorData = await response.json();
+          console.log("🔍 Données d'erreur reçues:", errorData);
+
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData && errorData.error) {
+            errorMessage = errorData.error;
+          }
+
+          // Ajouter des détails supplémentaires si disponibles
+          if (errorData && errorData.type) {
+            errorDetails = ` (Type: ${errorData.type})`;
+          }
+          if (errorData && errorData.timestamp) {
+            errorDetails += ` - ${new Date(
+              errorData.timestamp
+            ).toLocaleString()}`;
+          }
+        } catch (parseError) {
+          console.warn(
+            "⚠️ Impossible de parser la réponse d'erreur:",
+            parseError
+          );
+          // Essayer de récupérer le texte brut
+          try {
+            const errorText = await response.text();
+            if (errorText && errorText.trim()) {
+              errorMessage = errorText;
+            }
+          } catch (textError) {
+            console.warn(
+              "⚠️ Impossible de récupérer le texte d'erreur:",
+              textError
+            );
+          }
+        }
+
+        if (response.status === 400) {
+          setError(`${errorMessage}${errorDetails}`);
+        } else if (response.status === 403) {
+          setError("Erreur d'authentification. Veuillez vous reconnecter.");
+          // Rediriger vers la page de connexion
+          window.location.href = "/login";
+        } else {
+          setError(`${errorMessage}${errorDetails}`);
+        }
       }
     } catch (err) {
-      setError("Erreur de connexion");
-      console.error(err);
+      console.error("❌ Erreur de connexion:", err);
+      setError("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
     }

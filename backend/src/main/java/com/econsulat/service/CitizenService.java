@@ -1,9 +1,7 @@
 package com.econsulat.service;
 
 import com.econsulat.model.Citizen;
-import com.econsulat.model.User;
 import com.econsulat.repository.CitizenRepository;
-import com.econsulat.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +13,6 @@ public class CitizenService {
 
     @Autowired
     private CitizenRepository citizenRepository;
-
-    @Autowired
-    private UserRepository userRepository;
 
     public List<Citizen> getAllCitizens() {
         return citizenRepository.findAllByOrderByCreatedAtDesc();

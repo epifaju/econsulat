@@ -41,7 +41,7 @@ public class Demande {
     private Pays birthCountry;
 
     // Adresse (Étape 2)
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "adresse_id", nullable = false)
     private Adresse adresse;
 
@@ -79,9 +79,9 @@ public class Demande {
     @JoinColumn(name = "mother_birth_country_id", nullable = false)
     private Pays motherBirthCountry;
 
-    // Type de document (Étape 4)
-    @Enumerated(EnumType.STRING)
-    @Column(name = "document_type", nullable = false)
+    // Type de document (Étape 4) - REMPLACER L'ENUM PAR UNE RELATION JPA
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "document_type_id", nullable = false)
     private DocumentType documentType;
 
     // Fichiers uploadés (Étape 5)
@@ -105,23 +105,8 @@ public class Demande {
     @JsonIgnore
     private User user;
 
-    public enum DocumentType {
-        PASSEPORT("Passeport"),
-        ACTE_NAISSANCE("Acte de naissance"),
-        CERTIFICAT_MARIAGE("Certificat de mariage"),
-        CARTE_IDENTITE("Carte d'identité"),
-        AUTRE("Autre");
-
-        private final String displayName;
-
-        DocumentType(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
+    // SUPPRIMER L'ENUM DocumentType - IL SERA REMPLACÉ PAR LA CLASSE DocumentType
+    // public enum DocumentType { ... } ← SUPPRIMER TOUT CECI
 
     public enum Status {
         PENDING("En attente"),

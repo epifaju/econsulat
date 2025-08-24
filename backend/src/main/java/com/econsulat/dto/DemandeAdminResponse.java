@@ -116,8 +116,12 @@ public class DemandeAdminResponse {
         this.id = demande.getId();
         this.firstName = demande.getFirstName();
         this.lastName = demande.getLastName();
-        this.documentType = demande.getDocumentType().name();
-        this.documentTypeDisplay = demande.getDocumentType().getDisplayName();
+
+        // ✅ NOUVEAU : Utiliser la relation JPA au lieu de l'enum
+        this.documentType = demande.getDocumentType().getLibelle(); // Libellé depuis la base
+        this.documentTypeDisplay = demande.getDocumentType().getLibelle(); // Même libellé pour l'affichage
+        this.documentTypeId = demande.getDocumentType().getId(); // ID direct depuis la relation
+
         this.status = demande.getStatus().name();
         this.statusDisplay = demande.getStatus().getDisplayName();
         this.createdAt = demande.getCreatedAt();
@@ -127,8 +131,8 @@ public class DemandeAdminResponse {
                 : List.of();
         this.hasGeneratedDocuments = false; // Sera mis à jour par le service
 
-        // Récupérer l'ID numérique du type de document en base
-        this.documentTypeId = getDocumentTypeIdFromEnum(demande.getDocumentType());
+        // SUPPRIMER : Plus besoin de mapping manuel
+        // this.documentTypeId = getDocumentTypeIdFromEnum(demande.getDocumentType());
 
         // Champs pour l'édition
         this.civiliteId = demande.getCivilite().getId();
@@ -205,28 +209,6 @@ public class DemandeAdminResponse {
 
     public void setDocumentTypeId(Long documentTypeId) {
         this.documentTypeId = documentTypeId;
-    }
-
-    /**
-     * Récupère l'ID numérique du type de document en base à partir de l'enum
-     * Mapping entre l'enum Demande.DocumentType et les IDs de la table
-     * document_types
-     */
-    private Long getDocumentTypeIdFromEnum(Demande.DocumentType documentType) {
-        switch (documentType) {
-            case PASSEPORT:
-                return 1L; // ID du type "Passeport" en base
-            case ACTE_NAISSANCE:
-                return 2L; // ID du type "Acte de naissance" en base
-            case CERTIFICAT_MARIAGE:
-                return 3L; // ID du type "Certificat de mariage" en base
-            case CARTE_IDENTITE:
-                return 4L; // ID du type "Carte d'identité" en base
-            case AUTRE:
-                return 5L; // ID du type "Autre" en base
-            default:
-                return 1L; // Fallback vers Passeport
-        }
     }
 
     public String getStatus() {

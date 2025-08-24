@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Rapide - Correction CORS</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: #28a745; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+        .info { color: #17a2b8; font-weight: bold; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; border-left: 4px solid #007bff; }
+        .status { display: inline-block; width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; }
+        .status.success { background: #28a745; }
+        .status.error { background: #dc3545; }
+        .status.warning { background: #ffc107; }
+        .status.pending { background: #6c757d; }
+        .progress { width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; background: #007bff; transition: width 0.3s ease; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Rapide - Correction CORS</h1>
+        <p>Ce test vérifie que la correction CORS fonctionne et que la création de demandes est opérationnelle.</p>
+        
+        <div class="test-section">
+            <h2>📊 Progression des Tests</h2>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+            <div id="progressText">0/4 tests effectués</div>
+        </div>
+
+        <div class="test-section">
+            <h2>1. 🌐 Test de Connexion Backend</h2>
+            <button onclick="testConnection()" id="btnConnection">Tester la connexion</button>
+            <div id="connectionResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 🔐 Test d'Authentification</h2>
+            <button onclick="testAuth()" id="btnAuth" disabled>Se connecter</button>
+            <div id="authResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 📋 Test des Données de Référence</h2>
+            <button onclick="testReferenceData()" id="btnReference" disabled>Charger les données</button>
+            <div id="referenceResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 📝 Test de Création de Demande</h2>
+            <button onclick="testCreateDemande()" id="btnCreate" disabled>Tester la création</button>
+            <div id="createResult" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Résumé des Tests</h2>
+            <div id="summary" class="result">
+                <div>🔄 Tests en attente...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let testResults = {
+            connection: { status: 'pending', message: 'En attente' },
+            auth: { status: 'pending', message: 'En attente' },
+            reference: { status: 'pending', message: 'En attente' },
+            create: { status: 'pending', message: 'En attente' }
+        };
+
+        function updateProgress() {
+            const completed = Object.values(testResults).filter(r => r.status !== 'pending').length;
+            const total = Object.keys(testResults).length;
+            const percentage = (completed / total) * 100;
+            
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = `${completed}/${total} tests effectués`;
+            
+            // Mettre à jour le résumé
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('summary');
+            let html = '<h3>Résultats des Tests :</h3>';
+            
+            Object.entries(testResults).forEach(([test, result]) => {
+                const statusIcon = result.status === 'success' ? '✅' : 
+                                 result.status === 'error' ? '❌' : 
+                                 result.status === 'warning' ? '⚠️' : '🔄';
+                const statusClass = result.status;
+                html += `<div class="${statusClass}">${statusIcon} ${test.charAt(0).toUpperCase() + test.slice(1)}: ${result.message}</div>`;
+            });
+            
+            summary.innerHTML = html;
+        }
+
+        function setTestResult(test, status, message) {
+            testResults[test] = { status, message };
+            updateProgress();
+            
+            // Activer le bouton suivant si le test est réussi
+            if (status === 'success') {
+                enableNextButton(test);
+            }
+        }
+
+        function enableNextButton(completedTest) {
+            const buttonMap = {
+                'connection': 'btnAuth',
+                'auth': 'btnReference',
+                'reference': 'btnCreate'
+            };
+            
+            if (buttonMap[completedTest]) {
+                document.getElementById(buttonMap[completedTest]).disabled = false;
+            }
+        }
+
+        async function testConnection() {
+            const btn = document.getElementById('btnConnection');
+            btn.disabled = true;
+            btn.textContent = 'Test en cours...';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/document-types');
+                if (response.ok) {
+                    setTestResult('connection', 'success', 'Backend accessible et répond correctement');
+                } else {
+                    setTestResult('connection', 'warning', `Backend accessible mais erreur ${response.status}`);
+                }
+            } catch (error) {
+                setTestResult('connection', 'error', `Erreur de connexion: ${error.message}`);
+            } finally {
+                btn.textContent = 'Tester la connexion';
+            }
+        }
+
+        async function testAuth() {
+            const btn = document.getElementById('btnAuth');
+            btn.disabled = true;
+            btn.textContent = 'Connexion en cours...';
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        email: 'admin@econsulat.com', 
+                        password: 'admin123' 
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.token;
+                    setTestResult('auth', 'success', 'Authentification réussie avec token JWT');
+                } else {
+                    const errorText = await response.text();
+                    setTestResult('auth', 'error', `Erreur d'authentification: ${errorText}`);
+                }
+            } catch (error) {
+                setTestResult('auth', 'error', `Erreur de connexion: ${error.message}`);
+            } finally {
+                btn.textContent = 'Se connecter';
+            }
+        }
+
+        async function testReferenceData() {
+            const btn = document.getElementById('btnReference');
+            btn.disabled = true;
+            btn.textContent = 'Chargement en cours...';
+            
+            try {
+                const [civilitesRes, paysRes, typesRes] = await Promise.all([
+                    fetch('http://localhost:8080/api/demandes/civilites', {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    }),
+                    fetch('http://localhost:8080/api/demandes/pays', {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    }),
+                    fetch('http://localhost:8080/api/demandes/document-types', {
+                        headers: { Authorization: `Bearer ${authToken}` }
+                    })
+                ]);
+
+                let successCount = 0;
+                let totalCount = 3;
+
+                if (civilitesRes.ok) successCount++;
+                if (paysRes.ok) successCount++;
+                if (typesRes.ok) successCount++;
+
+                if (successCount === totalCount) {
+                    setTestResult('reference', 'success', `${successCount}/${totalCount} données de référence chargées avec succès`);
+                } else {
+                    setTestResult('reference', 'warning', `${successCount}/${totalCount} données de référence chargées`);
+                }
+            } catch (error) {
+                setTestResult('reference', 'error', `Erreur lors du chargement: ${error.message}`);
+            } finally {
+                btn.textContent = 'Charger les données';
+            }
+        }
+
+        async function testCreateDemande() {
+            const btn = document.getElementById('btnCreate');
+            btn.disabled = true;
+            btn.textContent = 'Test en cours...';
+            
+            const testDemande = {
+                civiliteId: 1,
+                firstName: "Test",
+                lastName: "Utilisateur",
+                birthDate: "1990-01-01",
+                birthPlace: "Paris",
+                birthCountryId: 1,
+                streetName: "Rue de Test",
+                streetNumber: "123",
+                boxNumber: "",
+                postalCode: "75001",
+                city: "Paris",
+                countryId: 1,
+                fatherFirstName: "Jean",
+                fatherLastName: "Utilisateur",
+                fatherBirthDate: "1960-01-01",
+                fatherBirthPlace: "Lyon",
+                fatherBirthCountryId: 1,
+                motherFirstName: "Marie",
+                motherLastName: "Utilisateur",
+                motherBirthDate: "1965-01-01",
+                motherBirthPlace: "Marseille",
+                motherBirthCountryId: 1,
+                documentTypeId: 1,
+                documentFiles: []
+            };
+
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    setTestResult('create', 'success', 'Demande créée avec succès ! ID: ' + data.id);
+                } else {
+                    let errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.text();
+                        errorMessage += ` - ${errorData}`;
+                    } catch (e) {
+                        // Ignorer l'erreur de parsing
+                    }
+                    setTestResult('create', 'error', errorMessage);
+                }
+            } catch (error) {
+                setTestResult('create', 'error', `Erreur de connexion: ${error.message}`);
+            } finally {
+                btn.textContent = 'Tester la création';
+            }
+        }
+
+        // Initialiser la progression
+        updateProgress();
+    </script>
+</body>
+</html>

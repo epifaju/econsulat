@@ -13,21 +13,47 @@ export const useDemandes = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8080/api/demandes/my", {
+      console.log("🔍 Debug - Token utilisé pour fetchDemandes:", token);
+
+      const response = await fetch("http://127.0.0.1:8080/api/demandes/my", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log(
+        "🔍 Debug - Réponse fetchDemandes:",
+        response.status,
+        response.statusText
+      );
+
       if (response.ok) {
         const data = await response.json();
         setDemandes(data);
+      } else if (response.status === 403) {
+        setError("Erreur d'authentification. Veuillez vous reconnecter.");
+        // Rediriger vers la page de connexion
+        window.location.href = "/login";
       } else {
-        setError("Erreur lors du chargement des demandes");
+        // Essayer de récupérer le message d'erreur, sinon utiliser un message par défaut
+        let errorMessage = "Erreur lors du chargement des demandes";
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (parseError) {
+          console.warn(
+            "⚠️ Impossible de parser la réponse d'erreur:",
+            parseError
+          );
+          // Utiliser le message par défaut
+        }
+        setError(errorMessage);
       }
     } catch (err) {
-      setError("Erreur de connexion");
-      console.error(err);
+      console.error("❌ Erreur de connexion dans fetchDemandes:", err);
+      setError("Erreur de connexion au serveur");
     } finally {
       setLoading(false);
     }

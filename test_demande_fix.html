@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Création Demande - Correction documentTypeId</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Création Demande - Correction documentTypeId</h1>
+        
+        <div class="info">
+            <h3>Objectif du test</h3>
+            <p>Vérifier que la correction du champ <code>documentType</code> → <code>documentTypeId</code> fonctionne.</p>
+        </div>
+
+        <div class="form-group">
+            <label for="token">Token JWT:</label>
+            <input type="text" id="token" placeholder="Collez votre token JWT ici" style="width: 100%;">
+        </div>
+
+        <div class="form-group">
+            <label for="civilite">Civilité:</label>
+            <select id="civilite">
+                <option value="">Chargement...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="pays">Pays:</label>
+            <select id="pays">
+                <option value="">Chargement...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="documentType">Type de document:</label>
+            <select id="documentType">
+                <option value="">Chargement...</option>
+            </select>
+        </div>
+
+        <button onclick="loadReferenceData()">🔄 Charger les données de référence</button>
+        <button onclick="testCreateDemande()">✅ Tester la création de demande</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let token = '';
+
+        // Charger les données de référence
+        async function loadReferenceData() {
+            token = document.getElementById('token').value.trim();
+            if (!token) {
+                showMessage('error', 'Veuillez entrer un token JWT');
+                return;
+            }
+
+            try {
+                // Charger les civilités
+                const civilitesRes = await fetch('http://localhost:8080/api/demandes/civilites', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (civilitesRes.ok) {
+                    const civilites = await civilitesRes.json();
+                    const select = document.getElementById('civilite');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    civilites.forEach(c => {
+                        select.innerHTML += `<option value="${c.id}">${c.libelle}</option>`;
+                    });
+                    showMessage('success', `✅ ${civilites.length} civilité(s) chargée(s)`);
+                }
+
+                // Charger les pays
+                const paysRes = await fetch('http://localhost:8080/api/demandes/pays', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (paysRes.ok) {
+                    const pays = await paysRes.json();
+                    const select = document.getElementById('pays');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    pays.forEach(p => {
+                        select.innerHTML += `<option value="${p.id}">${p.libelle}</option>`;
+                    });
+                    showMessage('success', `✅ ${pays.length} pays chargé(s)`);
+                }
+
+                // Charger les types de documents
+                const typesRes = await fetch('http://localhost:8080/api/demandes/document-types', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                if (typesRes.ok) {
+                    const types = await typesRes.json();
+                    const select = document.getElementById('documentType');
+                    select.innerHTML = '<option value="">Sélectionner...</option>';
+                    types.forEach(t => {
+                        const value = t.id || t.value;
+                        const label = t.libelle || t.label || t.displayName || t;
+                        select.innerHTML += `<option value="${value}">${label}</option>`;
+                    });
+                    showMessage('success', `✅ ${types.length} type(s) de document chargé(s)`);
+                }
+
+            } catch (error) {
+                showMessage('error', `Erreur: ${error.message}`);
+            }
+        }
+
+        // Tester la création de demande
+        async function testCreateDemande() {
+            const civiliteId = document.getElementById('civilite').value;
+            const paysId = document.getElementById('pays').value;
+            const documentTypeId = document.getElementById('documentType').value;
+
+            if (!civiliteId || !paysId || !documentTypeId) {
+                showMessage('error', 'Veuillez sélectionner toutes les valeurs');
+                return;
+            }
+
+            const testDemande = {
+                // Informations personnelles
+                civiliteId: parseInt(civiliteId),
+                firstName: "Test",
+                lastName: "Utilisateur",
+                birthDate: "1990-01-01",
+                birthPlace: "Paris",
+                birthCountryId: parseInt(paysId),
+
+                // Adresse
+                streetName: "Rue de Test",
+                streetNumber: "123",
+                boxNumber: "",
+                postalCode: "75001",
+                city: "Paris",
+                countryId: parseInt(paysId),
+
+                // Filiation - Père
+                fatherFirstName: "Jean",
+                fatherLastName: "Utilisateur",
+                fatherBirthDate: "1960-01-01",
+                fatherBirthPlace: "Lyon",
+                fatherBirthCountryId: parseInt(paysId),
+
+                // Filiation - Mère
+                motherFirstName: "Marie",
+                motherLastName: "Utilisateur",
+                motherBirthDate: "1965-01-01",
+                motherBirthPlace: "Marseille",
+                motherBirthCountryId: parseInt(paysId),
+
+                // Type de document - CORRIGÉ : documentTypeId au lieu de documentType
+                documentTypeId: parseInt(documentTypeId),
+
+                // Documents
+                documentFiles: ["test.pdf"]
+            };
+
+            console.log('📤 Demande à envoyer:', testDemande);
+
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    showMessage('success', `✅ Demande créée avec succès! ID: ${result.id}`);
+                    console.log('✅ Résultat:', result);
+                } else {
+                    const errorData = await response.json();
+                    showMessage('error', `❌ Erreur ${response.status}: ${errorData.message || 'Erreur inconnue'}`);
+                    console.error('❌ Erreur:', errorData);
+                }
+            } catch (error) {
+                showMessage('error', `❌ Erreur de connexion: ${error.message}`);
+                console.error('❌ Erreur:', error);
+            }
+        }
+
+        function showMessage(type, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<strong>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}</strong>`;
+        }
+    </script>
+</body>
+</html>

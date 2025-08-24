@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Spécifique - Endpoint /api/demandes</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .section h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .log-info { background-color: #e3f2fd; }
+        .log-success { background-color: #e8f5e8; }
+        .log-error { background-color: #ffebee; }
+        .log-warning { background-color: #fff8e1; }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background-color: #27ae60; }
+        .status-error { background-color: #e74c3c; }
+        .status-warning { background-color: #f39c12; }
+        .status-info { background-color: #3498db; }
+        .data-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Test Spécifique - Endpoint /api/demandes</h1>
+        <p>Ce test utilise exactement les mêmes données que votre frontend pour identifier la cause de l'erreur 403.</p>
+    </div>
+
+    <!-- Section Authentification -->
+    <div class="container">
+        <div class="section">
+            <h3>🔐 Authentification</h3>
+            <div class="form-group">
+                <label for="email">Email :</label>
+                <input type="email" id="email" placeholder="votre@email.com" value="admin@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe :</label>
+                <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+            </div>
+            <button onclick="testAuth()">🔑 Se Connecter</button>
+            <div id="authResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Test de l'Endpoint -->
+    <div class="container">
+        <div class="section">
+            <h3>📝 Test de l'Endpoint /api/demandes</h3>
+            <div class="data-display">
+                <h4>Données qui seront envoyées :</h4>
+                <pre id="dataToSend"></pre>
+            </div>
+            <button onclick="testDemandeEndpoint()" id="testButton" disabled>🧪 Tester l'Endpoint</button>
+            <div id="testResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Analyse Détaillée -->
+    <div class="container">
+        <div class="section">
+            <h3>🔍 Analyse Détaillée</h3>
+            <button onclick="analyzeRequest()" id="analyzeButton" disabled>🔍 Analyser la Requête</button>
+            <div id="analyzeResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Logs -->
+    <div class="container">
+        <div class="section">
+            <h3>📊 Logs en Temps Réel</h3>
+            <div id="logsContainer" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                <div class="log-entry log-info">🚀 Test démarré. Connectez-vous d'abord.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        let currentUser = null;
+
+        // Données exactes utilisées par le frontend
+        const testDemande = {
+            "civiliteId": "1",
+            "firstName": "Epifanio",
+            "lastName": "Goncalves",
+            "birthDate": "2020-02-02",
+            "birthPlace": "BUCHELAY",
+            "birthCountryId": "2",
+            "streetName": "jjl",
+            "streetNumber": "25",
+            "boxNumber": "",
+            "postalCode": "2522",
+            "city": "Bissau",
+            "countryId": "1",
+            "fatherFirstName": "Epifanio",
+            "fatherLastName": "Da SIlva Goncalves",
+            "fatherBirthDate": "1988-02-01",
+            "fatherBirthPlace": "BUCHELAY",
+            "fatherBirthCountryId": "2",
+            "motherFirstName": "Maria de Fatima",
+            "motherLastName": "CASSAMA",
+            "motherBirthDate": "1988-02-01",
+            "motherBirthPlace": "Farim",
+            "motherBirthCountryId": "2",
+            "documentTypeId": "3",
+            "documentFiles": [
+                "20250816_63689746_644628.pdf"
+            ]
+        };
+
+        function log(message, type = 'info') {
+            const logsContainer = document.getElementById('logsContainer');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = `status-indicator status-${type}`;
+            
+            logEntry.appendChild(statusIndicator);
+            logEntry.appendChild(document.createTextNode(`[${timestamp}] ${message}`));
+            
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = message;
+        }
+
+        // Afficher les données qui seront envoyées
+        document.getElementById('dataToSend').textContent = JSON.stringify(testDemande, null, 2);
+
+        async function testAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showResult('authResult', '❌ Veuillez remplir tous les champs', true);
+                return;
+            }
+
+            log('🔑 Test d\'authentification en cours...', 'info');
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                log(`📡 Réponse authentification: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    currentUser = { email: data.email, role: data.role };
+                    
+                    log(`✅ Authentification réussie pour ${data.email} (rôle: ${data.role})`, 'success');
+                    log(`🔑 Token reçu: ${data.token.substring(0, 50)}...`, 'info');
+                    
+                    showResult('authResult', `✅ Authentification réussie!\n\nEmail: ${data.email}\nRôle: ${data.role}\nToken: ${data.token.substring(0, 50)}...`);
+                    
+                    // Activer les boutons de test
+                    document.getElementById('testButton').disabled = false;
+                    document.getElementById('analyzeButton').disabled = false;
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Échec de l'authentification: ${response.status} - ${errorData}`, 'error');
+                    showResult('authResult', `❌ Échec de l'authentification\nStatus: ${response.status}\nErreur: ${errorData}`, true);
+                }
+            } catch (error) {
+                log(`💥 Erreur de connexion: ${error.message}`, 'error');
+                showResult('authResult', `💥 Erreur de connexion: ${error.message}`, true);
+            }
+        }
+
+        async function testDemandeEndpoint() {
+            if (!currentToken) {
+                showResult('testResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('📝 Test de l\'endpoint /api/demandes en cours...', 'info');
+            log(`📤 URL: http://127.0.0.1:8080/api/demandes`, 'info');
+            log(`📤 Méthode: POST`, 'info');
+            log(`📤 Token: ${currentToken.substring(0, 50)}...`, 'info');
+            log(`📤 Données: ${JSON.stringify(testDemande, null, 2)}`, 'info');
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demande créée avec succès!', 'success');
+                    showResult('testResult', `✅ Demande créée avec succès!\n\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    let errorMessage = `❌ Erreur lors de la création\nStatus: ${response.status}\nStatus Text: ${response.statusText}`;
+                    
+                    try {
+                        const errorData = await response.text();
+                        errorMessage += `\nDétails: ${errorData}`;
+                        log(`❌ Détails de l'erreur: ${errorData}`, 'error');
+                    } catch (parseError) {
+                        log(`⚠️ Impossible de parser la réponse d'erreur: ${parseError.message}`, 'warning');
+                    }
+
+                    if (response.status === 403) {
+                        errorMessage += '\n\n🔍 ANALYSE 403:\n';
+                        errorMessage += '- Le token est envoyé mais rejeté\n';
+                        errorMessage += '- Problème probable: configuration Spring Security\n';
+                        errorMessage += '- Vérifier que le backend a été redémarré\n';
+                        errorMessage += '- Vérifier les logs du backend\n';
+                        log('🔍 Analyse de l\'erreur 403: Problème de configuration', 'warning');
+                    }
+
+                    showResult('testResult', errorMessage, true);
+                }
+            } catch (error) {
+                log(`💥 Erreur de connexion: ${error.message}`, 'error');
+                showResult('testResult', `💥 Erreur de connexion: ${error.message}`, true);
+            }
+        }
+
+        async function analyzeRequest() {
+            if (!currentToken) {
+                showResult('analyzeResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('🔍 Analyse de la requête en cours...', 'info');
+            
+            try {
+                // Test avec différents endpoints pour diagnostiquer
+                const endpoints = [
+                    { name: 'Types de documents (public)', url: '/api/demandes/document-types', expected: 200 },
+                    { name: 'Civilités (public)', url: '/api/demandes/civilites', expected: 200 },
+                    { name: 'Pays (public)', url: '/api/demandes/pays', expected: 200 },
+                    { name: 'Mes demandes (auth)', url: '/api/demandes/my', expected: 200 },
+                    { name: 'Création demande (auth)', url: '/api/demandes', expected: 200 }
+                ];
+
+                let analysis = '🔍 Analyse des Endpoints:\n\n';
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        log(`🔍 Test de ${endpoint.name}`, 'info');
+                        
+                        const options = {
+                            method: endpoint.name.includes('Création') ? 'POST' : 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${currentToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        };
+
+                        if (endpoint.name.includes('Création')) {
+                            options.body = JSON.stringify(testDemande);
+                        }
+
+                        const response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, options);
+                        
+                        const status = response.status;
+                        const statusText = response.statusText;
+                        
+                        if (response.ok) {
+                            log(`✅ ${endpoint.name}: ${status} ${statusText}`, 'success');
+                            analysis += `✅ ${endpoint.name}: ${status} ${statusText}\n`;
+                        } else if (status === 403) {
+                            log(`❌ ${endpoint.name}: 403 Forbidden`, 'error');
+                            analysis += `❌ ${endpoint.name}: 403 Forbidden\n`;
+                        } else {
+                            log(`⚠️ ${endpoint.name}: ${status} ${statusText}`, 'warning');
+                            analysis += `⚠️ ${endpoint.name}: ${status} ${statusText}\n`;
+                        }
+                    } catch (error) {
+                        log(`💥 Erreur sur ${endpoint.name}: ${error.message}`, 'error');
+                        analysis += `💥 Erreur sur ${endpoint.name}: ${error.message}\n`;
+                    }
+                }
+
+                // Analyse du token et de l'utilisateur
+                analysis += `\n🔍 Analyse de l'Utilisateur:\n`;
+                analysis += `- Email: ${currentUser.email}\n`;
+                analysis += `- Rôle: ${currentUser.role}\n`;
+                analysis += `- Token: ${currentToken.substring(0, 50)}...\n`;
+
+                showResult('analyzeResult', analysis);
+                log('🔍 Analyse terminée', 'info');
+            } catch (error) {
+                log(`💥 Erreur lors de l'analyse: ${error.message}`, 'error');
+                showResult('analyzeResult', `💥 Erreur: ${error.message}`, true);
+            }
+        }
+
+        // Initialisation
+        log('🚀 Test spécifique de l\'endpoint /api/demandes démarré', 'info');
+        log('📋 Instructions:', 'info');
+        log('1. Connectez-vous avec vos identifiants', 'info');
+        log('2. Testez l\'endpoint /api/demandes', 'info');
+        log('3. Analysez les résultats', 'info');
+    </script>
+</body>
+</html>

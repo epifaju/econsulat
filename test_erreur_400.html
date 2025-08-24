@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Erreur 400 - Validation des Messages d'Erreur</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-section h3 {
+            color: #333;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status.success { background: #28a745; color: white; }
+        .status.error { background: #dc3545; color: white; }
+        .status.warning { background: #ffc107; color: black; }
+        .status.info { background: #17a2b8; color: white; }
+        .error-details {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .error-details h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Test des Erreurs 400 - Validation des Messages</h1>
+        <p>Test des corrections pour les erreurs de validation avec messages d'erreur formatés</p>
+    </div>
+
+    <div class="container">
+        <h2>📋 Résumé des Corrections Appliquées</h2>
+        <div class="test-section">
+            <h3>✅ Corrections Implémentées</h3>
+            <ul>
+                <li><strong>DemandeController.java</strong> - Retourne maintenant une vraie réponse d'erreur au lieu de null</li>
+                <li><strong>GlobalExceptionHandler.java</strong> - Gestion améliorée avec types d'erreur et logs détaillés</li>
+                <li><strong>NewDemandeForm.jsx</strong> - Gestion d'erreurs améliorée avec récupération du texte brut</li>
+                <li><strong>Gestion des erreurs 400</strong> - Messages d'erreur formatés et exploitables</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔐 Test d'Authentification</h2>
+        <div class="test-section">
+            <h3>Connexion Utilisateur</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="votre@email.com" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" placeholder="Mot de passe" value="password123">
+            </div>
+            <button class="btn" onclick="testAuth()">🔑 Tester l'Authentification</button>
+            <button class="btn btn-warning" onclick="clearAuth()">🗑️ Effacer Token</button>
+            
+            <div id="authResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>⚠️ Tests d'Erreurs de Validation (400)</h2>
+        
+        <div class="test-section">
+            <h3>Test 1: Demande sans Type de Document</h3>
+            <p>Teste la validation du champ <code>documentTypeId</code> manquant</p>
+            <button class="btn btn-warning" onclick="testMissingDocumentType()">⚠️ Tester Sans Type de Document</button>
+            <div id="test1Result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Demande avec Données Incomplètes</h3>
+            <p>Teste la validation de plusieurs champs obligatoires manquants</p>
+            <button class="btn btn-warning" onclick="testIncompleteData()">⚠️ Tester Données Incomplètes</button>
+            <div id="test2Result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: Demande avec Type de Document Invalide</h3>
+            <p>Teste la validation d'un ID de type de document inexistant</p>
+            <div class="form-group">
+                <label for="invalidDocumentTypeId">ID Type de Document Invalide:</label>
+                <input type="number" id="invalidDocumentTypeId" value="999999" min="1">
+            </div>
+            <button class="btn btn-warning" onclick="testInvalidDocumentType()">⚠️ Tester Type de Document Invalide</button>
+            <div id="test3Result" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>✅ Test de Création Valide</h2>
+        <div class="test-section">
+            <h3>Demande Complète et Valide</h3>
+            <p>Teste la création d'une demande avec toutes les données requises</p>
+            <div class="form-group">
+                <label for="validCiviliteId">ID Civilité:</label>
+                <input type="number" id="validCiviliteId" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label for="validBirthCountryId">ID Pays de naissance:</label>
+                <input type="number" id="validBirthCountryId" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label for="validCountryId">ID Pays résidence:</label>
+                <input type="number" id="validCountryId" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label for="validDocumentTypeId">ID Type de document:</label>
+                <input type="number" id="validDocumentTypeId" value="1" min="1">
+            </div>
+            
+            <button class="btn" onclick="testValidDemande()">✅ Tester Création Valide</button>
+            <div id="validDemandeResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Analyse des Réponses d'Erreur</h2>
+        <div class="test-section">
+            <h3>Structure des Messages d'Erreur</h3>
+            <div id="errorAnalysis">
+                <p>Exécutez les tests d'erreur pour analyser la structure des réponses...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        const API_BASE = 'http://127.0.0.1:8080';
+
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = message;
+        }
+
+        async function testAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('authResult', '❌ Veuillez remplir tous les champs', true);
+                return;
+            }
+
+            try {
+                log('🔑 Test d\'authentification...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    showResult('authResult', `✅ Authentification réussie!\nToken: ${currentToken.substring(0, 50)}...`);
+                    log('✅ Authentification réussie', 'success');
+                } else {
+                    const errorData = await response.text();
+                    showResult('authResult', `❌ Erreur d'authentification: ${response.status} ${response.statusText}\n${errorData}`, true);
+                    log(`❌ Erreur d'authentification: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAuth() {
+            currentToken = null;
+            showResult('authResult', '🗑️ Token effacé');
+            log('🗑️ Token effacé', 'info');
+        }
+
+        async function testMissingDocumentType() {
+            if (!currentToken) {
+                showResult('test1Result', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            try {
+                log('⚠️ Test de validation sans type de document...', 'info');
+                
+                // Demande sans documentTypeId
+                const invalidDemande = {
+                    civiliteId: 1,
+                    firstName: "Test",
+                    lastName: "Validation",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: 1,
+                    streetName: "Rue de Test",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: 1,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Test",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Marie",
+                    motherLastName: "Test",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    // documentTypeId manquant intentionnellement
+                    documentFiles: []
+                };
+
+                log(`📤 Données invalides (sans documentTypeId): ${JSON.stringify(invalidDemande, null, 2)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/api/demandes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(invalidDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.status === 400) {
+                    try {
+                        const errorData = await response.json();
+                        log(`✅ Erreur 400 reçue avec données JSON: ${JSON.stringify(errorData)}`, 'success');
+                        
+                        let resultMessage = `✅ Test réussi! Code 400 reçu\n\n`;
+                        resultMessage += `📋 Structure de l'erreur:\n`;
+                        resultMessage += `- Type: ${errorData.type || 'Non spécifié'}\n`;
+                        resultMessage += `- Erreur: ${errorData.error || 'Non spécifié'}\n`;
+                        resultMessage += `- Message: ${errorData.message || 'Non spécifié'}\n`;
+                        resultMessage += `- Timestamp: ${errorData.timestamp ? new Date(errorData.timestamp).toLocaleString() : 'Non spécifié'}\n`;
+                        resultMessage += `- Path: ${errorData.path || 'Non spécifié'}\n\n`;
+                        resultMessage += `🔍 Données complètes:\n${JSON.stringify(errorData, null, 2)}`;
+                        
+                        showResult('test1Result', resultMessage);
+                        analyzeErrorResponse(errorData);
+                        
+                    } catch (parseError) {
+                        log(`⚠️ Erreur 400 reçue mais impossible de parser JSON: ${parseError.message}`, 'warning');
+                        
+                        // Essayer de récupérer le texte brut
+                        try {
+                            const errorText = await response.text();
+                            showResult('test1Result', `✅ Test réussi! Code 400 reçu\n\n📋 Texte d'erreur brut:\n${errorText || 'Aucun texte'}`);
+                        } catch (textError) {
+                            showResult('test1Result', `✅ Test réussi! Code 400 reçu\n\n⚠️ Impossible de récupérer le contenu de l'erreur`);
+                        }
+                    }
+                } else {
+                    showResult('test1Result', `❌ Test échoué! Code ${response.status} reçu au lieu de 400`, true);
+                    log(`❌ Test de validation échoué - Code ${response.status} reçu`, 'error');
+                }
+            } catch (error) {
+                showResult('test1Result', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        async function testIncompleteData() {
+            if (!currentToken) {
+                showResult('test2Result', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            try {
+                log('⚠️ Test de validation avec données incomplètes...', 'info');
+                
+                // Demande avec plusieurs champs manquants
+                const incompleteDemande = {
+                    civiliteId: 1,
+                    // firstName manquant
+                    // lastName manquant
+                    birthDate: "1990-01-01",
+                    // birthPlace manquant
+                    birthCountryId: 1,
+                    // streetName manquant
+                    // streetNumber manquant
+                    boxNumber: "",
+                    // postalCode manquant
+                    // city manquant
+                    countryId: 1,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Test",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Marie",
+                    motherLastName: "Test",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    documentTypeId: 1,
+                    documentFiles: []
+                };
+
+                log(`📤 Données incomplètes: ${JSON.stringify(incompleteDemande, null, 2)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/api/demandes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(incompleteDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.status === 400) {
+                    try {
+                        const errorData = await response.json();
+                        log(`✅ Erreur 400 reçue avec données JSON: ${JSON.stringify(errorData)}`, 'success');
+                        
+                        let resultMessage = `✅ Test réussi! Code 400 reçu pour données incomplètes\n\n`;
+                        resultMessage += `📋 Message d'erreur:\n${errorData.message || 'Aucun message'}\n\n`;
+                        resultMessage += `🔍 Données complètes:\n${JSON.stringify(errorData, null, 2)}`;
+                        
+                        showResult('test2Result', resultMessage);
+                        analyzeErrorResponse(errorData);
+                        
+                    } catch (parseError) {
+                        log(`⚠️ Erreur 400 reçue mais impossible de parser JSON: ${parseError.message}`, 'warning');
+                        showResult('test2Result', `✅ Test réussi! Code 400 reçu pour données incomplètes\n\n⚠️ Impossible de parser la réponse JSON`);
+                    }
+                } else {
+                    showResult('test2Result', `❌ Test échoué! Code ${response.status} reçu au lieu de 400`, true);
+                    log(`❌ Test de validation échoué - Code ${response.status} reçu`, 'error');
+                }
+            } catch (error) {
+                showResult('test2Result', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        async function testInvalidDocumentType() {
+            if (!currentToken) {
+                showResult('test3Result', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            try {
+                log('⚠️ Test de validation avec type de document invalide...', 'info');
+                
+                const invalidDocumentTypeId = parseInt(document.getElementById('invalidDocumentTypeId').value);
+                
+                const invalidDemande = {
+                    civiliteId: 1,
+                    firstName: "Test",
+                    lastName: "DocumentType",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: 1,
+                    streetName: "Rue de Test",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: 1,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Test",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Marie",
+                    motherLastName: "Test",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    documentTypeId: invalidDocumentTypeId, // ID invalide
+                    documentFiles: []
+                };
+
+                log(`📤 Données avec documentTypeId invalide (${invalidDocumentTypeId}): ${JSON.stringify(invalidDemande, null, 2)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/api/demandes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(invalidDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.status === 400) {
+                    try {
+                        const errorData = await response.json();
+                        log(`✅ Erreur 400 reçue avec données JSON: ${JSON.stringify(errorData)}`, 'success');
+                        
+                        let resultMessage = `✅ Test réussi! Code 400 reçu pour type de document invalide\n\n`;
+                        resultMessage += `📋 Message d'erreur:\n${errorData.message || 'Aucun message'}\n\n`;
+                        resultMessage += `🔍 Données complètes:\n${JSON.stringify(errorData, null, 2)}`;
+                        
+                        showResult('test3Result', resultMessage);
+                        analyzeErrorResponse(errorData);
+                        
+                    } catch (parseError) {
+                        log(`⚠️ Erreur 400 reçue mais impossible de parser JSON: ${parseError.message}`, 'warning');
+                        showResult('test3Result', `✅ Test réussi! Code 400 reçu pour type de document invalide\n\n⚠️ Impossible de parser la réponse JSON`);
+                    }
+                } else {
+                    showResult('test3Result', `❌ Test échoué! Code ${response.status} reçu au lieu de 400`, true);
+                    log(`❌ Test de validation échoué - Code ${response.status} reçu`, 'error');
+                }
+            } catch (error) {
+                showResult('test3Result', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        async function testValidDemande() {
+            if (!currentToken) {
+                showResult('validDemandeResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            const civiliteId = parseInt(document.getElementById('validCiviliteId').value);
+            const birthCountryId = parseInt(document.getElementById('validBirthCountryId').value);
+            const countryId = parseInt(document.getElementById('validCountryId').value);
+            const documentTypeId = parseInt(document.getElementById('validDocumentTypeId').value);
+
+            if (!civiliteId || !birthCountryId || !countryId || !documentTypeId) {
+                showResult('validDemandeResult', '❌ Veuillez remplir tous les champs', true);
+                return;
+            }
+
+            try {
+                log('✅ Test de création de demande valide...', 'info');
+                
+                const validDemande = {
+                    civiliteId: civiliteId,
+                    firstName: "Test",
+                    lastName: "Valide",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: birthCountryId,
+                    streetName: "Rue de Test",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: countryId,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Test",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: birthCountryId,
+                    motherFirstName: "Marie",
+                    motherLastName: "Test",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: birthCountryId,
+                    documentTypeId: documentTypeId,
+                    documentFiles: []
+                };
+
+                log(`📤 Données valides: ${JSON.stringify(validDemande, null, 2)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/api/demandes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(validDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('validDemandeResult', `✅ Demande créée avec succès!\nID: ${data.id}\nStatut: ${data.status}\n\n🔍 Données complètes:\n${JSON.stringify(data, null, 2)}`);
+                    log('✅ Demande créée avec succès', 'success');
+                } else {
+                    let errorMessage = `❌ Erreur lors de la création\nStatus: ${response.status}\nStatus Text: ${response.statusText}`;
+                    
+                    try {
+                        const errorData = await response.json();
+                        errorMessage += `\nDétails: ${JSON.stringify(errorData, null, 2)}`;
+                        log(`❌ Détails de l'erreur: ${JSON.stringify(errorData)}`, 'error');
+                    } catch (parseError) {
+                        log(`⚠️ Impossible de parser la réponse d'erreur: ${parseError.message}`, 'warning');
+                    }
+
+                    showResult('validDemandeResult', errorMessage, true);
+                    log(`❌ Erreur lors de la création: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                showResult('validDemandeResult', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        function analyzeErrorResponse(errorData) {
+            const analysis = document.getElementById('errorAnalysis');
+            
+            let analysisHTML = '<h4>🔍 Analyse de la Réponse d\'Erreur</h4>';
+            
+            if (errorData) {
+                analysisHTML += '<div class="error-details">';
+                analysisHTML += `<h4>✅ Structure de l'erreur reçue:</h4>`;
+                analysisHTML += `<ul>`;
+                
+                if (errorData.type) {
+                    analysisHTML += `<li><strong>Type:</strong> ${errorData.type}</li>`;
+                }
+                if (errorData.error) {
+                    analysisHTML += `<li><strong>Erreur:</strong> ${errorData.error}</li>`;
+                }
+                if (errorData.message) {
+                    analysisHTML += `<li><strong>Message:</strong> ${errorData.message}</li>`;
+                }
+                if (errorData.timestamp) {
+                    analysisHTML += `<li><strong>Timestamp:</strong> ${new Date(errorData.timestamp).toLocaleString()}</li>`;
+                }
+                if (errorData.path) {
+                    analysisHTML += `<li><strong>Path:</strong> ${errorData.path}</li>`;
+                }
+                
+                analysisHTML += '</ul>';
+                analysisHTML += '</div>';
+                
+                // Vérifier si la structure est correcte
+                const hasRequiredFields = errorData.error && errorData.message;
+                const hasOptionalFields = errorData.type && errorData.timestamp;
+                
+                if (hasRequiredFields) {
+                    analysisHTML += '<div class="status success">✅ Structure de base correcte</div>';
+                } else {
+                    analysisHTML += '<div class="status error">❌ Structure de base incomplète</div>';
+                }
+                
+                if (hasOptionalFields) {
+                    analysisHTML += '<div class="status success">✅ Champs optionnels présents</div>';
+                } else {
+                    analysisHTML += '<div class="status warning">⚠️ Champs optionnels manquants</div>';
+                }
+                
+            } else {
+                analysisHTML += '<div class="status error">❌ Aucune donnée d\'erreur reçue</div>';
+            }
+            
+            analysis.innerHTML = analysisHTML;
+        }
+
+        // Initialisation
+        log('🚀 Page de test des erreurs 400 chargée', 'info');
+    </script>
+</body>
+</html>

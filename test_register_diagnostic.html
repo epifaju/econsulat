@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Inscription eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Inscription eConsulat</h1>
+        <p>Ce fichier permet de diagnostiquer les problèmes d'inscription étape par étape.</p>
+
+        <!-- Test 1: Vérification de la connectivité -->
+        <div class="test-section">
+            <h3>Test 1: Vérification de la connectivité</h3>
+            <p>Vérifions d'abord si le serveur backend est accessible.</p>
+            <button onclick="testConnectivity()">Tester la connectivité</button>
+            <div id="connectivity-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 2: Test d'inscription simple -->
+        <div class="test-section">
+            <h3>Test 2: Test d'inscription simple</h3>
+            <p>Testons l'inscription avec des données minimales.</p>
+            <button onclick="testSimpleRegistration()">Test d'inscription simple</button>
+            <div id="simple-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 3: Test d'inscription avec validation -->
+        <div class="test-section">
+            <h3>Test 3: Test d'inscription avec validation</h3>
+            <p>Testons l'inscription avec des données complètes et validation.</p>
+            <div class="form-group">
+                <label for="firstName">Prénom:</label>
+                <input type="text" id="firstName" value="Test" required>
+            </div>
+            <div class="form-group">
+                <label for="lastName">Nom:</label>
+                <input type="text" id="lastName" value="User" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="test@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" value="password123" required>
+            </div>
+            <button onclick="testFullRegistration()">Test d'inscription complète</button>
+            <div id="full-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 4: Test des erreurs de validation -->
+        <div class="test-section">
+            <h3>Test 4: Test des erreurs de validation</h3>
+            <p>Testons comment le serveur gère les données invalides.</p>
+            <button onclick="testInvalidData()">Test données invalides</button>
+            <div id="invalid-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Test 5: Test CORS -->
+        <div class="test-section">
+            <h3>Test 5: Test CORS</h3>
+            <p>Vérifions si les problèmes CORS existent.</p>
+            <button onclick="testCORS()">Test CORS</button>
+            <div id="cors-result" class="result" style="display: none;"></div>
+        </div>
+
+        <!-- Logs détaillés -->
+        <div class="test-section">
+            <h3>Logs détaillés</h3>
+            <p>Historique complet des tests effectués.</p>
+            <div id="logs" class="result info" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <script>
+        let logCounter = 0;
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            logsDiv.textContent += logEntry;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        // Test 1: Vérification de la connectivité
+        async function testConnectivity() {
+            log('🔍 Test de connectivité en cours...');
+            try {
+                const response = await fetch('http://localhost:8080/api/auth/register', {
+                    method: 'OPTIONS'
+                });
+                
+                if (response.ok) {
+                    showResult('connectivity-result', '✅ Serveur accessible - OPTIONS autorisé', 'success');
+                    log('✅ Serveur accessible - OPTIONS autorisé');
+                } else {
+                    showResult('connectivity-result', `❌ Serveur accessible mais OPTIONS non autorisé: ${response.status}`, 'error');
+                    log(`❌ Serveur accessible mais OPTIONS non autorisé: ${response.status}`);
+                }
+            } catch (error) {
+                showResult('connectivity-result', `❌ Erreur de connexion: ${error.message}`, 'error');
+                log(`❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        // Test 2: Test d'inscription simple
+        async function testSimpleRegistration() {
+            log('🔍 Test d\'inscription simple en cours...');
+            try {
+                const data = {
+                    firstName: "Test",
+                    lastName: "User",
+                    email: "simple@example.com",
+                    password: "password123"
+                };
+
+                log(`📤 Envoi des données: ${JSON.stringify(data, null, 2)}`);
+
+                const response = await fetch('http://localhost:8080/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                log(`📥 Réponse reçue: Status ${response.status} ${response.statusText}`);
+
+                const result = await response.json();
+                log(`📥 Corps de la réponse: ${JSON.stringify(result, null, 2)}`);
+
+                if (response.ok) {
+                    showResult('simple-result', `✅ Inscription réussie!\n\nRéponse complète:\n${JSON.stringify(result, null, 2)}`, 'success');
+                    log('✅ Inscription réussie!');
+                } else {
+                    showResult('simple-result', `❌ Erreur ${response.status}: ${result.error || 'Erreur inconnue'}\n\nRéponse complète:\n${JSON.stringify(result, null, 2)}`, 'error');
+                    log(`❌ Erreur ${response.status}: ${result.error || 'Erreur inconnue'}`);
+                }
+            } catch (error) {
+                showResult('simple-result', `❌ Erreur de connexion: ${error.message}`, 'error');
+                log(`❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        // Test 3: Test d'inscription avec validation
+        async function testFullRegistration() {
+            log('🔍 Test d\'inscription complète en cours...');
+            try {
+                const data = {
+                    firstName: document.getElementById('firstName').value,
+                    lastName: document.getElementById('lastName').value,
+                    email: document.getElementById('email').value,
+                    password: document.getElementById('password').value
+                };
+
+                // Validation côté client
+                if (!data.firstName || !data.lastName || !data.email || !data.password) {
+                    showResult('full-result', '❌ Tous les champs sont obligatoires', 'error');
+                    return;
+                }
+
+                if (data.password.length < 6) {
+                    showResult('full-result', '❌ Le mot de passe doit contenir au moins 6 caractères', 'error');
+                    return;
+                }
+
+                log(`📤 Envoi des données: ${JSON.stringify(data, null, 2)}`);
+
+                const response = await fetch('http://localhost:8080/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                log(`📥 Réponse reçue: Status ${response.status} ${response.statusText}`);
+
+                const result = await response.json();
+                log(`📥 Corps de la réponse: ${JSON.stringify(result, null, 2)}`);
+
+                if (response.ok) {
+                    showResult('full-result', `✅ Inscription réussie!\n\nRéponse complète:\n${JSON.stringify(result, null, 2)}`, 'success');
+                    log('✅ Inscription réussie!');
+                } else {
+                    showResult('full-result', `❌ Erreur ${response.status}: ${result.error || 'Erreur inconnue'}\n\nRéponse complète:\n${JSON.stringify(result, null, 2)}`, 'error');
+                    log(`❌ Erreur ${response.status}: ${result.error || 'Erreur inconnue'}`);
+                }
+            } catch (error) {
+                showResult('full-result', `❌ Erreur de connexion: ${error.message}`, 'error');
+                log(`❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        // Test 4: Test des erreurs de validation
+        async function testInvalidData() {
+            log('🔍 Test des erreurs de validation en cours...');
+            try {
+                const invalidData = {
+                    firstName: "", // Prénom vide
+                    lastName: "",  // Nom vide
+                    email: "invalid-email", // Email invalide
+                    password: "123" // Mot de passe trop court
+                };
+
+                log(`📤 Envoi de données invalides: ${JSON.stringify(invalidData, null, 2)}`);
+
+                const response = await fetch('http://localhost:8080/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(invalidData)
+                });
+
+                log(`📥 Réponse reçue: Status ${response.status} ${response.statusText}`);
+
+                const result = await response.json();
+                log(`📥 Corps de la réponse: ${JSON.stringify(result, null, 2)}`);
+
+                if (response.status === 400) {
+                    showResult('invalid-result', `✅ Erreur 400 attendue (validation)\n\nRéponse complète:\n${JSON.stringify(result, null, 2)}`, 'success');
+                    log('✅ Erreur 400 attendue (validation)');
+                } else {
+                    showResult('invalid-result', `⚠️ Statut inattendu ${response.status}: ${result.error || 'Erreur inconnue'}\n\nRéponse complète:\n${JSON.stringify(result, null, 2)}`, 'info');
+                    log(`⚠️ Statut inattendu ${response.status}: ${result.error || 'Erreur inconnue'}`);
+                }
+            } catch (error) {
+                showResult('invalid-result', `❌ Erreur de connexion: ${error.message}`, 'error');
+                log(`❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        // Test 5: Test CORS
+        async function testCORS() {
+            log('🔍 Test CORS en cours...');
+            try {
+                // Test avec des origines différentes
+                const origins = [
+                    'http://localhost:5173',
+                    'http://127.0.0.1:5173',
+                    'http://localhost:3000',
+                    'https://example.com'
+                ];
+
+                for (const origin of origins) {
+                    try {
+                        log(`🌐 Test avec l'origine: ${origin}`);
+                        
+                        const response = await fetch('http://localhost:8080/api/auth/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Origin': origin
+                            },
+                            body: JSON.stringify({
+                                firstName: "Test",
+                                lastName: "CORS",
+                                email: `cors-${Date.now()}@example.com`,
+                                password: "password123"
+                            })
+                        });
+
+                        log(`📥 Réponse pour ${origin}: Status ${response.status}`);
+                        
+                        if (response.ok) {
+                            log(`✅ CORS autorisé pour ${origin}`);
+                        } else {
+                            log(`⚠️ CORS non autorisé pour ${origin}: ${response.status}`);
+                        }
+                    } catch (error) {
+                        log(`❌ Erreur CORS pour ${origin}: ${error.message}`);
+                    }
+                }
+
+                showResult('cors-result', '✅ Tests CORS terminés. Vérifiez les logs pour les détails.', 'success');
+            } catch (error) {
+                showResult('cors-result', `❌ Erreur lors du test CORS: ${error.message}`, 'error');
+                log(`❌ Erreur lors du test CORS: ${error.message}`);
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Diagnostic d\'inscription eConsulat initialisé');
+            log('📋 Instructions:');
+            log('1. Assurez-vous que le serveur backend est démarré sur le port 8080');
+            log('2. Exécutez les tests dans l\'ordre pour diagnostiquer le problème');
+            log('3. Vérifiez les logs pour des informations détaillées');
+        });
+    </script>
+</body>
+</html>

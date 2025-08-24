@@ -35,10 +35,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // Debug: Log de la requête
         System.out.println("🔍 JWT Filter - URL: " + request.getRequestURI());
+        System.out.println("🔍 JWT Filter - Méthode: " + request.getMethod());
         System.out.println("🔍 JWT Filter - Authorization header: " + authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             System.out.println("❌ JWT Filter - Pas de token Bearer trouvé");
+            System.out.println("🔍 JWT Filter - Headers disponibles:");
+            java.util.Enumeration<String> headerNames = request.getHeaderNames();
+            while (headerNames.hasMoreElements()) {
+                String headerName = headerNames.nextElement();
+                String headerValue = request.getHeader(headerName);
+                System.out.println("  " + headerName + ": " + headerValue);
+            }
             filterChain.doFilter(request, response);
             return;
         }
@@ -57,6 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             System.out.println("🔍 JWT Filter - Username extrait: " + username);
         } catch (Exception e) {
             System.out.println("❌ JWT Filter - Erreur lors de l'extraction du token: " + e.getMessage());
+            e.printStackTrace();
             filterChain.doFilter(request, response);
             return;
         }
@@ -67,9 +76,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 System.out.println("🔍 JWT Filter - UserDetails chargé: " + userDetails.getUsername());
                 System.out.println("🔍 JWT Filter - UserDetails enabled: " + userDetails.isEnabled());
                 System.out.println("🔍 JWT Filter - UserDetails authorities: " + userDetails.getAuthorities());
-                System.out.println("🔍 JWT Filter - UserDetails accountNonExpired: " + userDetails.isAccountNonExpired());
+                System.out
+                        .println("🔍 JWT Filter - UserDetails accountNonExpired: " + userDetails.isAccountNonExpired());
                 System.out.println("🔍 JWT Filter - UserDetails accountNonLocked: " + userDetails.isAccountNonLocked());
-                System.out.println("🔍 JWT Filter - UserDetails credentialsNonExpired: " + userDetails.isCredentialsNonExpired());
+                System.out.println(
+                        "🔍 JWT Filter - UserDetails credentialsNonExpired: " + userDetails.isCredentialsNonExpired());
 
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     System.out.println("✅ JWT Filter - Token valide pour: " + username);
@@ -83,10 +94,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
                     System.out.println("🔐 JWT Filter - Authentification établie dans SecurityContext");
-                    System.out.println("🔐 JWT Filter - SecurityContext Authentication: " + SecurityContextHolder.getContext().getAuthentication());
-                    System.out.println("🔐 JWT Filter - SecurityContext Authorities: " + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
+                    System.out.println("🔐 JWT Filter - SecurityContext Authentication: "
+                            + SecurityContextHolder.getContext().getAuthentication());
+                    System.out.println("🔐 JWT Filter - SecurityContext Authorities: "
+                            + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
                 } else {
                     System.out.println("❌ JWT Filter - Token invalide pour: " + username);
+                    System.out.println("🔍 JWT Filter - Raison possible: token expiré ou signature invalide");
                 }
             } catch (Exception e) {
                 System.out.println("❌ JWT Filter - Erreur lors du chargement de l'utilisateur: " + e.getMessage());
@@ -101,6 +115,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         + SecurityContextHolder.getContext().getAuthentication().getAuthorities());
             }
         }
+
+        // Log final avant de passer au filtre suivant
+        System.out.println("🔍 JWT Filter - Passage au filtre suivant pour: " + request.getRequestURI());
         filterChain.doFilter(request, response);
     }
 }

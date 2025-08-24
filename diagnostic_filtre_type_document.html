@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnostic - Filtre Type de Document</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-danger { background: #dc3545; }
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-info { color: #0066cc; }
+        .log-success { color: #28a745; }
+        .log-warning { color: #ffc107; }
+        .log-error { color: #dc3545; }
+        .log-debug { color: #6c757d; }
+        .filter-demo {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .filter-select {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin: 5px;
+            min-width: 200px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .debug-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 11px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnostic - Filtre Type de Document</h1>
+    
+    <div class="container">
+        <h2>📋 Test de l'API des Types de Documents</h2>
+        <p>Vérification de la récupération des types de documents depuis la base de données.</p>
+        
+        <button class="btn" onclick="testDocumentTypesAPI()">Test API Types de Documents</button>
+        <button class="btn" onclick="testAdminDocumentTypesAPI()">Test API Admin Types</button>
+        <button class="btn btn-warning" onclick="testDemandesAPI()">Test API Demandes</button>
+        
+        <div id="apiResult" class="result-box"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Test du Filtrage</h2>
+        <p>Simulation du comportement du filtre avec les données réelles.</p>
+        
+        <div class="filter-demo">
+            <label><strong>Type de document :</strong></label>
+            <select id="documentTypeFilter" class="filter-select" onchange="applyFilter()">
+                <option value="">Tous les types</option>
+                <option value="">Chargement des types...</option>
+            </select>
+            
+            <br><br>
+            <label><strong>Statut :</strong></label>
+            <select id="statusFilter" class="filter-select" onchange="applyFilter()">
+                <option value="">Tous les statuts</option>
+                <option value="PENDING">En attente</option>
+                <option value="APPROVED">Approuvé</option>
+                <option value="REJECTED">Rejeté</option>
+            </select>
+        </div>
+        
+        <div id="filterResult" class="result-box">
+            <div class="log-entry log-info">Sélectionnez des filtres pour voir les résultats...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Analyse des Données</h2>
+        <p>Examen détaillé de la structure des données et du processus de filtrage.</p>
+        
+        <div id="dataAnalysis" class="result-box"></div>
+        
+        <button class="btn btn-success" onclick="analyzeData()">Analyser les Données</button>
+        <button class="btn btn-warning" onclick="debugFiltering()">Debug du Filtrage</button>
+        <button class="btn btn-danger" onclick="clearResults()">Effacer Résultats</button>
+    </div>
+
+    <div class="container">
+        <h2>🐛 Debug du Code</h2>
+        <p>Vérification de la logique de filtrage et des correspondances.</p>
+        
+        <div class="debug-section">
+            <h3>🔍 Problèmes Potentiels Identifiés :</h3>
+            <ul>
+                <li><strong>Mismatch de valeurs :</strong> Les valeurs du filtre ne correspondent pas aux données des demandes</li>
+                <li><strong>Structure des données :</strong> Différence entre documentType et documentTypeDisplay</li>
+                <li><strong>Logique de filtrage :</strong> La correspondance peut échouer à cause de la casse ou des formats</li>
+                <li><strong>Chargement asynchrone :</strong> Les types peuvent ne pas être chargés au moment du filtrage</li>
+            </ul>
+        </div>
+        
+        <div id="debugResult" class="result-box"></div>
+    </div>
+
+    <script>
+        // Données de test et d'analyse
+        let testDemandes = [];
+        let documentTypes = [];
+        let debugInfo = {};
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            element.appendChild(entry);
+            element.scrollTop = element.scrollHeight;
+        }
+
+        async function testDocumentTypesAPI() {
+            const resultBox = document.getElementById('apiResult');
+            resultBox.innerHTML = '';
+            
+            log('apiResult', '🔄 Test de l\'API /api/demandes/document-types...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('apiResult', `✅ ${data.length} types de documents récupérés`, 'success');
+                    
+                    data.forEach((type, index) => {
+                        log('apiResult', `   ${index + 1}. value: "${type.value}", label: "${type.label}"`, 'info');
+                    });
+                    
+                    // Mettre à jour le select de démonstration
+                    updateFilterSelect(data);
+                    documentTypes = data;
+                    
+                    // Analyser la structure
+                    debugInfo.documentTypes = data;
+                    
+                } else {
+                    log('apiResult', `❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log('apiResult', `❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function testAdminDocumentTypesAPI() {
+            const resultBox = document.getElementById('apiResult');
+            
+            log('apiResult', '🔄 Test de l\'API /api/admin/document-types...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('apiResult', `✅ ${data.length} types de documents admin récupérés`, 'success');
+                    
+                    data.forEach((type, index) => {
+                        log('apiResult', `   ${index + 1}. id: ${type.id}, libelle: "${type.libelle}"`, 'info');
+                    });
+                    
+                } else {
+                    log('apiResult', `❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log('apiResult', `❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function testDemandesAPI() {
+            const resultBox = document.getElementById('apiResult');
+            
+            log('apiResult', '🔄 Test de l\'API /api/demandes/my...', 'info');
+            
+            try {
+                // Simuler un token pour le test
+                const mockToken = 'mock-token-for-testing';
+                const response = await fetch('http://localhost:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${mockToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('apiResult', `✅ ${data.length} demandes récupérées`, 'success');
+                    
+                    // Analyser la structure des demandes
+                    if (data.length > 0) {
+                        const firstDemande = data[0];
+                        log('apiResult', `📊 Structure de la première demande:`, 'info');
+                        log('apiResult', `   documentType: "${firstDemande.documentType}"`, 'debug');
+                        log('apiResult', `   documentTypeDisplay: "${firstDemande.documentTypeDisplay}"`, 'debug');
+                        log('apiResult', `   status: "${firstDemande.status}"`, 'debug');
+                    }
+                    
+                    testDemandes = data;
+                    debugInfo.demandes = data;
+                    
+                } else {
+                    log('apiResult', `❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                    log('apiResult', '💡 Note: Cette erreur est normale sans authentification', 'warning');
+                }
+            } catch (err) {
+                log('apiResult', `❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        function updateFilterSelect(types) {
+            const select = document.getElementById('documentTypeFilter');
+            select.innerHTML = '<option value="">Tous les types</option>';
+            
+            if (types && types.length > 0) {
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.value || type.label || type.libelle;
+                    option.textContent = type.label || type.libelle || type.value;
+                    select.appendChild(option);
+                });
+            } else {
+                // Fallback
+                const fallbackTypes = [
+                    'Passeport', 'Acte de naissance', 'Certificat de mariage', 
+                    'Carte d\'identité', 'Autre'
+                ];
+                fallbackTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function applyFilter() {
+            if (testDemandes.length === 0) {
+                log('filterResult', '⚠️ Chargez d\'abord les données de test', 'warning');
+                return;
+            }
+            
+            const documentTypeFilter = document.getElementById('documentTypeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const resultBox = document.getElementById('filterResult');
+            resultBox.innerHTML = '';
+            
+            log('filterResult', `🔍 Application des filtres:`, 'info');
+            log('filterResult', `   Type de document: "${documentTypeFilter || 'Tous'}"`, 'info');
+            log('filterResult', `   Statut: "${statusFilter || 'Tous'}"`, 'info');
+            
+            // Debug du filtrage
+            log('filterResult', `📊 Données avant filtrage: ${testDemandes.length} demandes`, 'debug');
+            
+            // Filtrage avec debug
+            const filteredDemandes = testDemandes.filter(demande => {
+                const matchesDocumentType = !documentTypeFilter || 
+                    demande.documentTypeDisplay === documentTypeFilter ||
+                    demande.documentType === documentTypeFilter;
+                
+                const matchesStatus = !statusFilter || demande.status === statusFilter;
+                
+                // Debug de chaque demande
+                if (documentTypeFilter) {
+                    log('filterResult', `🔍 Demande #${demande.id}:`, 'debug');
+                    log('filterResult', `   documentType: "${demande.documentType}"`, 'debug');
+                    log('filterResult', `   documentTypeDisplay: "${demande.documentTypeDisplay}"`, 'debug');
+                    log('filterResult', `   filterValue: "${documentTypeFilter}"`, 'debug');
+                    log('filterResult', `   match: ${matchesDocumentType}`, matchesDocumentType ? 'success' : 'error');
+                }
+                
+                return matchesDocumentType && matchesStatus;
+            });
+            
+            log('filterResult', `📊 Résultats: ${filteredDemandes.length}/${testDemandes.length} demandes`, 'success');
+            
+            filteredDemandes.forEach(demande => {
+                const statusClass = `status-${demande.status.toLowerCase()}`;
+                log('filterResult', `   ✅ #${demande.id} ${demande.firstName} ${demande.lastName} - ${demande.documentTypeDisplay} <span class="status-badge ${statusClass}">${demande.statusDisplay}</span>`, 'success');
+            });
+        }
+
+        function analyzeData() {
+            const resultBox = document.getElementById('dataAnalysis');
+            resultBox.innerHTML = '';
+            
+            log('dataAnalysis', '🔍 Analyse des données...', 'info');
+            
+            if (testDemandes.length === 0) {
+                log('dataAnalysis', '⚠️ Aucune demande à analyser. Chargez d\'abord les données.', 'warning');
+                return;
+            }
+            
+            // Analyser la structure des demandes
+            log('dataAnalysis', `📊 Analyse de ${testDemandes.length} demandes:`, 'info');
+            
+            const uniqueDocumentTypes = new Set();
+            const uniqueDocumentTypeDisplays = new Set();
+            const uniqueStatuses = new Set();
+            
+            testDemandes.forEach((demande, index) => {
+                uniqueDocumentTypes.add(demande.documentType);
+                uniqueDocumentTypeDisplays.add(demande.documentTypeDisplay);
+                uniqueStatuses.add(demande.status);
+                
+                if (index < 3) { // Afficher les 3 premières demandes
+                    log('dataAnalysis', `   Demande #${demande.id}:`, 'debug');
+                    log('dataAnalysis', `     documentType: "${demande.documentType}"`, 'debug');
+                    log('dataAnalysis', `     documentTypeDisplay: "${demande.documentTypeDisplay}"`, 'debug');
+                    log('dataAnalysis', `     status: "${demande.status}"`, 'debug');
+                }
+            });
+            
+            log('dataAnalysis', `📋 Types de documents uniques:`, 'info');
+            Array.from(uniqueDocumentTypes).forEach(type => {
+                log('dataAnalysis', `   - "${type}"`, 'info');
+            });
+            
+            log('dataAnalysis', `📋 Types d'affichage uniques:`, 'info');
+            Array.from(uniqueDocumentTypeDisplays).forEach(type => {
+                log('dataAnalysis', `   - "${type}"`, 'info');
+            });
+            
+            log('dataAnalysis', `📋 Statuts uniques:`, 'info');
+            Array.from(uniqueStatuses).forEach(status => {
+                log('dataAnalysis', `   - "${status}"`, 'info');
+            });
+            
+            // Analyser la correspondance avec les types de documents
+            if (documentTypes.length > 0) {
+                log('dataAnalysis', `🔗 Correspondance avec les types de documents:`, 'info');
+                
+                documentTypes.forEach(type => {
+                    const matchingDemandes = testDemandes.filter(demande => 
+                        demande.documentTypeDisplay === type.label ||
+                        demande.documentType === type.value
+                    );
+                    
+                    log('dataAnalysis', `   Type "${type.label}" (${type.value}): ${matchingDemandes.length} demandes`, 'info');
+                });
+            }
+        }
+
+        function debugFiltering() {
+            const resultBox = document.getElementById('debugResult');
+            resultBox.innerHTML = '';
+            
+            log('debugResult', '🐛 Debug du processus de filtrage...', 'info');
+            
+            if (testDemandes.length === 0 || documentTypes.length === 0) {
+                log('debugResult', '⚠️ Données insuffisantes pour le debug', 'warning');
+                return;
+            }
+            
+            // Simuler le filtrage étape par étape
+            log('debugResult', '🔍 Simulation du filtrage pour chaque type:', 'info');
+            
+            documentTypes.forEach(type => {
+                log('debugResult', `\n📋 Test du type "${type.label}" (${type.value}):`, 'info');
+                
+                const matchingDemandes = testDemandes.filter(demande => {
+                    const match1 = demande.documentTypeDisplay === type.label;
+                    const match2 = demande.documentType === type.value;
+                    const match3 = demande.documentTypeDisplay === type.value;
+                    const match4 = demande.documentType === type.label;
+                    
+                    log('debugResult', `   Demande #${demande.id}:`, 'debug');
+                    log('debugResult', `     documentTypeDisplay === type.label: "${demande.documentTypeDisplay}" === "${type.label}" = ${match1}`, 'debug');
+                    log('debugResult', `     documentType === type.value: "${demande.documentType}" === "${type.value}" = ${match2}`, 'debug');
+                    log('debugResult', `     documentTypeDisplay === type.value: "${demande.documentTypeDisplay}" === "${type.value}" = ${match3}`, 'debug');
+                    log('debugResult', `     documentType === type.label: "${demande.documentType}" === "${type.label}" = ${match4}`, 'debug');
+                    
+                    return match1 || match2 || match3 || match4;
+                });
+                
+                log('debugResult', `   ✅ ${matchingDemandes.length} demandes correspondent`, 'success');
+            });
+            
+            // Analyser les problèmes potentiels
+            log('debugResult', '\n🚨 Problèmes potentiels identifiés:', 'warning');
+            
+            const problems = [];
+            
+            // Vérifier la cohérence des données
+            testDemandes.forEach(demande => {
+                if (demande.documentType && demande.documentTypeDisplay) {
+                    if (demande.documentType !== demande.documentTypeDisplay) {
+                        problems.push(`Demande #${demande.id}: documentType (${demande.documentType}) ≠ documentTypeDisplay (${demande.documentTypeDisplay})`);
+                    }
+                }
+            });
+            
+            if (problems.length > 0) {
+                problems.forEach(problem => {
+                    log('debugResult', `   ⚠️ ${problem}`, 'warning');
+                });
+            } else {
+                log('debugResult', '   ✅ Aucun problème de cohérence détecté', 'success');
+            }
+        }
+
+        function clearResults() {
+            document.getElementById('apiResult').innerHTML = '';
+            document.getElementById('filterResult').innerHTML = '';
+            document.getElementById('dataAnalysis').innerHTML = '';
+            document.getElementById('debugResult').innerHTML = '';
+            testDemandes = [];
+            documentTypes = [];
+            debugInfo = {};
+        }
+
+        // Initialisation
+        log('apiResult', '🚀 Diagnostic initialisé. Commencez par tester l\'API des types de documents.', 'info');
+        log('apiResult', '💡 Ordre recommandé: 1) Types de documents, 2) Demandes, 3) Analyse, 4) Debug', 'info');
+    </script>
+</body>
+</html>

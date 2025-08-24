@@ -64,21 +64,15 @@ public class PdfDocumentService {
             Demande demande = demandeRepository.findById(demandeId)
                     .orElseThrow(() -> new RuntimeException("Demande non trouvée avec l'ID: " + demandeId));
 
-            // Utiliser le type de document de la demande (enum) et le convertir en entité
-            // JPA
-            Demande.DocumentType demandeDocumentType = demande.getDocumentType();
-            if (demandeDocumentType == null) {
+            // ✅ CORRIGÉ : Utiliser directement la relation JPA DocumentType
+            DocumentType documentType = demande.getDocumentType();
+            if (documentType == null) {
                 throw new RuntimeException("Le type de document n'est pas défini pour cette demande");
             }
 
-            // Convertir l'enum en entité JPA DocumentType
-            DocumentType documentType = documentTypeRepository.findByLibelle(demandeDocumentType.getDisplayName())
-                    .orElseThrow(() -> new RuntimeException(
-                            "Type de document JPA non trouvé pour: " + demandeDocumentType.getDisplayName()));
-
+            // Plus besoin de conversion : on a déjà l'entité JPA
             System.out.println("Demande trouvée: " + demande.getFirstName() + " " + demande.getLastName());
-            System.out.println("Type de document de la demande: " + demandeDocumentType.getDisplayName());
-            System.out.println("Type de document JPA: " + documentType.getLibelle());
+            System.out.println("Type de document de la demande: " + documentType.getLibelle());
             System.out.println("Type de document demandé: " + documentTypeId);
 
             // Validation des données de la demande

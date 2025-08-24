@@ -34,6 +34,10 @@ const UserDashboard = () => {
   const [filters, setFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
+  // Nouvel état pour les types de documents
+  const [documentTypes, setDocumentTypes] = useState([]);
+  const [documentTypesLoading, setDocumentTypesLoading] = useState(false);
+
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message });
     setTimeout(() => setNotification(null), 5000);
@@ -101,7 +105,154 @@ const UserDashboard = () => {
     rejectedRequests: demandes.filter((d) => d.status === "REJECTED").length,
   };
 
-  // Filtrage et recherche
+  // Charger les types de documents depuis la base de données
+  useEffect(() => {
+    const fetchDocumentTypes = async () => {
+      try {
+        setDocumentTypesLoading(true);
+        const response = await fetch(
+          "http://127.0.0.1:8080/api/demandes/document-types",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Normaliser les données pour gérer différents formats
+          const normalizedTypes = data.map((type) => {
+            // Gérer le format { value, label } de l'API demandes
+            if (type.value && type.label) {
+              return {
+                value: type.value,
+                label: type.label,
+                // Ajouter des alias pour améliorer la correspondance
+                aliases: [
+                  type.label.toLowerCase(),
+                  type.value.toLowerCase(),
+                  // Ajouter des variations courantes
+                  type.label.replace(/\s+/g, "").toLowerCase(),
+                  type.label.replace(/[éèê]/g, "e").toLowerCase(),
+                  type.label.replace(/[àâ]/g, "a").toLowerCase(),
+                ],
+              };
+            }
+            // Gérer le format { id, libelle } de l'API admin
+            else if (type.id && type.libelle) {
+              return {
+                value: type.libelle,
+                label: type.libelle,
+                aliases: [
+                  type.libelle.toLowerCase(),
+                  type.id.toString().toLowerCase(),
+                  type.libelle.replace(/\s+/g, "").toLowerCase(),
+                  type.libelle.replace(/[éèê]/g, "e").toLowerCase(),
+                  type.libelle.replace(/[àâ]/g, "a").toLowerCase(),
+                ],
+              };
+            }
+            // Gérer le format { libelle } simple
+            else if (type.libelle) {
+              return {
+                value: type.libelle,
+                label: type.libelle,
+                aliases: [
+                  type.libelle.toLowerCase(),
+                  type.libelle.replace(/\s+/g, "").toLowerCase(),
+                  type.libelle.replace(/[éèê]/g, "e").toLowerCase(),
+                  type.libelle.replace(/[àâ]/g, "a").toLowerCase(),
+                ],
+              };
+            }
+            // Fallback pour les autres formats
+            else {
+              const fallbackValue = String(type);
+              return {
+                value: fallbackValue,
+                label: fallbackValue,
+                aliases: [fallbackValue.toLowerCase()],
+              };
+            }
+          });
+
+          setDocumentTypes(normalizedTypes);
+
+          // Debug : afficher les types normalisés
+          console.log("🔍 Types de documents normalisés:", normalizedTypes);
+        } else {
+          console.error(
+            "Erreur lors du chargement des types de documents:",
+            response.status
+          );
+          // En cas d'erreur, utiliser les types par défaut
+          setDocumentTypes([
+            {
+              value: "PASSEPORT",
+              label: "Passeport",
+              aliases: ["passeport", "passport"],
+            },
+            {
+              value: "ACTE_NAISSANCE",
+              label: "Acte de naissance",
+              aliases: ["acte de naissance", "actenaissance", "naissance"],
+            },
+            {
+              value: "CERTIFICAT_MARIAGE",
+              label: "Certificat de mariage",
+              aliases: [
+                "certificat de mariage",
+                "certificatmariage",
+                "mariage",
+              ],
+            },
+            {
+              value: "CARTE_IDENTITE",
+              label: "Carte d'identité",
+              aliases: ["carte d'identite", "carteidentite", "identite"],
+            },
+            { value: "AUTRE", label: "Autre", aliases: ["autre"] },
+          ]);
+        }
+      } catch (err) {
+        console.error("Erreur lors du chargement des types de documents:", err);
+        // En cas d'erreur, utiliser les types par défaut
+        setDocumentTypes([
+          {
+            value: "PASSEPORT",
+            label: "Passeport",
+            aliases: ["passeport", "passport"],
+          },
+          {
+            value: "ACTE_NAISSANCE",
+            label: "Acte de naissance",
+            aliases: ["acte de naissance", "actenaissance", "naissance"],
+          },
+          {
+            value: "CERTIFICAT_MARIAGE",
+            label: "Certificat de mariage",
+            aliases: ["certificat de mariage", "certificatmariage", "mariage"],
+          },
+          {
+            value: "CARTE_IDENTITE",
+            label: "Carte d'identité",
+            aliases: ["carte d'identite", "carteidentite", "identite"],
+          },
+          { value: "AUTRE", label: "Autre", aliases: ["autre"] },
+        ]);
+      } finally {
+        setDocumentTypesLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchDocumentTypes();
+    }
+  }, [token]);
+
+  // Filtrage et recherche amélioré
   const filteredDemandes = demandes.filter((demande) => {
     const matchesSearch =
       searchTerm === "" ||
@@ -113,6 +264,62 @@ const UserDashboard = () => {
 
     const matchesFilters = Object.keys(filters).every((key) => {
       if (!filters[key]) return true;
+
+      // Gestion spéciale pour le filtre documentType
+      if (key === "documentType") {
+        const filterValue = filters[key];
+        const demandeType = demande.documentTypeDisplay || demande.documentType;
+
+        // Si le filtre est vide, accepter toutes les demandes
+        if (!filterValue) return true;
+
+        // Correspondance exacte
+        if (demandeType === filterValue) {
+          return true;
+        }
+
+        // Correspondance insensible à la casse
+        if (
+          demandeType &&
+          filterValue &&
+          demandeType.toLowerCase() === filterValue.toLowerCase()
+        ) {
+          return true;
+        }
+
+        // Correspondance partielle (pour gérer les variations)
+        if (
+          demandeType &&
+          filterValue &&
+          (demandeType.toLowerCase().includes(filterValue.toLowerCase()) ||
+            filterValue.toLowerCase().includes(demandeType.toLowerCase()))
+        ) {
+          return true;
+        }
+
+        // NOUVEAU : Correspondance par ID numérique
+        // Chercher le type de document correspondant par son label
+        const matchingDocumentType = documentTypes.find(
+          (type) => type.label === filterValue || type.value === filterValue
+        );
+
+        if (matchingDocumentType) {
+          // Vérifier si la demande correspond à ce type
+          const demandeMatchesType =
+            demande.documentTypeDisplay === matchingDocumentType.label ||
+            demande.documentType === matchingDocumentType.value ||
+            demande.documentType === matchingDocumentType.label ||
+            demande.documentTypeDisplay === matchingDocumentType.value;
+
+          if (demandeMatchesType) {
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      // Pour les autres filtres, correspondance exacte
       return demande[key] === filters[key];
     });
 
@@ -237,6 +444,7 @@ const UserDashboard = () => {
     }
   };
 
+  // Options de filtres dynamiques basées sur les types de documents de la base
   const filterOptions = {
     status: {
       label: "Statut",
@@ -248,11 +456,25 @@ const UserDashboard = () => {
     },
     documentType: {
       label: "Type de document",
-      values: [
-        { value: "PASSPORT", label: "Passeport" },
-        { value: "ID_CARD", label: "Carte d'identité" },
-        { value: "DRIVERS_LICENSE", label: "Permis de conduire" },
-      ],
+      values: documentTypesLoading
+        ? [{ value: "", label: "Chargement des types..." }]
+        : documentTypes.length > 0
+        ? [
+            { value: "", label: "Tous les types" },
+            ...documentTypes.map((type) => ({
+              value: type.value,
+              label: type.label,
+            })),
+          ]
+        : [
+            // Fallback si aucun type n'est chargé
+            { value: "", label: "Tous les types" },
+            { value: "PASSEPORT", label: "Passeport" },
+            { value: "ACTE_NAISSANCE", label: "Acte de naissance" },
+            { value: "CERTIFICAT_MARIAGE", label: "Certificat de mariage" },
+            { value: "CARTE_IDENTITE", label: "Carte d'identité" },
+            { value: "AUTRE", label: "Autre" },
+          ],
     },
   };
 

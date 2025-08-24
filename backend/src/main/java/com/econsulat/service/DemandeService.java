@@ -35,60 +35,89 @@ public class DemandeService {
         @Autowired
         private TransactionTemplate transactionTemplate;
 
+        @Autowired
+        private DocumentTypeRepository documentTypeRepository;
+
         public DemandeResponse createDemande(DemandeRequest request, String userEmail) {
-                User user = userRepository.findByEmail(userEmail)
-                                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+                try {
+                        // ✅ VALIDATION PRÉALABLE DES DONNÉES
+                        validateDemandeRequest(request);
 
-                // Récupérer les entités liées
-                Civilite civilite = civiliteRepository.findById(request.getCiviliteId())
-                                .orElseThrow(() -> new RuntimeException("Civilité non trouvée"));
+                        User user = userRepository.findByEmail(userEmail)
+                                        .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-                Pays birthCountry = paysRepository.findById(request.getBirthCountryId())
-                                .orElseThrow(() -> new RuntimeException("Pays de naissance non trouvé"));
+                        // Récupérer les entités liées avec validation
+                        Civilite civilite = civiliteRepository.findById(request.getCiviliteId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Civilité non trouvée avec l'ID: " + request.getCiviliteId()));
 
-                Pays country = paysRepository.findById(request.getCountryId())
-                                .orElseThrow(() -> new RuntimeException("Pays non trouvé"));
+                        Pays birthCountry = paysRepository.findById(request.getBirthCountryId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Pays de naissance non trouvé avec l'ID: "
+                                                                        + request.getBirthCountryId()));
 
-                Pays fatherBirthCountry = paysRepository.findById(request.getFatherBirthCountryId())
-                                .orElseThrow(() -> new RuntimeException("Pays de naissance du père non trouvé"));
+                        Pays country = paysRepository.findById(request.getCountryId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Pays non trouvé avec l'ID: " + request.getCountryId()));
 
-                Pays motherBirthCountry = paysRepository.findById(request.getMotherBirthCountryId())
-                                .orElseThrow(() -> new RuntimeException("Pays de naissance de la mère non trouvé"));
+                        Pays fatherBirthCountry = paysRepository.findById(request.getFatherBirthCountryId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Pays de naissance du père non trouvé avec l'ID: "
+                                                                        + request.getFatherBirthCountryId()));
 
-                // Créer l'adresse
-                Adresse adresse = new Adresse();
-                adresse.setStreetName(request.getStreetName());
-                adresse.setStreetNumber(request.getStreetNumber());
-                adresse.setBoxNumber(request.getBoxNumber());
-                adresse.setPostalCode(request.getPostalCode());
-                adresse.setCity(request.getCity());
-                adresse.setCountry(country);
+                        Pays motherBirthCountry = paysRepository.findById(request.getMotherBirthCountryId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Pays de naissance de la mère non trouvé avec l'ID: "
+                                                                        + request.getMotherBirthCountryId()));
 
-                // Créer la demande
-                Demande demande = new Demande();
-                demande.setCivilite(civilite);
-                demande.setFirstName(request.getFirstName());
-                demande.setLastName(request.getLastName());
-                demande.setBirthDate(request.getBirthDate());
-                demande.setBirthPlace(request.getBirthPlace());
-                demande.setBirthCountry(birthCountry);
-                demande.setAdresse(adresse);
-                demande.setFatherFirstName(request.getFatherFirstName());
-                demande.setFatherLastName(request.getFatherLastName());
-                demande.setFatherBirthDate(request.getFatherBirthDate());
-                demande.setFatherBirthPlace(request.getFatherBirthPlace());
-                demande.setFatherBirthCountry(fatherBirthCountry);
-                demande.setMotherFirstName(request.getMotherFirstName());
-                demande.setMotherLastName(request.getMotherLastName());
-                demande.setMotherBirthDate(request.getMotherBirthDate());
-                demande.setMotherBirthPlace(request.getMotherBirthPlace());
-                demande.setMotherBirthCountry(motherBirthCountry);
-                demande.setDocumentType(request.getDocumentType());
-                demande.setDocumentsPath(String.join(",", request.getDocumentFiles()));
-                demande.setUser(user);
+                        DocumentType documentType = documentTypeRepository.findById(request.getDocumentTypeId())
+                                        .orElseThrow(() -> new RuntimeException(
+                                                        "Type de document non trouvé avec l'ID: "
+                                                                        + request.getDocumentTypeId()));
 
-                Demande savedDemande = demandeRepository.save(demande);
-                return convertToResponse(savedDemande);
+                        // Créer l'adresse avec validation
+                        Adresse adresse = new Adresse();
+                        adresse.setStreetName(request.getStreetName().trim());
+                        adresse.setStreetNumber(request.getStreetNumber().trim());
+                        adresse.setBoxNumber(request.getBoxNumber() != null ? request.getBoxNumber().trim() : null);
+                        adresse.setPostalCode(request.getPostalCode().trim());
+                        adresse.setCity(request.getCity().trim());
+                        adresse.setCountry(country);
+
+                        // Créer la demande
+                        Demande demande = new Demande();
+                        demande.setCivilite(civilite);
+                        demande.setFirstName(request.getFirstName());
+                        demande.setLastName(request.getLastName());
+                        demande.setBirthDate(request.getBirthDate());
+                        demande.setBirthPlace(request.getBirthPlace());
+                        demande.setBirthCountry(birthCountry);
+                        demande.setAdresse(adresse);
+                        demande.setFatherFirstName(request.getFatherFirstName());
+                        demande.setFatherLastName(request.getFatherLastName());
+                        demande.setFatherBirthDate(request.getFatherBirthDate());
+                        demande.setFatherBirthPlace(request.getFatherBirthPlace());
+                        demande.setFatherBirthCountry(fatherBirthCountry);
+                        demande.setMotherFirstName(request.getMotherFirstName());
+                        demande.setMotherLastName(request.getMotherLastName());
+                        demande.setMotherBirthDate(request.getMotherBirthDate());
+                        demande.setMotherBirthPlace(request.getMotherBirthPlace());
+                        demande.setMotherBirthCountry(motherBirthCountry);
+                        demande.setDocumentType(documentType);
+                        demande.setDocumentsPath(request.getDocumentFiles() != null
+                                        ? String.join(",", request.getDocumentFiles())
+                                        : "");
+                        demande.setUser(user);
+
+                        Demande savedDemande = demandeRepository.save(demande);
+                        return convertToResponse(savedDemande);
+
+                } catch (Exception e) {
+                        // Log de l'erreur pour debugging
+                        System.err.println("Erreur lors de la création de la demande: " + e.getMessage());
+                        e.printStackTrace();
+                        throw e;
+                }
         }
 
         public List<DemandeResponse> getDemandesByUser(String userEmail) {
@@ -206,6 +235,45 @@ public class DemandeService {
                 return convertToResponse(updatedDemande);
         }
 
+        // ✅ NOUVELLE MÉTHODE DE VALIDATION
+        private void validateDemandeRequest(DemandeRequest request) {
+                if (request.getDocumentTypeId() == null) {
+                        throw new RuntimeException("L'ID du type de document est obligatoire");
+                }
+
+                if (request.getStreetName() == null || request.getStreetName().trim().isEmpty()) {
+                        throw new RuntimeException("Le nom de rue est obligatoire");
+                }
+
+                if (request.getStreetNumber() == null || request.getStreetNumber().trim().isEmpty()) {
+                        throw new RuntimeException("Le numéro de rue est obligatoire");
+                }
+
+                if (request.getPostalCode() == null || request.getPostalCode().trim().isEmpty()) {
+                        throw new RuntimeException("Le code postal est obligatoire");
+                }
+
+                if (request.getCity() == null || request.getCity().trim().isEmpty()) {
+                        throw new RuntimeException("La ville est obligatoire");
+                }
+
+                if (request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
+                        throw new RuntimeException("Le prénom est obligatoire");
+                }
+
+                if (request.getLastName() == null || request.getLastName().trim().isEmpty()) {
+                        throw new RuntimeException("Le nom de famille est obligatoire");
+                }
+
+                if (request.getBirthDate() == null) {
+                        throw new RuntimeException("La date de naissance est obligatoire");
+                }
+
+                if (request.getBirthPlace() == null || request.getBirthPlace().trim().isEmpty()) {
+                        throw new RuntimeException("Le lieu de naissance est obligatoire");
+                }
+        }
+
         private DemandeResponse convertToResponse(Demande demande) {
                 DemandeResponse response = new DemandeResponse();
                 response.setId(demande.getId());
@@ -231,8 +299,11 @@ public class DemandeService {
                 response.setMotherBirthDate(demande.getMotherBirthDate());
                 response.setMotherBirthPlace(demande.getMotherBirthPlace());
                 response.setMotherBirthCountry(demande.getMotherBirthCountry().getLibelle());
-                response.setDocumentType(demande.getDocumentType().name());
-                response.setDocumentTypeDisplay(demande.getDocumentType().getDisplayName());
+
+                // ✅ CORRIGÉ : Utiliser les méthodes de l'entité DocumentType
+                response.setDocumentType(demande.getDocumentType().getId().toString());
+                response.setDocumentTypeDisplay(demande.getDocumentType().getLibelle());
+
                 response.setStatus(demande.getStatus().name());
                 response.setStatusDisplay(demande.getStatus().getDisplayName());
                 response.setCreatedAt(demande.getCreatedAt());

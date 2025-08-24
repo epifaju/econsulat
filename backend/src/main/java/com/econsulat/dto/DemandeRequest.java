@@ -43,8 +43,8 @@ public class DemandeRequest {
     private String motherBirthPlace;
     private Long motherBirthCountryId;
 
-    // Étape 4: Type de document
-    private Demande.DocumentType documentType;
+    // Étape 4: Type de document - CORRIGÉ : Utiliser l'ID au lieu de l'enum
+    private Long documentTypeId; // ID du type de document depuis la table document_types
 
     // Étape 5: Documents (noms des fichiers uploadés)
     private List<String> documentFiles;

@@ -252,7 +252,7 @@ public class DocumentGenerationService {
             // Titre
             XWPFParagraph title = document.createParagraph();
             XWPFRun titleRun = title.createRun();
-            titleRun.setText(demande.getDocumentType().name());
+            titleRun.setText(demande.getDocumentType().getLibelle()); // ✅ CORRIGÉ : getLibelle() au lieu de name()
             titleRun.setBold(true);
             titleRun.setFontSize(16);
 

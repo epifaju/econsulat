@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Création Demande - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        .info { border-color: #17a2b8; background: #d1ecf1; }
+        .form-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 15px; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; max-height: 400px; overflow-y: auto; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .status.success { background: #28a745; color: white; }
+        .status.error { background: #dc3545; color: white; }
+        .status.warning { background: #ffc107; color: black; }
+        .debug-info { background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .step { background: #f8f9fa; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Création Demande - eConsulat</h1>
+        
+        <div class="section info">
+            <h3>🎯 Objectif du debug</h3>
+            <p>Identifier pourquoi la création de demande ne fonctionne plus après les corrections de l'erreur 403.</p>
+            <p><strong>Problème :</strong> La demande n'est plus créée, probablement à cause des modifications de sécurité</p>
+        </div>
+
+        <!-- Section Connexion -->
+        <div class="section">
+            <h3>🔑 Étape 1: Connexion et obtention du token</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="votre@email.com" value="test@test.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" placeholder="Mot de passe" value="password123">
+            </div>
+            <button onclick="login()">🔐 Se connecter</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+
+        <!-- Section Diagnostic Token -->
+        <div class="section">
+            <h3>🔍 Étape 2: Diagnostic complet du token et des autorités</h3>
+            <button onclick="diagnoseTokenComplete()">🔍 Diagnostic complet du token</button>
+            <button onclick="testTokenValidation()">✅ Tester la validation du token</button>
+            <button onclick="checkUserAuthorities()">👑 Vérifier les autorités utilisateur</button>
+            <div id="tokenDiagnostic" class="result"></div>
+        </div>
+
+        <!-- Section Test Endpoints -->
+        <div class="section">
+            <h3>🌐 Étape 3: Test des endpoints de demandes</h3>
+            <button onclick="testEndpoints()">🧪 Tester tous les endpoints</button>
+            <button onclick="testCreateDemandeStepByStep()">📝 Test création étape par étape</button>
+            <div id="endpointsTest" class="result"></div>
+        </div>
+
+        <!-- Section Analyse Erreur -->
+        <div class="section">
+            <h3>🚨 Étape 4: Analyse des erreurs et logs</h3>
+            <button onclick="analyzeErrors()">🔬 Analyser les erreurs</button>
+            <button onclick="checkSecurityContext()">🔐 Vérifier le contexte de sécurité</button>
+            <div id="errorAnalysis" class="result"></div>
+        </div>
+
+        <!-- Section Logs -->
+        <div class="section">
+            <h3>📊 Logs de diagnostic</h3>
+            <button onclick="clearLogs()">🗑️ Effacer les logs</button>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logsDiv.innerHTML += `[${timestamp}] <span class="status ${statusClass}">${type.toUpperCase()}</span> ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('loginResult', 'error', '❌ Veuillez remplir tous les champs');
+                return;
+            }
+
+            try {
+                log('🔐 Tentative de connexion...', 'info');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                log(`📡 Réponse du serveur: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    currentUser = data;
+                    
+                    log('✅ Connexion réussie!', 'success');
+                    log(`👤 Utilisateur: ${data.email}`, 'info');
+                    log(`🔑 Token reçu: ${data.token ? 'Oui' : 'Non'}`, 'info');
+                    log(`👑 Rôle: ${data.role}`, 'info');
+                    
+                    showResult('loginResult', 'success', 
+                        `✅ Connexion réussie!\n` +
+                        `👤 Email: ${data.email}\n` +
+                        `👑 Rôle: ${data.role}\n` +
+                        `🔑 Token: ${data.token ? 'Reçu' : 'Manquant'}`);
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Erreur de connexion: ${response.status} - ${errorData}`, 'error');
+                    showResult('loginResult', 'error', `❌ Erreur de connexion: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+                showResult('loginResult', 'error', `❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        function diagnoseTokenComplete() {
+            if (!currentToken) {
+                showResult('tokenDiagnostic', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                const tokenParts = currentToken.split('.');
+                if (tokenParts.length !== 3) {
+                    showResult('tokenDiagnostic', 'error', '❌ Format de token invalide');
+                    return;
+                }
+
+                const header = JSON.parse(atob(tokenParts[0]));
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const expiration = new Date(payload.exp * 1000);
+                const now = new Date();
+
+                let message = `🔍 Diagnostic complet du token JWT:\n\n`;
+                message += `📋 Header: ${JSON.stringify(header, null, 2)}\n\n`;
+                message += `📋 Payload: ${JSON.stringify(payload, null, 2)}\n\n`;
+                message += `⏰ Expiration: ${expiration.toLocaleString()}\n`;
+                message += `🕐 Maintenant: ${now.toLocaleString()}\n`;
+                message += `👤 Sujet: ${payload.sub}\n`;
+                message += `🔑 Type: ${payload.typ || 'N/A'}\n`;
+                message += `📝 Algorithme: ${header.alg || 'N/A'}\n`;
+
+                if (expiration < now) {
+                    message += `\n❌ TOKEN EXPIRÉ!`;
+                    showResult('tokenDiagnostic', 'error', message);
+                } else if (expiration - now < 5 * 60 * 1000) {
+                    message += `\n⚠️ Token expire bientôt!`;
+                    showResult('tokenDiagnostic', 'warning', message);
+                } else {
+                    message += `\n✅ Token valide`;
+                    showResult('tokenDiagnostic', 'success', message);
+                }
+                
+                log(`🔍 Token diagnostiqué: ${payload.sub}`, 'info');
+            } catch (error) {
+                showResult('tokenDiagnostic', 'error', `❌ Erreur lors du diagnostic: ${error.message}`);
+                log(`❌ Erreur diagnostic: ${error.message}`, 'error');
+            }
+        }
+
+        async function testTokenValidation() {
+            if (!currentToken) {
+                showResult('tokenDiagnostic', 'error', '❌ Aucun token à valider. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🔍 Validation du token...', 'info');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                log(`📡 Réponse validation: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Token valide!', 'success');
+                    log(`📊 Nombre de demandes: ${data.length}`, 'info');
+                    
+                    showResult('tokenDiagnostic', 'success', 
+                        `✅ Token valide!\n` +
+                        `📊 Nombre de demandes: ${data.length}\n` +
+                        `🔓 Accès autorisé à l'API`);
+                } else if (response.status === 403) {
+                    log('❌ Token invalide ou expiré (403 Forbidden)', 'error');
+                    showResult('tokenDiagnostic', 'error', 
+                        `❌ Token invalide ou expiré\n` +
+                        `🚫 Accès refusé (403 Forbidden)\n` +
+                        `💡 Vérifiez la validité du token`);
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Erreur de validation: ${response.status} - ${errorData}`, 'error');
+                    showResult('tokenDiagnostic', 'error', `❌ Erreur de validation: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de validation: ${error.message}`, 'error');
+                showResult('tokenDiagnostic', 'error', `❌ Erreur de validation: ${error.message}`);
+            }
+        }
+
+        async function checkUserAuthorities() {
+            if (!currentToken) {
+                showResult('tokenDiagnostic', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('👑 Vérification des autorités utilisateur...', 'info');
+                
+                // Test de différents endpoints pour vérifier les autorités
+                const endpoints = [
+                    { name: 'Mes demandes', url: '/api/demandes/my', method: 'GET' },
+                    { name: 'Types de documents', url: '/api/demandes/document-types', method: 'GET' },
+                    { name: 'Civilités', url: '/api/demandes/civilites', method: 'GET' },
+                    { name: 'Pays', url: '/api/demandes/pays', method: 'GET' }
+                ];
+
+                let results = `👑 Test des autorités utilisateur:\n\n`;
+                let hasAccess = true;
+
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, {
+                            method: endpoint.method,
+                            headers: { 'Authorization': `Bearer ${currentToken}` }
+                        });
+
+                        const status = response.status;
+                        const statusText = response.statusText;
+                        
+                        results += `${endpoint.name} (${endpoint.method} ${endpoint.url}): ${status} ${statusText}\n`;
+                        
+                        if (response.ok) {
+                            log(`✅ ${endpoint.name}: ${status}`, 'success');
+                        } else if (response.status === 403) {
+                            log(`❌ ${endpoint.name}: ${status} (Forbidden)`, 'error');
+                            hasAccess = false;
+                        } else {
+                            log(`⚠️ ${endpoint.name}: ${status}`, 'warning');
+                        }
+                    } catch (error) {
+                        results += `${endpoint.name}: Erreur de connexion\n`;
+                        log(`❌ ${endpoint.name}: Erreur de connexion`, 'error');
+                        hasAccess = false;
+                    }
+                }
+
+                if (hasAccess) {
+                    results += `\n✅ L'utilisateur a accès aux endpoints de base`;
+                    showResult('tokenDiagnostic', 'success', results);
+                } else {
+                    results += `\n❌ L'utilisateur n'a pas accès à tous les endpoints`;
+                    showResult('tokenDiagnostic', 'error', results);
+                }
+
+                log('👑 Vérification des autorités terminée', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors de la vérification des autorités: ${error.message}`, 'error');
+                showResult('tokenDiagnostic', 'error', `❌ Erreur lors de la vérification des autorités: ${error.message}`);
+            }
+        }
+
+        async function testEndpoints() {
+            if (!currentToken) {
+                showResult('endpointsTest', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🌐 Test de tous les endpoints...', 'info');
+                
+                const endpoints = [
+                    { name: 'GET /api/demandes', url: '/api/demandes', method: 'GET' },
+                    { name: 'GET /api/demandes/my', url: '/api/demandes/my', method: 'GET' },
+                    { name: 'GET /api/demandes/document-types', url: '/api/demandes/document-types', method: 'GET' },
+                    { name: 'GET /api/demandes/civilites', url: '/api/demandes/civilites', method: 'GET' },
+                    { name: 'GET /api/demandes/pays', url: '/api/demandes/pays', method: 'GET' },
+                    { name: 'POST /api/demandes', url: '/api/demandes', method: 'POST' }
+                ];
+
+                let results = `🌐 Test de tous les endpoints:\n\n`;
+
+                for (const endpoint of endpoints) {
+                    try {
+                        let response;
+                        if (endpoint.method === 'POST') {
+                            // Pour POST, on envoie des données de test minimales
+                            const testData = {
+                                civiliteId: 1,
+                                firstName: "Test",
+                                lastName: "User",
+                                birthDate: "1990-01-01",
+                                birthPlace: "Test",
+                                birthCountryId: 1,
+                                streetName: "Test Street",
+                                streetNumber: "123",
+                                postalCode: "12345",
+                                city: "Test City",
+                                countryId: 1,
+                                fatherFirstName: "Test",
+                                fatherLastName: "Father",
+                                fatherBirthDate: "1960-01-01",
+                                fatherBirthPlace: "Test",
+                                fatherBirthCountryId: 1,
+                                motherFirstName: "Test",
+                                motherLastName: "Mother",
+                                motherBirthDate: "1965-01-01",
+                                motherBirthPlace: "Test",
+                                motherBirthCountryId: 1,
+                                documentTypeId: 1,
+                                documentFiles: []
+                            };
+
+                            response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, {
+                                method: endpoint.method,
+                                headers: {
+                                    'Authorization': `Bearer ${currentToken}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(testData)
+                            });
+                        } else {
+                            response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, {
+                                method: endpoint.method,
+                                headers: { 'Authorization': `Bearer ${currentToken}` }
+                            });
+                        }
+
+                        const status = response.status;
+                        const statusText = response.statusText;
+                        
+                        results += `${endpoint.name}: ${status} ${statusText}\n`;
+                        
+                        if (response.ok) {
+                            log(`✅ ${endpoint.name}: ${status}`, 'success');
+                        } else if (response.status === 403) {
+                            log(`❌ ${endpoint.name}: ${status} (Forbidden)`, 'error');
+                        } else {
+                            log(`⚠️ ${endpoint.name}: ${status}`, 'warning');
+                        }
+                    } catch (error) {
+                        results += `${endpoint.name}: Erreur de connexion\n`;
+                        log(`❌ ${endpoint.name}: Erreur de connexion`, 'error');
+                    }
+                }
+
+                showResult('endpointsTest', 'info', results);
+                log('🌐 Test des endpoints terminé', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors du test des endpoints: ${error.message}`, 'error');
+                showResult('endpointsTest', 'error', `❌ Erreur lors du test des endpoints: ${error.message}`);
+            }
+        }
+
+        async function testCreateDemandeStepByStep() {
+            if (!currentToken) {
+                showResult('endpointsTest', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('📝 Test création demande étape par étape...', 'info');
+                
+                // Étape 1: Vérifier l'accès aux données de référence
+                log('📝 Étape 1: Vérification des données de référence', 'info');
+                
+                const [civilitesRes, paysRes, typesRes] = await Promise.all([
+                    fetch('http://127.0.0.1:8080/api/demandes/civilites', {
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    }),
+                    fetch('http://127.0.0.1:8080/api/demandes/pays', {
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    }),
+                    fetch('http://127.0.0.1:8080/api/demandes/document-types', {
+                        headers: { 'Authorization': `Bearer ${currentToken}` }
+                    })
+                ]);
+
+                let step1Results = `📝 Étape 1: Données de référence\n`;
+                step1Results += `• Civilités: ${civilitesRes.status} ${civilitesRes.statusText}\n`;
+                step1Results += `• Pays: ${paysRes.status} ${paysRes.statusText}\n`;
+                step1Results += `• Types de documents: ${typesRes.status} ${typesRes.statusText}\n`;
+
+                if (civilitesRes.ok && paysRes.ok && typesRes.ok) {
+                    log('✅ Données de référence accessibles', 'success');
+                    step1Results += `\n✅ Toutes les données de référence sont accessibles`;
+                } else {
+                    log('❌ Certaines données de référence ne sont pas accessibles', 'error');
+                    step1Results += `\n❌ Certaines données de référence ne sont pas accessibles`;
+                }
+
+                // Étape 2: Tentative de création de demande
+                log('📝 Étape 2: Tentative de création de demande', 'info');
+                
+                const testDemande = {
+                    civiliteId: 1,
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: 1,
+                    streetName: "Rue de la Paix",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: 1,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Dupont",
+                    fatherBirthDate: "1950-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Marie",
+                    motherLastName: "Martin",
+                    motherBirthDate: "1955-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    documentTypeId: 1,
+                    documentFiles: []
+                };
+
+                const createResponse = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                let step2Results = `\n📝 Étape 2: Création de demande\n`;
+                step2Results += `• Statut: ${createResponse.status} ${createResponse.statusText}\n`;
+
+                if (createResponse.ok) {
+                    const data = await createResponse.json();
+                    log('✅ Demande créée avec succès!', 'success');
+                    step2Results += `• ID de la demande: ${data.id}\n`;
+                    step2Results += `• Statut: ${data.status}\n`;
+                    step2Results += `\n✅ La création de demande fonctionne correctement!`;
+                } else if (createResponse.status === 403) {
+                    log('❌ Accès refusé (403 Forbidden)', 'error');
+                    step2Results += `\n❌ Accès refusé (403 Forbidden)`;
+                    
+                    // Essayer de récupérer plus d'informations sur l'erreur
+                    try {
+                        const errorData = await createResponse.text();
+                        if (errorData) {
+                            step2Results += `\n• Détails de l'erreur: ${errorData}`;
+                        }
+                    } catch (parseError) {
+                        step2Results += `\n• Réponse vide (impossible de parser)`;
+                    }
+                } else {
+                    log(`❌ Erreur lors de la création: ${createResponse.status}`, 'error');
+                    step2Results += `\n❌ Erreur lors de la création: ${createResponse.status}`;
+                    
+                    try {
+                        const errorData = await createResponse.text();
+                        if (errorData) {
+                            step2Results += `\n• Détails de l'erreur: ${errorData}`;
+                        }
+                    } catch (parseError) {
+                        step2Results += `\n• Réponse vide (impossible de parser)`;
+                    }
+                }
+
+                const finalResults = step1Results + step2Results;
+                showResult('endpointsTest', 'info', finalResults);
+                log('📝 Test création demande terminé', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors du test de création: ${error.message}`, 'error');
+                showResult('endpointsTest', 'error', `❌ Erreur lors du test de création: ${error.message}`);
+            }
+        }
+
+        async function analyzeErrors() {
+            if (!currentToken) {
+                showResult('errorAnalysis', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🔬 Analyse des erreurs...', 'info');
+                
+                let analysis = `🔬 Analyse des erreurs de création de demande:\n\n`;
+                
+                // Test 1: Vérifier l'authentification
+                analysis += `🔍 Test 1: Vérification de l'authentification\n`;
+                const authResponse = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                analysis += `• GET /api/demandes/my: ${authResponse.status} ${authResponse.statusText}\n`;
+                
+                if (authResponse.status === 403) {
+                    analysis += `❌ Problème d'authentification - L'utilisateur n'est pas reconnu\n`;
+                } else if (authResponse.status === 200) {
+                    analysis += `✅ Authentification OK - L'utilisateur est reconnu\n`;
+                }
+
+                // Test 2: Vérifier les autorisations
+                analysis += `\n🔍 Test 2: Vérification des autorisations\n`;
+                const createResponse = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({
+                        civiliteId: 1,
+                        firstName: "Test",
+                        lastName: "User",
+                        birthDate: "1990-01-01",
+                        birthPlace: "Test",
+                        birthCountryId: 1,
+                        streetName: "Test Street",
+                        streetNumber: "123",
+                        postalCode: "12345",
+                        city: "Test City",
+                        countryId: 1,
+                        fatherFirstName: "Test",
+                        fatherLastName: "Father",
+                        fatherBirthDate: "1960-01-01",
+                        fatherBirthPlace: "Test",
+                        fatherBirthCountryId: 1,
+                        motherFirstName: "Test",
+                        motherLastName: "Mother",
+                        motherBirthDate: "1965-01-01",
+                        motherBirthPlace: "Test",
+                        motherBirthCountryId: 1,
+                        documentTypeId: 1,
+                        documentFiles: []
+                    })
+                });
+                
+                analysis += `• POST /api/demandes: ${createResponse.status} ${createResponse.statusText}\n`;
+                
+                if (createResponse.status === 403) {
+                    analysis += `❌ Problème d'autorisation - L'utilisateur n'a pas le droit de créer\n`;
+                } else if (createResponse.status === 200) {
+                    analysis += `✅ Autorisation OK - L'utilisateur peut créer\n`;
+                }
+
+                // Test 3: Vérifier la configuration CORS
+                analysis += `\n🔍 Test 3: Vérification de la configuration CORS\n`;
+                const corsResponse = await fetch('http://127.0.0.1:8080/api/demandes/civilites');
+                analysis += `• GET /api/demandes/civilites (sans token): ${corsResponse.status} ${corsResponse.statusText}\n`;
+                
+                if (corsResponse.status === 200) {
+                    analysis += `✅ CORS OK - Les requêtes sans token sont autorisées\n`;
+                } else {
+                    analysis += `❌ Problème CORS - Les requêtes sans token sont bloquées\n`;
+                }
+
+                // Diagnostic final
+                analysis += `\n🎯 DIAGNOSTIC FINAL:\n`;
+                if (authResponse.status === 200 && createResponse.status === 200) {
+                    analysis += `✅ Tout fonctionne correctement!`;
+                } else if (authResponse.status === 403) {
+                    analysis += `🚨 PROBLÈME D'AUTHENTIFICATION\n`;
+                    analysis += `• Le token JWT n'est pas valide ou expiré\n`;
+                    analysis += `• L'utilisateur n'est pas reconnu par le système\n`;
+                } else if (createResponse.status === 403) {
+                    analysis += `🚨 PROBLÈME D'AUTORISATION\n`;
+                    analysis += `• L'utilisateur est authentifié mais n'a pas les droits\n`;
+                    analysis += `• Vérifiez le rôle de l'utilisateur: ${currentUser?.role || 'Inconnu'}\n`;
+                }
+
+                showResult('errorAnalysis', 'info', analysis);
+                log('🔬 Analyse des erreurs terminée', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors de l'analyse: ${error.message}`, 'error');
+                showResult('errorAnalysis', 'error', `❌ Erreur lors de l'analyse: ${error.message}`);
+            }
+        }
+
+        async function checkSecurityContext() {
+            if (!currentToken) {
+                showResult('errorAnalysis', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🔐 Vérification du contexte de sécurité...', 'info');
+                
+                // Test simple pour vérifier que le token est bien transmis
+                const response = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'X-Debug-Token': 'true'
+                    }
+                });
+
+                let results = `🔐 Vérification du contexte de sécurité:\n\n`;
+                results += `• Token utilisé: ${currentToken.substring(0, 20)}...\n`;
+                results += `• Réponse du serveur: ${response.status} ${response.statusText}\n`;
+                results += `• Headers de réponse: ${JSON.stringify([...response.headers.entries()], null, 2)}\n`;
+
+                if (response.ok) {
+                    results += `\n✅ Le contexte de sécurité est correctement établi`;
+                } else {
+                    results += `\n❌ Problème avec le contexte de sécurité`;
+                }
+
+                showResult('errorAnalysis', 'info', results);
+                log('🔐 Vérification du contexte de sécurité terminée', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors de la vérification du contexte: ${error.message}`, 'error');
+                showResult('errorAnalysis', 'error', `❌ Erreur lors de la vérification du contexte: ${error.message}`);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('🗑️ Logs effacés', 'warning');
+        }
+
+        // Initialisation
+        log('🚀 Debug création demande démarré', 'info');
+        log('💡 Connectez-vous d\'abord, puis lancez les tests de diagnostic', 'info');
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Résolution Erreur 403 - eConsulat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 6px; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        .info { border-color: #17a2b8; background: #d1ecf1; }
+        .form-group { margin-bottom: 15px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 15px; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .status.success { background: #28a745; color: white; }
+        .status.error { background: #dc3545; color: white; }
+        .status.warning { background: #ffc107; color: black; }
+        .debug-info { background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Résolution Erreur 403 - eConsulat</h1>
+        
+        <div class="section info">
+            <h3>🎯 Objectif du test</h3>
+            <p>Résoudre l'erreur 403 (Forbidden) lors de la création de demande et éviter le crash JSON.parse.</p>
+            <p><strong>Problème actuel :</strong> POST /api/demandes → HTTP 403 Forbidden + crash JSON.parse</p>
+        </div>
+
+        <!-- Section Connexion -->
+        <div class="section">
+            <h3>🔑 Étape 1: Connexion et obtention du token</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="votre@email.com" value="test@test.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" placeholder="Mot de passe" value="password123">
+            </div>
+            <button onclick="login()">🔐 Se connecter</button>
+            <div id="loginResult" class="result"></div>
+        </div>
+
+        <!-- Section Diagnostic Token -->
+        <div class="section">
+            <h3>🔍 Étape 2: Diagnostic du token JWT</h3>
+            <button onclick="diagnoseToken()">🔍 Diagnostiquer le token</button>
+            <button onclick="validateToken()">✅ Valider le token</button>
+            <div id="tokenDiagnostic" class="result"></div>
+        </div>
+
+        <!-- Section Test Demande -->
+        <div class="section">
+            <h3>📝 Étape 3: Test création demande (avec gestion d'erreur robuste)</h3>
+            <button onclick="testCreateDemandeRobust()">🧪 Tester création robuste</button>
+            <button onclick="testCreateDemandeWithHeaders()">📋 Tester avec headers détaillés</button>
+            <div id="demandeTestResult" class="result"></div>
+        </div>
+
+        <!-- Section Analyse Erreur -->
+        <div class="section">
+            <h3>🚨 Étape 4: Analyse détaillée de l'erreur 403</h3>
+            <button onclick="analyze403Error()">🔬 Analyser l'erreur 403</button>
+            <button onclick="testDifferentEndpoints()">🌐 Tester différents endpoints</button>
+            <div id="errorAnalysis" class="result"></div>
+        </div>
+
+        <!-- Section Logs -->
+        <div class="section">
+            <h3>📊 Logs de diagnostic</h3>
+            <button onclick="clearLogs()">🗑️ Effacer les logs</button>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logsDiv.innerHTML += `[${timestamp}] <span class="status ${statusClass}">${type.toUpperCase()}</span> ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('loginResult', 'error', '❌ Veuillez remplir tous les champs');
+                return;
+            }
+
+            try {
+                log('🔐 Tentative de connexion...', 'info');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                log(`📡 Réponse du serveur: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    currentUser = data;
+                    
+                    log('✅ Connexion réussie!', 'success');
+                    log(`👤 Utilisateur: ${data.email}`, 'info');
+                    log(`🔑 Token reçu: ${data.token ? 'Oui' : 'Non'}`, 'info');
+                    log(`👑 Rôle: ${data.role}`, 'info');
+                    
+                    showResult('loginResult', 'success', 
+                        `✅ Connexion réussie!\n` +
+                        `👤 Email: ${data.email}\n` +
+                        `👑 Rôle: ${data.role}\n` +
+                        `🔑 Token: ${data.token ? 'Reçu' : 'Manquant'}`);
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Erreur de connexion: ${response.status} - ${errorData}`, 'error');
+                    showResult('loginResult', 'error', `❌ Erreur de connexion: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+                showResult('loginResult', 'error', `❌ Erreur de connexion: ${error.message}`);
+            }
+        }
+
+        function diagnoseToken() {
+            if (!currentToken) {
+                showResult('tokenDiagnostic', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                const tokenParts = currentToken.split('.');
+                if (tokenParts.length !== 3) {
+                    showResult('tokenDiagnostic', 'error', '❌ Format de token invalide');
+                    return;
+                }
+
+                const header = JSON.parse(atob(tokenParts[0]));
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const expiration = new Date(payload.exp * 1000);
+                const now = new Date();
+
+                let status = 'success';
+                let message = `🔍 Diagnostic du token JWT:\n\n`;
+                message += `📋 Header: ${JSON.stringify(header, null, 2)}\n\n`;
+                message += `📋 Payload: ${JSON.stringify(payload, null, 2)}\n\n`;
+                message += `⏰ Expiration: ${expiration.toLocaleString()}\n`;
+                message += `🕐 Maintenant: ${now.toLocaleString()}\n`;
+                message += `👤 Sujet: ${payload.sub}\n`;
+
+                if (expiration < now) {
+                    status = 'error';
+                    message += `\n❌ TOKEN EXPIRÉ!`;
+                } else if (expiration - now < 5 * 60 * 1000) { // 5 minutes
+                    status = 'warning';
+                    message += `\n⚠️ Token expire bientôt!`;
+                }
+
+                showResult('tokenDiagnostic', status, message);
+                log(`🔍 Token diagnostiqué: ${payload.sub}`, status);
+            } catch (error) {
+                showResult('tokenDiagnostic', 'error', `❌ Erreur lors du diagnostic: ${error.message}`);
+                log(`❌ Erreur diagnostic: ${error.message}`, 'error');
+            }
+        }
+
+        async function validateToken() {
+            if (!currentToken) {
+                showResult('tokenDiagnostic', 'error', '❌ Aucun token à valider. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🔍 Validation du token...', 'info');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`
+                    }
+                });
+
+                log(`📡 Réponse validation: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Token valide!', 'success');
+                    log(`📊 Nombre de demandes: ${data.length}`, 'info');
+                    
+                    showResult('tokenDiagnostic', 'success', 
+                        `✅ Token valide!\n` +
+                        `📊 Nombre de demandes: ${data.length}\n` +
+                        `🔓 Accès autorisé à l'API`);
+                } else if (response.status === 403) {
+                    log('❌ Token invalide ou expiré (403 Forbidden)', 'error');
+                    showResult('tokenDiagnostic', 'error', 
+                        `❌ Token invalide ou expiré\n` +
+                        `🚫 Accès refusé (403 Forbidden)\n` +
+                        `💡 Vérifiez la validité du token`);
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Erreur de validation: ${response.status} - ${errorData}`, 'error');
+                    showResult('tokenDiagnostic', 'error', `❌ Erreur de validation: ${response.status} - ${errorData}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de validation: ${error.message}`, 'error');
+                showResult('tokenDiagnostic', 'error', `❌ Erreur de validation: ${error.message}`);
+            }
+        }
+
+        async function testCreateDemandeRobust() {
+            if (!currentToken) {
+                showResult('demandeTestResult', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🧪 Test de création de demande (gestion robuste)...', 'info');
+                
+                const testDemande = {
+                    civiliteId: 1,
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: 1,
+                    streetName: "Rue de la Paix",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: 1,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Dupont",
+                    fatherBirthDate: "1950-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Marie",
+                    motherLastName: "Martin",
+                    motherBirthDate: "1955-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    documentTypeId: 1,
+                    documentFiles: []
+                };
+
+                log(`📤 Données de test: ${JSON.stringify(testDemande, null, 2)}`, 'info');
+
+                const response = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                log(`📡 Réponse création: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demande créée avec succès!', 'success');
+                    log(`🆔 ID de la demande: ${data.id}`, 'info');
+                    
+                    showResult('demandeTestResult', 'success', 
+                        `✅ Demande créée avec succès!\n` +
+                        `🆔 ID: ${data.id}\n` +
+                        `📅 Date: ${data.createdAt}\n` +
+                        `📋 Statut: ${data.status}`);
+                } else if (response.status === 403) {
+                    log('❌ Accès refusé (403 Forbidden)', 'error');
+                    
+                    // Gestion robuste de l'erreur 403
+                    let errorMessage = "Accès refusé (403 Forbidden)";
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (parseError) {
+                        log(`⚠️ Réponse 403 vide - impossible de parser: ${parseError.message}`, 'warning');
+                        errorMessage = "Accès refusé - Vérifiez vos autorisations";
+                    }
+                    
+                    showResult('demandeTestResult', 'error', 
+                        `❌ ${errorMessage}\n` +
+                        `🚫 Vérifiez les autorisations de l'utilisateur\n` +
+                        `🔑 Vérifiez la validité du token\n` +
+                        `👤 Rôle utilisateur: ${currentUser?.role || 'Inconnu'}`);
+                } else {
+                    // Gestion robuste des autres erreurs
+                    let errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (parseError) {
+                        log(`⚠️ Impossible de parser la réponse d'erreur: ${parseError.message}`, 'warning');
+                    }
+                    
+                    log(`❌ Erreur de création: ${errorMessage}`, 'error');
+                    showResult('demandeTestResult', 'error', `❌ Erreur de création: ${errorMessage}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur de test: ${error.message}`, 'error');
+                showResult('demandeTestResult', 'error', `❌ Erreur de test: ${error.message}`);
+            }
+        }
+
+        async function testCreateDemandeWithHeaders() {
+            if (!currentToken) {
+                showResult('demandeTestResult', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('📋 Test avec headers détaillés...', 'info');
+                
+                const testDemande = {
+                    civiliteId: 1,
+                    firstName: "Marie",
+                    lastName: "Martin",
+                    birthDate: "1985-05-15",
+                    birthPlace: "Lyon",
+                    birthCountryId: 1,
+                    streetName: "Avenue des Champs",
+                    streetNumber: "456",
+                    boxNumber: "",
+                    postalCode: "69000",
+                    city: "Lyon",
+                    countryId: 1,
+                    fatherFirstName: "Jean",
+                    fatherLastName: "Martin",
+                    fatherBirthDate: "1940-01-01",
+                    fatherBirthPlace: "Paris",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Sophie",
+                    motherLastName: "Bernard",
+                    motherBirthDate: "1945-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    documentTypeId: 1,
+                    documentFiles: []
+                };
+
+                // Headers détaillés pour le diagnostic
+                const headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Accept': 'application/json',
+                    'User-Agent': 'eConsulat-Diagnostic-Tool',
+                    'X-Requested-With': 'XMLHttpRequest'
+                };
+
+                log(`📋 Headers utilisés: ${JSON.stringify(headers, null, 2)}`, 'info');
+
+                const response = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(testDemande)
+                });
+
+                log(`📡 Réponse avec headers détaillés: ${response.status} ${response.statusText}`, 'info');
+                log(`📋 Headers de réponse: ${JSON.stringify([...response.headers.entries()], null, 2)}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demande créée avec succès (headers détaillés)!', 'success');
+                    showResult('demandeTestResult', 'success', 
+                        `✅ Demande créée avec succès (headers détaillés)!\n` +
+                        `🆔 ID: ${data.id}`);
+                } else if (response.status === 403) {
+                    log('❌ Accès refusé même avec headers détaillés', 'error');
+                    showResult('demandeTestResult', 'error', 
+                        `❌ Accès refusé même avec headers détaillés\n` +
+                        `🚫 Le problème n'est pas lié aux headers\n` +
+                        `💡 Vérifiez l'authentification et les autorisations`);
+                } else {
+                    let errorMessage = `Erreur ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData && errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (parseError) {
+                        log(`⚠️ Impossible de parser la réponse d'erreur: ${parseError.message}`, 'warning');
+                    }
+                    
+                    showResult('demandeTestResult', 'error', `❌ Erreur: ${errorMessage}`);
+                }
+            } catch (error) {
+                log(`❌ Erreur avec headers détaillés: ${error.message}`, 'error');
+                showResult('demandeTestResult', 'error', `❌ Erreur: ${error.message}`);
+            }
+        }
+
+        async function analyze403Error() {
+            if (!currentToken) {
+                showResult('errorAnalysis', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🔬 Analyse détaillée de l\'erreur 403...', 'info');
+                
+                // Test 1: Endpoint de base
+                log('🔬 Test 1: Endpoint de base /api/demandes', 'info');
+                const response1 = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                log(`📡 Test 1 - GET /api/demandes: ${response1.status} ${response1.statusText}`, 'info');
+
+                // Test 2: Endpoint spécifique
+                log('🔬 Test 2: Endpoint spécifique /api/demandes/my', 'info');
+                const response2 = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    headers: { 'Authorization': `Bearer ${currentToken}` }
+                });
+                log(`📡 Test 2 - GET /api/demandes/my: ${response2.status} ${response2.statusText}`, 'info');
+
+                // Test 3: Endpoint public
+                log('🔬 Test 3: Endpoint public /api/demandes/civilites', 'info');
+                const response3 = await fetch('http://127.0.0.1:8080/api/demandes/civilites');
+                log(`📡 Test 3 - GET /api/demandes/civilites: ${response3.status} ${response3.statusText}`, 'info');
+
+                // Analyse des résultats
+                let analysis = `🔬 Analyse de l'erreur 403:\n\n`;
+                analysis += `📊 Résultats des tests:\n`;
+                analysis += `• GET /api/demandes: ${response1.status} ${response1.statusText}\n`;
+                analysis += `• GET /api/demandes/my: ${response2.status} ${response2.statusText}\n`;
+                analysis += `• GET /api/demandes/civilites: ${response3.status} ${response3.statusText}\n\n`;
+
+                if (response1.status === 403 && response2.status === 403) {
+                    analysis += `🚨 DIAGNOSTIC: Problème d'authentification global\n`;
+                    analysis += `• L'utilisateur n'a pas accès aux endpoints de demandes\n`;
+                    analysis += `• Vérifiez le rôle de l'utilisateur: ${currentUser?.role || 'Inconnu'}\n`;
+                    analysis += `• Vérifiez que le token est valide et non expiré\n`;
+                } else if (response1.status === 403 && response2.status === 200) {
+                    analysis += `⚠️ DIAGNOSTIC: Problème d'autorisation spécifique\n`;
+                    analysis += `• L'utilisateur peut voir ses demandes mais pas créer\n`;
+                    analysis += `• Vérifiez les permissions de création\n`;
+                } else if (response3.status === 200) {
+                    analysis += `✅ DIAGNOSTIC: Endpoints publics accessibles\n`;
+                    analysis += `• La configuration CORS et la connectivité sont OK\n`;
+                }
+
+                showResult('errorAnalysis', 'info', analysis);
+                log('🔬 Analyse terminée', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors de l'analyse: ${error.message}`, 'error');
+                showResult('errorAnalysis', 'error', `❌ Erreur lors de l'analyse: ${error.message}`);
+            }
+        }
+
+        async function testDifferentEndpoints() {
+            if (!currentToken) {
+                showResult('errorAnalysis', 'error', '❌ Aucun token disponible. Connectez-vous d\'abord.');
+                return;
+            }
+
+            try {
+                log('🌐 Test de différents endpoints...', 'info');
+                
+                const endpoints = [
+                    { name: 'Auth Profile', url: '/api/auth/profile', method: 'GET' },
+                    { name: 'Users Profile', url: '/api/users', method: 'GET' },
+                    { name: 'Admin Stats', url: '/api/admin/stats', method: 'GET' },
+                    { name: 'Document Types', url: '/api/demandes/document-types', method: 'GET' }
+                ];
+
+                let results = `🌐 Test de différents endpoints:\n\n`;
+
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, {
+                            method: endpoint.method,
+                            headers: { 'Authorization': `Bearer ${currentToken}` }
+                        });
+
+                        const status = response.status;
+                        const statusText = response.statusText;
+                        
+                        results += `${endpoint.name} (${endpoint.method} ${endpoint.url}): ${status} ${statusText}\n`;
+                        
+                        if (response.ok) {
+                            log(`✅ ${endpoint.name}: ${status}`, 'success');
+                        } else if (response.status === 403) {
+                            log(`❌ ${endpoint.name}: ${status} (Forbidden)`, 'error');
+                        } else {
+                            log(`⚠️ ${endpoint.name}: ${status}`, 'warning');
+                        }
+                    } catch (error) {
+                        results += `${endpoint.name}: Erreur de connexion\n`;
+                        log(`❌ ${endpoint.name}: Erreur de connexion`, 'error');
+                    }
+                }
+
+                showResult('errorAnalysis', 'info', results);
+                log('🌐 Test des endpoints terminé', 'info');
+
+            } catch (error) {
+                log(`❌ Erreur lors du test des endpoints: ${error.message}`, 'error');
+                showResult('errorAnalysis', 'error', `❌ Erreur lors du test des endpoints: ${error.message}`);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('🗑️ Logs effacés', 'warning');
+        }
+
+        // Initialisation
+        log('🚀 Test de résolution d\'erreur 403 démarré', 'info');
+        log('💡 Connectez-vous d\'abord, puis testez la création de demande', 'info');
+    </script>
+</body>
+</html>

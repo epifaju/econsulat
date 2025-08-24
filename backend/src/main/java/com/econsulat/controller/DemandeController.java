@@ -61,10 +61,45 @@ public class DemandeController {
     private DemandeRepository demandeRepository;
 
     @PostMapping
-    public ResponseEntity<DemandeResponse> createDemande(@RequestBody DemandeRequest request) {
-        String userEmail = getCurrentUserEmail();
-        DemandeResponse response = demandeService.createDemande(request, userEmail);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> createDemande(@RequestBody DemandeRequest request) {
+        System.out.println("🔍 DemandeController - createDemande appelé");
+        System.out.println("🔍 DemandeController - Request reçu: " + request);
+        System.out.println("🔍 DemandeController - DocumentTypeId: " + request.getDocumentTypeId());
+
+        try {
+            String userEmail = getCurrentUserEmail();
+            System.out.println("🔍 DemandeController - Email utilisateur connecté: " + userEmail);
+
+            // Vérifier l'authentification
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            System.out.println("🔍 DemandeController - Authentication: " + auth);
+            if (auth != null) {
+                System.out.println("🔍 DemandeController - Authorities: " + auth.getAuthorities());
+                System.out.println("🔍 DemandeController - Principal: " + auth.getPrincipal());
+                System.out.println("🔍 DemandeController - Is authenticated: " + auth.isAuthenticated());
+            }
+
+            DemandeResponse response = demandeService.createDemande(request, userEmail);
+            System.out.println("✅ DemandeController - Demande créée avec succès: " + response);
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            // ✅ Gestion spécifique des erreurs de validation
+            System.err.println("❌ DemandeController - Erreur de validation: " + e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Erreur de validation");
+            errorResponse.put("message", e.getMessage());
+            errorResponse.put("timestamp", System.currentTimeMillis());
+            errorResponse.put("type", "VALIDATION_ERROR");
+            errorResponse.put("path", "/api/demandes");
+
+            return ResponseEntity.badRequest().body(errorResponse); // Retourner la vraie réponse d'erreur
+
+        } catch (Exception e) {
+            System.err.println("💥 DemandeController - Erreur inattendue: " + e.getMessage());
+            e.printStackTrace();
+            throw e; // Laisser le GlobalExceptionHandler gérer
+        }
     }
 
     @GetMapping("/my")
@@ -139,40 +174,27 @@ public class DemandeController {
 
             // Log pour debug
             System.out.println("🔍 Recherche document pour demande ID: " + id);
-            System.out.println("🔍 Type de document de la demande: " + originalDemande.getDocumentType());
-            System.out.println("🔍 Ordinal du type: " + originalDemande.getDocumentType().ordinal());
+            System.out.println("🔍 Type de document de la demande: " + originalDemande.getDocumentType().getLibelle());
+            System.out.println("🔍 ID du type: " + originalDemande.getDocumentType().getId());
 
             // Récupérer le document généré en utilisant le vrai type de document de la
             // demande
-            // Essayer d'abord avec l'ordinal + 1, puis avec l'ordinal direct
+            // Utiliser directement l'ID de la relation JPA
             GeneratedDocument generatedDocument = null;
 
-            // Première tentative : ordinal + 1 (comme avant)
+            // Première tentative : avec l'ID du type de document
             try {
+                Long documentTypeId = originalDemande.getDocumentType().getId();
                 generatedDocument = generatedDocumentRepository
-                        .findPdfDocumentByDemandeAndType(id, originalDemande.getDocumentType().ordinal() + 1L)
+                        .findPdfDocumentByDemandeAndType(id, documentTypeId)
                         .orElse(null);
-                System.out.println("🔍 Première tentative avec ordinal + 1: "
-                        + (originalDemande.getDocumentType().ordinal() + 1L));
+                System.out.println("🔍 Première tentative avec ID du type: " + documentTypeId);
             } catch (Exception e) {
                 System.out.println("⚠️ Erreur première tentative: " + e.getMessage());
             }
 
-            // Si pas trouvé, essayer avec l'ordinal direct
-            if (generatedDocument == null) {
-                try {
-                    generatedDocument = generatedDocumentRepository
-                            .findPdfDocumentByDemandeAndType(id, (long) originalDemande.getDocumentType().ordinal())
-                            .orElse(null);
-                    System.out.println("🔍 Deuxième tentative avec ordinal direct: "
-                            + originalDemande.getDocumentType().ordinal());
-                } catch (Exception e) {
-                    System.out.println("⚠️ Erreur deuxième tentative: " + e.getMessage());
-                }
-            }
-
-            // Si toujours pas trouvé, essayer de trouver n'importe quel document PDF pour
-            // cette demande
+            // Si pas trouvé, essayer de trouver n'importe quel document PDF pour cette
+            // demande
             if (generatedDocument == null) {
                 try {
                     List<GeneratedDocument> allDocs = generatedDocumentRepository.findByDemandeId(id);
@@ -253,15 +275,10 @@ public class DemandeController {
 
             return ResponseEntity.ok(types);
         } catch (Exception e) {
-            // En cas d'erreur, retourner l'enum comme fallback
-            List<Map<String, String>> types = new ArrayList<>();
-            for (Demande.DocumentType type : Demande.DocumentType.values()) {
-                Map<String, String> typeMap = new HashMap<>();
-                typeMap.put("value", type.name());
-                typeMap.put("label", type.getDisplayName());
-                types.add(typeMap);
-            }
-            return ResponseEntity.ok(types);
+            // ❌ SUPPRIMER : Plus d'enum comme fallback
+            // Retourner une liste vide en cas d'erreur
+            System.err.println("Erreur lors de la récupération des types de documents: " + e.getMessage());
+            return ResponseEntity.ok(new ArrayList<>());
         }
     }
 

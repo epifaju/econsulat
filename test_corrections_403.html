@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Corrections Erreur 403 - eConsulat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        .test-section h3 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status.success { background: #28a745; color: white; }
+        .status.error { background: #dc3545; color: white; }
+        .status.warning { background: #ffc107; color: black; }
+        .status.info { background: #17a2b8; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 Test des Corrections Erreur 403</h1>
+        <p>Validation des solutions implémentées pour résoudre l'erreur 403 Forbidden</p>
+    </div>
+
+    <div class="container">
+        <h2>📋 Résumé des Corrections Implémentées</h2>
+        <div class="test-section">
+            <h3>✅ Corrections Backend</h3>
+            <ul>
+                <li><strong>GlobalExceptionHandler.java</strong> - Gestion centralisée des exceptions</li>
+                <li><strong>DemandeService.java</strong> - Validation préalable des données + méthode de validation</li>
+                <li><strong>DemandeController.java</strong> - Gestion d'erreurs améliorée + logs de debugging</li>
+            </ul>
+        </div>
+        
+        <div class="test-section">
+            <h3>✅ Corrections Frontend</h3>
+            <ul>
+                <li><strong>NewDemandeForm.jsx</strong> - Validation frontend + gestion d'erreurs améliorée</li>
+                <li><strong>Gestion des codes d'erreur</strong> - 400 pour validation, 403 pour authentification</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔐 Test d'Authentification</h2>
+        <div class="test-section">
+            <h3>Connexion Utilisateur</h3>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" placeholder="votre@email.com" value="test@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe:</label>
+                <input type="password" id="password" placeholder="Mot de passe" value="password123">
+            </div>
+            <button class="btn" onclick="testAuth()">🔑 Tester l'Authentification</button>
+            <button class="btn btn-secondary" onclick="clearAuth()">🗑️ Effacer Token</button>
+            
+            <div id="authResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📝 Test de Création de Demande</h2>
+        <div class="test-section">
+            <h3>Données de Test</h3>
+            <div class="form-group">
+                <label for="civiliteId">ID Civilité:</label>
+                <input type="number" id="civiliteId" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label for="birthCountryId">ID Pays de naissance:</label>
+                <input type="number" id="birthCountryId" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label for="countryId">ID Pays résidence:</label>
+                <input type="number" id="countryId" value="1" min="1">
+            </div>
+            <div class="form-group">
+                <label for="documentTypeId">ID Type de document:</label>
+                <input type="number" id="documentTypeId" value="1" min="1">
+            </div>
+            
+            <button class="btn" onclick="testCreateDemande()">📤 Tester Création Demande</button>
+            <button class="btn btn-secondary" onclick="testCreateDemandeInvalid()">⚠️ Test Données Invalides</button>
+            
+            <div id="createDemandeResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Test des Endpoints</h2>
+        <div class="test-section">
+            <h3>Vérification des Endpoints</h3>
+            <button class="btn" onclick="testEndpoints()">🔍 Tester Tous les Endpoints</button>
+            
+            <div id="endpointsResult" class="result"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Résultats des Tests</h2>
+        <div class="test-section">
+            <h3>Statut des Corrections</h3>
+            <div id="testSummary">
+                <p>Cliquez sur "🔍 Tester Tous les Endpoints" pour commencer les tests...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        const API_BASE = 'http://127.0.0.1:8080';
+
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = message;
+        }
+
+        function showMessage(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.innerHTML = `<strong>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${message}</strong>`;
+        }
+
+        async function testAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('authResult', '❌ Veuillez remplir tous les champs', true);
+                return;
+            }
+
+            try {
+                log('🔑 Test d\'authentification...', 'info');
+                
+                const response = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    showResult('authResult', `✅ Authentification réussie!\nToken: ${currentToken.substring(0, 50)}...`);
+                    log('✅ Authentification réussie', 'success');
+                } else {
+                    const errorData = await response.text();
+                    showResult('authResult', `❌ Erreur d'authentification: ${response.status} ${response.statusText}\n${errorData}`, true);
+                    log(`❌ Erreur d'authentification: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('authResult', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        function clearAuth() {
+            currentToken = null;
+            showResult('authResult', '🗑️ Token effacé');
+            log('🗑️ Token effacé', 'info');
+        }
+
+        async function testCreateDemande() {
+            if (!currentToken) {
+                showResult('createDemandeResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            const civiliteId = parseInt(document.getElementById('civiliteId').value);
+            const birthCountryId = parseInt(document.getElementById('birthCountryId').value);
+            const countryId = parseInt(document.getElementById('countryId').value);
+            const documentTypeId = parseInt(document.getElementById('documentTypeId').value);
+
+            if (!civiliteId || !birthCountryId || !countryId || !documentTypeId) {
+                showResult('createDemandeResult', '❌ Veuillez remplir tous les champs', true);
+                return;
+            }
+
+            try {
+                log('📝 Test de création de demande...', 'info');
+                
+                const testDemande = {
+                    civiliteId: civiliteId,
+                    firstName: "Jean",
+                    lastName: "Dupont",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: birthCountryId,
+                    streetName: "Rue de Test",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: countryId,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Dupont",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: birthCountryId,
+                    motherFirstName: "Marie",
+                    motherLastName: "Dupont",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: birthCountryId,
+                    documentTypeId: documentTypeId,
+                    documentFiles: []
+                };
+
+                log(`📤 Données à envoyer: ${JSON.stringify(testDemande, null, 2)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/api/demandes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('createDemandeResult', `✅ Demande créée avec succès!\nID: ${data.id}\nStatut: ${data.status}`);
+                    log('✅ Demande créée avec succès', 'success');
+                } else {
+                    let errorMessage = `❌ Erreur lors de la création\nStatus: ${response.status}\nStatus Text: ${response.statusText}`;
+                    
+                    try {
+                        const errorData = await response.json();
+                        errorMessage += `\nDétails: ${JSON.stringify(errorData, null, 2)}`;
+                        log(`❌ Détails de l'erreur: ${JSON.stringify(errorData)}`, 'error');
+                    } catch (parseError) {
+                        log(`⚠️ Impossible de parser la réponse d'erreur: ${parseError.message}`, 'warning');
+                    }
+
+                    showResult('createDemandeResult', errorMessage, true);
+                    log(`❌ Erreur lors de la création: ${response.status} ${response.statusText}`, 'error');
+                    
+                    // Analyse spécifique de l'erreur
+                    if (response.status === 400) {
+                        log('✅ Code 400 reçu (validation) - Correction fonctionne!', 'success');
+                    } else if (response.status === 403) {
+                        log('❌ Code 403 reçu (authentification) - Problème persiste', 'error');
+                    }
+                }
+            } catch (error) {
+                showResult('createDemandeResult', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCreateDemandeInvalid() {
+            if (!currentToken) {
+                showResult('createDemandeResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            try {
+                log('⚠️ Test de création avec données invalides...', 'info');
+                
+                // Demande sans documentTypeId pour tester la validation
+                const invalidDemande = {
+                    civiliteId: 1,
+                    firstName: "Test",
+                    lastName: "Invalide",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Paris",
+                    birthCountryId: 1,
+                    streetName: "Rue de Test",
+                    streetNumber: "123",
+                    boxNumber: "",
+                    postalCode: "75001",
+                    city: "Paris",
+                    countryId: 1,
+                    fatherFirstName: "Pierre",
+                    fatherLastName: "Test",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Lyon",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Marie",
+                    motherLastName: "Test",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Marseille",
+                    motherBirthCountryId: 1,
+                    // documentTypeId manquant intentionnellement
+                    documentFiles: []
+                };
+
+                log(`📤 Données invalides à envoyer: ${JSON.stringify(invalidDemande, null, 2)}`, 'info');
+
+                const response = await fetch(`${API_BASE}/api/demandes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(invalidDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.status === 400) {
+                    try {
+                        const errorData = await response.json();
+                        showResult('createDemandeResult', `✅ Test réussi! Code 400 reçu pour données invalides\nDétails: ${JSON.stringify(errorData, null, 2)}`);
+                        log('✅ Test de validation réussi - Code 400 reçu', 'success');
+                    } catch (parseError) {
+                        showResult('createDemandeResult', `✅ Test réussi! Code 400 reçu pour données invalides`);
+                        log('✅ Test de validation réussi - Code 400 reçu', 'success');
+                    }
+                } else {
+                    showResult('createDemandeResult', `❌ Test échoué! Code ${response.status} reçu au lieu de 400`, true);
+                    log(`❌ Test de validation échoué - Code ${response.status} reçu`, 'error');
+                }
+            } catch (error) {
+                showResult('createDemandeResult', `❌ Erreur de connexion: ${error.message}`, true);
+                log(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEndpoints() {
+            if (!currentToken) {
+                showResult('endpointsResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('🔍 Test des endpoints...', 'info');
+            let results = '🔍 Test des Endpoints:\n\n';
+            let successCount = 0;
+            let totalCount = 0;
+
+            const endpoints = [
+                { name: 'Types de documents', url: '/api/demandes/document-types', method: 'GET' },
+                { name: 'Civilités', url: '/api/demandes/civilites', method: 'GET' },
+                { name: 'Pays', url: '/api/demandes/pays', method: 'GET' },
+                { name: 'Mes demandes', url: '/api/demandes/my', method: 'GET' }
+            ];
+
+            for (const endpoint of endpoints) {
+                totalCount++;
+                try {
+                    const response = await fetch(`${API_BASE}${endpoint.url}`, {
+                        method: endpoint.method,
+                        headers: {
+                            'Authorization': `Bearer ${currentToken}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        results += `✅ ${endpoint.name}: ${response.status} OK\n`;
+                        successCount++;
+                        log(`✅ ${endpoint.name}: ${response.status} OK`, 'success');
+                    } else {
+                        results += `❌ ${endpoint.name}: ${response.status} ${response.statusText}\n`;
+                        log(`❌ ${endpoint.name}: ${response.status} ${response.statusText}`, 'error');
+                    }
+                } catch (error) {
+                    results += `❌ ${endpoint.name}: Erreur de connexion\n`;
+                    log(`❌ ${endpoint.name}: Erreur de connexion`, 'error');
+                }
+            }
+
+            results += `\n📊 Résumé: ${successCount}/${totalCount} endpoints fonctionnent`;
+            
+            if (successCount === totalCount) {
+                results += '\n🎉 Tous les endpoints fonctionnent correctement!';
+                log('🎉 Tous les endpoints fonctionnent', 'success');
+            } else {
+                results += '\n⚠️ Certains endpoints ont des problèmes';
+                log(`⚠️ ${totalCount - successCount} endpoints ont des problèmes`, 'warning');
+            }
+
+            showResult('endpointsResult', results);
+            
+            // Mettre à jour le résumé
+            updateTestSummary(successCount, totalCount);
+        }
+
+        function updateTestSummary(successCount, totalCount) {
+            const summary = document.getElementById('testSummary');
+            const percentage = Math.round((successCount / totalCount) * 100);
+            
+            let statusClass = 'success';
+            let statusText = '✅';
+            let statusMessage = 'Excellent';
+            
+            if (percentage < 50) {
+                statusClass = 'error';
+                statusText = '❌';
+                statusMessage = 'Critique';
+            } else if (percentage < 80) {
+                statusClass = 'warning';
+                statusText = '⚠️';
+                statusMessage = 'Attention';
+            }
+            
+            summary.innerHTML = `
+                <div class="status ${statusClass}">${statusText} ${statusMessage}</div>
+                <p><strong>Endpoints testés:</strong> ${successCount}/${totalCount} (${percentage}%)</p>
+                <p><strong>Statut:</strong> ${statusMessage}</p>
+                <p><strong>Token:</strong> ${currentToken ? '✅ Présent' : '❌ Absent'}</p>
+            `;
+        }
+
+        // Initialisation
+        log('🚀 Page de test des corrections 403 chargée', 'info');
+    </script>
+</body>
+</html>

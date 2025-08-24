@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Filtre Type de Document Dynamique</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+        }
+        .log-info { color: #0066cc; }
+        .log-success { color: #28a745; }
+        .log-warning { color: #ffc107; }
+        .log-error { color: #dc3545; }
+        .filter-demo {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .filter-select {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            margin: 5px;
+            min-width: 200px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test - Filtre Type de Document Dynamique</h1>
+    
+    <div class="container">
+        <h2>📋 Test de l'API des Types de Documents</h2>
+        <p>Ce test vérifie que l'API retourne bien les types de documents depuis la table <code>document_types</code>.</p>
+        
+        <button class="btn" onclick="testDocumentTypesAPI()">Test API Types de Documents</button>
+        <button class="btn" onclick="testAdminDocumentTypesAPI()">Test API Admin Types</button>
+        
+        <div id="apiResult" class="result-box"></div>
+    </div>
+
+    <div class="container">
+        <h2>🔍 Démonstration du Filtre</h2>
+        <p>Simulation du comportement du filtre "Type de document" dans l'interface utilisateur.</p>
+        
+        <div class="filter-demo">
+            <label><strong>Type de document :</strong></label>
+            <select id="documentTypeFilter" class="filter-select" onchange="applyFilter()">
+                <option value="">Tous les types</option>
+                <option value="">Chargement des types...</option>
+            </select>
+            
+            <br><br>
+            <label><strong>Statut :</strong></label>
+            <select id="statusFilter" class="filter-select" onchange="applyFilter()">
+                <option value="">Tous les statuts</option>
+                <option value="PENDING">En attente</option>
+                <option value="APPROVED">Approuvé</option>
+                <option value="REJECTED">Rejeté</option>
+            </select>
+        </div>
+        
+        <div id="filterResult" class="result-box">
+            <div class="log-entry log-info">Sélectionnez des filtres pour voir les résultats...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 Données de Test</h2>
+        <p>Données simulées pour tester le filtrage :</p>
+        
+        <div id="testData" class="result-box"></div>
+        
+        <button class="btn btn-success" onclick="loadTestData()">Charger Données de Test</button>
+        <button class="btn btn-warning" onclick="clearResults()">Effacer Résultats</button>
+    </div>
+
+    <script>
+        // Données de test simulées
+        let testDemandes = [];
+        let documentTypes = [];
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${timestamp}] ${message}`;
+            element.appendChild(entry);
+            element.scrollTop = element.scrollHeight;
+        }
+
+        async function testDocumentTypesAPI() {
+            const resultBox = document.getElementById('apiResult');
+            resultBox.innerHTML = '';
+            
+            log('apiResult', '🔄 Test de l\'API /api/demandes/document-types...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/demandes/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('apiResult', `✅ ${data.length} types de documents récupérés`, 'success');
+                    
+                    data.forEach((type, index) => {
+                        log('apiResult', `   ${index + 1}. value: "${type.value}", label: "${type.label}"`, 'info');
+                    });
+                    
+                    // Mettre à jour le select de démonstration
+                    updateFilterSelect(data);
+                    documentTypes = data;
+                    
+                } else {
+                    log('apiResult', `❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log('apiResult', `❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        async function testAdminDocumentTypesAPI() {
+            const resultBox = document.getElementById('apiResult');
+            
+            log('apiResult', '🔄 Test de l\'API /api/admin/document-types...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:8080/api/admin/document-types');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('apiResult', `✅ ${data.length} types de documents admin récupérés`, 'success');
+                    
+                    data.forEach((type, index) => {
+                        log('apiResult', `   ${index + 1}. id: ${type.id}, libelle: "${type.libelle}"`, 'info');
+                    });
+                    
+                } else {
+                    log('apiResult', `❌ Erreur: ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (err) {
+                log('apiResult', `❌ Erreur de connexion: ${err.message}`, 'error');
+            }
+        }
+
+        function updateFilterSelect(types) {
+            const select = document.getElementById('documentTypeFilter');
+            select.innerHTML = '<option value="">Tous les types</option>';
+            
+            if (types && types.length > 0) {
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type.value || type.label || type.libelle;
+                    option.textContent = type.label || type.libelle || type.value;
+                    select.appendChild(option);
+                });
+            } else {
+                // Fallback
+                const fallbackTypes = [
+                    'Passeport', 'Acte de naissance', 'Certificat de mariage', 
+                    'Carte d\'identité', 'Autre'
+                ];
+                fallbackTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function loadTestData() {
+            // Simuler des données de demandes
+            testDemandes = [
+                {
+                    id: 1,
+                    firstName: 'Jean',
+                    lastName: 'Dupont',
+                    documentType: 'PASSEPORT',
+                    documentTypeDisplay: 'Passeport',
+                    status: 'PENDING',
+                    statusDisplay: 'En attente',
+                    createdAt: '2024-01-15T10:30:00'
+                },
+                {
+                    id: 2,
+                    firstName: 'Marie',
+                    lastName: 'Martin',
+                    documentType: 'ACTE_NAISSANCE',
+                    documentTypeDisplay: 'Acte de naissance',
+                    status: 'APPROVED',
+                    statusDisplay: 'Approuvé',
+                    createdAt: '2024-01-14T14:20:00'
+                },
+                {
+                    id: 3,
+                    firstName: 'Pierre',
+                    lastName: 'Bernard',
+                    documentType: 'CERTIFICAT_MARIAGE',
+                    documentTypeDisplay: 'Certificat de mariage',
+                    status: 'REJECTED',
+                    statusDisplay: 'Rejeté',
+                    createdAt: '2024-01-13T09:15:00'
+                },
+                {
+                    id: 4,
+                    firstName: 'Sophie',
+                    lastName: 'Leroy',
+                    documentType: 'CARTE_IDENTITE',
+                    documentTypeDisplay: 'Carte d\'identité',
+                    status: 'PENDING',
+                    statusDisplay: 'En attente',
+                    createdAt: '2024-01-12T16:45:00'
+                }
+            ];
+            
+            const resultBox = document.getElementById('testData');
+            resultBox.innerHTML = '';
+            
+            log('testData', '📊 Données de test chargées:', 'success');
+            testDemandes.forEach(demande => {
+                log('testData', `   Demande #${demande.id}: ${demande.firstName} ${demande.lastName} - ${demande.documentTypeDisplay} (${demande.statusDisplay})`, 'info');
+            });
+            
+            applyFilter();
+        }
+
+        function applyFilter() {
+            if (testDemandes.length === 0) {
+                log('filterResult', '⚠️ Chargez d\'abord les données de test', 'warning');
+                return;
+            }
+            
+            const documentTypeFilter = document.getElementById('documentTypeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            const resultBox = document.getElementById('filterResult');
+            resultBox.innerHTML = '';
+            
+            log('filterResult', `🔍 Application des filtres:`, 'info');
+            log('filterResult', `   Type de document: ${documentTypeFilter || 'Tous'}`, 'info');
+            log('filterResult', `   Statut: ${statusFilter || 'Tous'}`, 'info');
+            
+            // Filtrage
+            const filteredDemandes = testDemandes.filter(demande => {
+                const matchesDocumentType = !documentTypeFilter || 
+                    demande.documentTypeDisplay === documentTypeFilter ||
+                    demande.documentType === documentTypeFilter;
+                
+                const matchesStatus = !statusFilter || demande.status === statusFilter;
+                
+                return matchesDocumentType && matchesStatus;
+            });
+            
+            log('filterResult', `📊 Résultats: ${filteredDemandes.length}/${testDemandes.length} demandes`, 'success');
+            
+            filteredDemandes.forEach(demande => {
+                const statusClass = `status-${demande.status.toLowerCase()}`;
+                log('filterResult', `   ✅ #${demande.id} ${demande.firstName} ${demande.lastName} - ${demande.documentTypeDisplay} <span class="status-badge ${statusClass}">${demande.statusDisplay}</span>`, 'success');
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('apiResult').innerHTML = '';
+            document.getElementById('filterResult').innerHTML = '';
+            document.getElementById('testData').innerHTML = '';
+            testDemandes = [];
+            documentTypes = [];
+        }
+
+        // Initialisation
+        log('apiResult', '🚀 Test initialisé. Cliquez sur "Test API Types de Documents" pour commencer.', 'info');
+    </script>
+</body>
+</html>

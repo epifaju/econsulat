@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Complet - Erreur 403 eConsulat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .section h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .log-info { background-color: #e3f2fd; }
+        .log-success { background-color: #e8f5e8; }
+        .log-error { background-color: #ffebee; }
+        .log-warning { background-color: #fff8e1; }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background-color: #27ae60; }
+        .status-error { background-color: #e74c3c; }
+        .status-warning { background-color: #f39c12; }
+        .status-info { background-color: #3498db; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Complet - Erreur 403 eConsulat</h1>
+        <p>Ce diagnostic va analyser en détail la cause de l'erreur HTTP 403 Forbidden lors de la création de demandes.</p>
+    </div>
+
+    <!-- Section Authentification -->
+    <div class="container">
+        <div class="section">
+            <h3>🔐 Test d'Authentification</h3>
+            <div class="form-group">
+                <label for="email">Email :</label>
+                <input type="email" id="email" placeholder="votre@email.com" value="admin@econsulat.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe :</label>
+                <input type="password" id="password" placeholder="Mot de passe" value="admin123">
+            </div>
+            <button onclick="testAuth()">🔑 Tester l'Authentification</button>
+            <div id="authResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Test des Endpoints -->
+    <div class="container">
+        <div class="section">
+            <h3>🌐 Test des Endpoints</h3>
+            <button onclick="testEndpoints()">🧪 Tester Tous les Endpoints</button>
+            <div id="endpointsResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Test de Création de Demande -->
+    <div class="container">
+        <div class="section">
+            <h3>📝 Test de Création de Demande</h3>
+            <button onclick="testCreateDemande()">📤 Créer une Demande de Test</button>
+            <div id="createDemandeResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Analyse des Headers -->
+    <div class="container">
+        <div class="section">
+            <h3>📋 Analyse des Headers HTTP</h3>
+            <button onclick="analyzeHeaders()">🔍 Analyser les Headers</button>
+            <div id="headersResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Test des Rôles -->
+    <div class="container">
+        <div class="section">
+            <h3>👥 Test des Rôles et Permissions</h3>
+            <button onclick="testRoles()">🎭 Tester les Rôles</button>
+            <div id="rolesResult" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Section Logs en Temps Réel -->
+    <div class="container">
+        <div class="section">
+            <h3>📊 Logs en Temps Réel</h3>
+            <div id="logsContainer" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
+                <div class="log-entry log-info">🚀 Diagnostic démarré. Cliquez sur les boutons pour commencer les tests.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentToken = null;
+        let currentUser = null;
+
+        function log(message, type = 'info') {
+            const logsContainer = document.getElementById('logsContainer');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = `status-indicator status-${type}`;
+            
+            logEntry.appendChild(statusIndicator);
+            logEntry.appendChild(document.createTextNode(`[${timestamp}] ${message}`));
+            
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function showResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isError ? 'error' : 'success'}`;
+            element.textContent = message;
+        }
+
+        async function testAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showResult('authResult', '❌ Veuillez remplir tous les champs', true);
+                return;
+            }
+
+            log('🔑 Test d\'authentification en cours...', 'info');
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                log(`📡 Réponse authentification: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentToken = data.token;
+                    currentUser = { email: data.email, role: data.role };
+                    
+                    log(`✅ Authentification réussie pour ${data.email} (rôle: ${data.role})`, 'success');
+                    log(`🔑 Token reçu: ${data.token.substring(0, 50)}...`, 'info');
+                    
+                    showResult('authResult', `✅ Authentification réussie!\n\nEmail: ${data.email}\nRôle: ${data.role}\nToken: ${data.token.substring(0, 50)}...`);
+                } else {
+                    const errorData = await response.text();
+                    log(`❌ Échec de l'authentification: ${response.status} - ${errorData}`, 'error');
+                    showResult('authResult', `❌ Échec de l'authentification\nStatus: ${response.status}\nErreur: ${errorData}`, true);
+                }
+            } catch (error) {
+                log(`💥 Erreur de connexion: ${error.message}`, 'error');
+                showResult('authResult', `💥 Erreur de connexion: ${error.message}`, true);
+            }
+        }
+
+        async function testEndpoints() {
+            if (!currentToken) {
+                showResult('endpointsResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('🌐 Test des endpoints en cours...', 'info');
+            
+            const endpoints = [
+                { name: 'Types de documents', url: '/api/demandes/document-types', method: 'GET' },
+                { name: 'Civilités', url: '/api/demandes/civilites', method: 'GET' },
+                { name: 'Pays', url: '/api/demandes/pays', method: 'GET' },
+                { name: 'Mes demandes', url: '/api/demandes/my', method: 'GET' },
+                { name: 'Création demande', url: '/api/demandes', method: 'POST' }
+            ];
+
+            let results = '🌐 Test des Endpoints:\n\n';
+            
+            for (const endpoint of endpoints) {
+                try {
+                    log(`🔍 Test de ${endpoint.name} (${endpoint.method} ${endpoint.url})`, 'info');
+                    
+                    const options = {
+                        method: endpoint.method,
+                        headers: {
+                            'Authorization': `Bearer ${currentToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    };
+
+                    if (endpoint.method === 'POST') {
+                        options.body = JSON.stringify({ test: true });
+                    }
+
+                    const response = await fetch(`http://127.0.0.1:8080${endpoint.url}`, options);
+                    
+                    const status = response.status;
+                    const statusText = response.statusText;
+                    
+                    if (response.ok) {
+                        log(`✅ ${endpoint.name}: ${status} ${statusText}`, 'success');
+                        results += `✅ ${endpoint.name}: ${status} ${statusText}\n`;
+                    } else if (status === 403) {
+                        log(`❌ ${endpoint.name}: 403 Forbidden (Problème d'autorisation)`, 'error');
+                        results += `❌ ${endpoint.name}: 403 Forbidden (Problème d'autorisation)\n`;
+                    } else {
+                        log(`⚠️ ${endpoint.name}: ${status} ${statusText}`, 'warning');
+                        results += `⚠️ ${endpoint.name}: ${status} ${statusText}\n`;
+                    }
+                } catch (error) {
+                    log(`💥 Erreur sur ${endpoint.name}: ${error.message}`, 'error');
+                    results += `💥 Erreur sur ${endpoint.name}: ${error.message}\n`;
+                }
+            }
+
+            showResult('endpointsResult', results);
+        }
+
+        async function testCreateDemande() {
+            if (!currentToken) {
+                showResult('createDemandeResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('📝 Test de création de demande en cours...', 'info');
+            
+            // Données de test
+            const testDemande = {
+                civiliteId: 1,
+                firstName: "Jean",
+                lastName: "Dupont",
+                birthDate: "1990-01-01",
+                birthPlace: "Paris",
+                birthCountryId: 1,
+                streetName: "Rue de la Paix",
+                streetNumber: "123",
+                boxNumber: "",
+                postalCode: "75001",
+                city: "Paris",
+                countryId: 1,
+                fatherFirstName: "Pierre",
+                fatherLastName: "Dupont",
+                fatherBirthDate: "1950-01-01",
+                fatherBirthPlace: "Lyon",
+                fatherBirthCountryId: 1,
+                motherFirstName: "Marie",
+                motherLastName: "Martin",
+                motherBirthDate: "1955-01-01",
+                motherBirthPlace: "Marseille",
+                motherBirthCountryId: 1,
+                documentTypeId: 1,
+                documentFiles: []
+            };
+
+            try {
+                log(`📤 Envoi des données: ${JSON.stringify(testDemande, null, 2)}`, 'info');
+                
+                const response = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                log(`📥 Réponse reçue: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Demande créée avec succès!', 'success');
+                    showResult('createDemandeResult', `✅ Demande créée avec succès!\n\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    let errorMessage = `❌ Erreur lors de la création\nStatus: ${response.status}\nStatus Text: ${response.statusText}`;
+                    
+                    try {
+                        const errorData = await response.text();
+                        errorMessage += `\nDétails: ${errorData}`;
+                        log(`❌ Détails de l'erreur: ${errorData}`, 'error');
+                    } catch (parseError) {
+                        log(`⚠️ Impossible de parser la réponse d'erreur: ${parseError.message}`, 'warning');
+                    }
+
+                    if (response.status === 403) {
+                        errorMessage += '\n\n🔍 ANALYSE 403:\n- Problème d\'authentification ou d\'autorisation\n- Vérifier le token JWT\n- Vérifier les rôles utilisateur\n- Vérifier la configuration Spring Security';
+                        log('🔍 Analyse de l\'erreur 403: Problème d\'authentification/autorisation', 'warning');
+                    }
+
+                    showResult('createDemandeResult', errorMessage, true);
+                }
+            } catch (error) {
+                log(`💥 Erreur de connexion: ${error.message}`, 'error');
+                showResult('createDemandeResult', `💥 Erreur de connexion: ${error.message}`, true);
+            }
+        }
+
+        async function analyzeHeaders() {
+            if (!currentToken) {
+                showResult('headersResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('📋 Analyse des headers en cours...', 'info');
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${currentToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                let analysis = '📋 Analyse des Headers HTTP:\n\n';
+                analysis += `🔑 Token utilisé: ${currentToken.substring(0, 50)}...\n`;
+                analysis += `📡 Status de la réponse: ${response.status} ${response.statusText}\n\n`;
+                
+                // Analyser les headers de la réponse
+                analysis += '📥 Headers de la réponse:\n';
+                for (const [key, value] of response.headers.entries()) {
+                    analysis += `  ${key}: ${value}\n`;
+                }
+
+                if (response.status === 403) {
+                    analysis += '\n🔍 ANALYSE 403:\n';
+                    analysis += '- Le token est envoyé mais rejeté\n';
+                    analysis += '- Problème probable: rôle insuffisant ou configuration Spring Security\n';
+                    analysis += '- Vérifier que l\'utilisateur a le rôle USER, ADMIN ou AGENT\n';
+                }
+
+                showResult('headersResult', analysis);
+                log('📋 Analyse des headers terminée', 'info');
+            } catch (error) {
+                log(`💥 Erreur lors de l'analyse des headers: ${error.message}`, 'error');
+                showResult('headersResult', `💥 Erreur: ${error.message}`, true);
+            }
+        }
+
+        async function testRoles() {
+            if (!currentToken) {
+                showResult('rolesResult', '❌ Veuillez d\'abord vous authentifier', true);
+                return;
+            }
+
+            log('👥 Test des rôles en cours...', 'info');
+            
+            try {
+                // Test avec différents endpoints selon les rôles
+                const roleTests = [
+                    { name: 'Endpoint public (types de documents)', url: '/api/demandes/document-types', expected: 200 },
+                    { name: 'Endpoint utilisateur (mes demandes)', url: '/api/demandes/my', expected: 200 },
+                    { name: 'Endpoint admin (toutes les demandes)', url: '/api/admin/demandes', expected: [200, 403] },
+                    { name: 'Endpoint admin (utilisateurs)', url: '/api/admin/users', expected: [200, 403] }
+                ];
+
+                let results = '👥 Test des Rôles et Permissions:\n\n';
+                
+                for (const test of roleTests) {
+                    try {
+                        const response = await fetch(`http://127.0.0.1:8080${test.url}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${currentToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const status = response.status;
+                        const expected = Array.isArray(test.expected) ? test.expected : [test.expected];
+                        
+                        if (expected.includes(status)) {
+                            log(`✅ ${test.name}: ${status} (attendu: ${expected.join(' ou ')})`, 'success');
+                            results += `✅ ${test.name}: ${status} (attendu: ${expected.join(' ou ')})\n`;
+                        } else {
+                            log(`❌ ${test.name}: ${status} (attendu: ${expected.join(' ou ')})`, 'error');
+                            results += `❌ ${test.name}: ${status} (attendu: ${expected.join(' ou ')})\n`;
+                        }
+
+                        if (status === 403) {
+                            results += `  🔍 Accès refusé - Vérifier le rôle de l'utilisateur\n`;
+                        }
+                    } catch (error) {
+                        log(`💥 Erreur sur ${test.name}: ${error.message}`, 'error');
+                        results += `💥 Erreur sur ${test.name}: ${error.message}\n`;
+                    }
+                }
+
+                // Analyse du rôle actuel
+                results += `\n🔍 Analyse du rôle actuel:\n`;
+                results += `- Email: ${currentUser.email}\n`;
+                results += `- Rôle: ${currentUser.role}\n`;
+                results += `- Rôle Spring Security: ROLE_${currentUser.role}\n`;
+
+                showResult('rolesResult', results);
+                log('👥 Test des rôles terminé', 'info');
+            } catch (error) {
+                log(`💥 Erreur lors du test des rôles: ${error.message}`, 'error');
+                showResult('rolesResult', `💥 Erreur: ${error.message}`, true);
+            }
+        }
+
+        // Initialisation
+        log('🚀 Diagnostic eConsulat 403 démarré', 'info');
+        log('📋 Instructions:', 'info');
+        log('1. Commencez par tester l\'authentification', 'info');
+        log('2. Puis testez les endpoints', 'info');
+        log('3. Testez la création de demande', 'info');
+        log('4. Analysez les headers et rôles', 'info');
+    </script>
+</body>
+</html>

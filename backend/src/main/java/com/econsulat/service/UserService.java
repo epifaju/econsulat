@@ -2,6 +2,7 @@ package com.econsulat.service;
 
 import com.econsulat.model.User;
 import com.econsulat.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class UserService implements UserDetailsService {
 
@@ -24,8 +26,12 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        log.info("🔍 loadUserByUsername appelé avec l'email: '{}'", email);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé: " + email));
+
+        log.info("✅ Utilisateur chargé pour loadUserByUsername: ID={}, Email={}, Role={}",
+                user.getId(), user.getEmail(), user.getRole());
 
         // Retourner directement notre utilisateur car il implémente déjà UserDetails
         // avec la méthode getAuthorities() qui retourne les bonnes autorités
@@ -41,7 +47,28 @@ public class UserService implements UserDetailsService {
     }
 
     public Optional<User> findByEmail(String email) {
-        return userRepository.findByEmail(email);
+        log.info("🔍 findByEmail appelé avec l'email: '{}'", email);
+        log.info("🔍 Longueur de l'email: {}", email.length());
+        log.info("🔍 Caractères de l'email: {}",
+                email.chars().mapToObj(c -> String.format("'%c'(%d)", (char) c, c)).toList());
+
+        Optional<User> user = userRepository.findByEmail(email);
+
+        if (user.isPresent()) {
+            User foundUser = user.get();
+            log.info("✅ Utilisateur trouvé dans findByEmail: ID={}, Email='{}', Role={}, Enabled={}",
+                    foundUser.getId(), foundUser.getEmail(), foundUser.getRole(), foundUser.getEmailVerified());
+        } else {
+            log.warn("⚠️ Aucun utilisateur trouvé avec l'email: '{}'", email);
+
+            // Debug: afficher tous les utilisateurs existants
+            List<User> allUsers = userRepository.findAll();
+            log.info("📋 Tous les utilisateurs en base ({}):", allUsers.size());
+            allUsers.forEach(u -> log.info("   - ID={}, Email='{}', Role={}, Enabled={}",
+                    u.getId(), u.getEmail(), u.getRole(), u.getEmailVerified()));
+        }
+
+        return user;
     }
 
     public User createUser(User user) {

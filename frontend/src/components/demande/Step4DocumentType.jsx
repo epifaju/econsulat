@@ -22,15 +22,15 @@ const Step4DocumentType = ({ formData, updateFormData, documentTypes }) => {
             Type de document <span className="text-red-500">*</span>
           </label>
           <select
-            value={formData.documentType}
-            onChange={(e) => handleChange("documentType", e.target.value)}
+            value={formData.documentTypeId || ""}
+            onChange={(e) => handleChange("documentTypeId", e.target.value)}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
             required
           >
             <option value="">Sélectionnez un type de document</option>
             {documentTypes.map((type) => (
-              <option key={type.value || type} value={type.value || type}>
-                {type.label || type.displayName || type}
+              <option key={type.id || type.value} value={type.id || type.value}>
+                {type.libelle || type.label || type.displayName || type}
               </option>
             ))}
           </select>

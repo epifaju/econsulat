@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnostic Rapide - Création Demande</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        .info { border-color: #17a2b8; background: #d1ecf1; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+        .log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnostic Rapide - Création Demande</h1>
+        
+        <div class="section info">
+            <h3>🎯 Problème</h3>
+            <p>La création de demande ne fonctionne plus après les corrections de l'erreur 403.</p>
+        </div>
+
+        <!-- Test rapide -->
+        <div class="section">
+            <h3>🧪 Test rapide</h3>
+            <button onclick="testRapide()">🚀 Lancer le diagnostic rapide</button>
+            <div id="testResult" class="result"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h3>📊 Logs</h3>
+            <button onclick="clearLogs()">🗑️ Effacer</button>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const statusClass = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            logsDiv.innerHTML += `[${timestamp}] <span class="${statusClass}">${type.toUpperCase()}</span> ${message}\n`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function showResult(message, type = 'info') {
+            const element = document.getElementById('testResult');
+            element.className = `result ${type}`;
+            element.innerHTML = message;
+        }
+
+        async function testRapide() {
+            log('🚀 Démarrage du diagnostic rapide...', 'info');
+            
+            try {
+                // Test 1: Connexion
+                log('🔑 Test 1: Connexion...', 'info');
+                const loginResponse = await fetch('http://127.0.0.1:8080/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: 'test@test.com', password: 'password123' })
+                });
+
+                if (!loginResponse.ok) {
+                    showResult('❌ Échec de la connexion', 'error');
+                    return;
+                }
+
+                const loginData = await loginResponse.json();
+                const token = loginData.token;
+                log('✅ Connexion réussie', 'success');
+
+                // Test 2: Vérification du token
+                log('🔍 Test 2: Vérification du token...', 'info');
+                const authResponse = await fetch('http://127.0.0.1:8080/api/demandes/my', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (authResponse.status === 403) {
+                    log('❌ Token invalide (403)', 'error');
+                    showResult('🚨 PROBLÈME D\'AUTHENTIFICATION\n\nLe token JWT n\'est pas reconnu par le serveur.\n\nCauses possibles:\n• Token expiré\n• Clé secrète JWT incorrecte\n• Problème de configuration Spring Security', 'error');
+                    return;
+                }
+
+                if (authResponse.ok) {
+                    log('✅ Token valide', 'success');
+                } else {
+                    log(`⚠️ Token partiellement valide: ${authResponse.status}`, 'warning');
+                }
+
+                // Test 3: Création de demande
+                log('📝 Test 3: Création de demande...', 'info');
+                const testDemande = {
+                    civiliteId: 1,
+                    firstName: "Test",
+                    lastName: "User",
+                    birthDate: "1990-01-01",
+                    birthPlace: "Test",
+                    birthCountryId: 1,
+                    streetName: "Test Street",
+                    streetNumber: "123",
+                    postalCode: "12345",
+                    city: "Test City",
+                    countryId: 1,
+                    fatherFirstName: "Test",
+                    fatherLastName: "Father",
+                    fatherBirthDate: "1960-01-01",
+                    fatherBirthPlace: "Test",
+                    fatherBirthCountryId: 1,
+                    motherFirstName: "Test",
+                    motherLastName: "Mother",
+                    motherBirthDate: "1965-01-01",
+                    motherBirthPlace: "Test",
+                    motherBirthCountryId: 1,
+                    documentTypeId: 1,
+                    documentFiles: []
+                };
+
+                const createResponse = await fetch('http://127.0.0.1:8080/api/demandes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testDemande)
+                });
+
+                log(`📡 Réponse création: ${createResponse.status} ${createResponse.statusText}`, 'info');
+
+                if (createResponse.ok) {
+                    const data = await createResponse.json();
+                    log('✅ Demande créée avec succès!', 'success');
+                    showResult(`✅ SUCCÈS!\n\nLa création de demande fonctionne correctement.\n\nDétails:\n• ID: ${data.id}\n• Statut: ${data.status}\n• Date: ${data.createdAt}`, 'success');
+                } else if (createResponse.status === 403) {
+                    log('❌ Accès refusé (403)', 'error');
+                    
+                    // Analyser la cause du 403
+                    let cause = "Accès refusé (403 Forbidden)";
+                    let details = "";
+                    
+                    if (authResponse.ok) {
+                        cause = "PROBLÈME D'AUTORISATION";
+                        details = "L'utilisateur est authentifié mais n'a pas les droits de création.\n\nCauses possibles:\n• Rôle utilisateur insuffisant\n• Configuration Spring Security trop restrictive\n• Annotations @PreAuthorize manquantes";
+                    } else {
+                        cause = "PROBLÈME D'AUTHENTIFICATION";
+                        details = "L'utilisateur n'est pas correctement authentifié.\n\nCauses possibles:\n• Token JWT invalide\n• Problème de configuration Spring Security\n• Filtre JWT défaillant";
+                    }
+                    
+                    showResult(`🚨 ${cause}\n\n${details}`, 'error');
+                } else {
+                    log(`❌ Erreur: ${createResponse.status}`, 'error');
+                    showResult(`❌ Erreur ${createResponse.status}: ${createResponse.statusText}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Erreur lors du test: ${error.message}`, 'error');
+                showResult(`❌ Erreur de connexion: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('🗑️ Logs effacés', 'warning');
+        }
+
+        // Initialisation
+        log('🚀 Diagnostic rapide prêt', 'info');
+        log('💡 Cliquez sur "Lancer le diagnostic rapide" pour commencer', 'info');
+    </script>
+</body>
+</html>
