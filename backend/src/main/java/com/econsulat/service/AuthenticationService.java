@@ -59,7 +59,14 @@ public class AuthenticationService {
             log.info("✅ Token JWT généré: {}...", token.substring(0, Math.min(50, token.length())));
 
             log.info("🎉 Authentification complète réussie pour: {}", user.getEmail());
-            return new AuthResponse(token, user.getEmail(), user.getRole(), "Connexion réussie");
+            return new AuthResponse(
+                    token,
+                    user.getId(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    user.getEmail(),
+                    user.getRole(),
+                    "Connexion réussie");
 
         } catch (Exception e) {
             log.error("💥 Erreur lors de l'authentification pour {}: {}", request.getEmail(), e.getMessage(), e);

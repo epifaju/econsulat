@@ -49,6 +49,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/demandes/{id}/generate-document").authenticated()
                                                 .requestMatchers("/api/demandes/{id}/download-document").authenticated()
                                                 .requestMatchers("/api/payment/create-session").authenticated()
+                                                .requestMatchers("/api/users/me").authenticated()
                                                 
                                                 // Endpoints admin (rôles spécifiques)
                                                 .requestMatchers("/api/demandes/*/status").hasAnyRole("ADMIN", "AGENT")

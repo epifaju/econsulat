@@ -15,6 +15,7 @@ import CitizenForm from "./components/CitizenForm";
 import EmailVerification from "./components/EmailVerification";
 import PaymentSuccess from "./components/PaymentSuccess";
 import PaymentCancel from "./components/PaymentCancel";
+import Profile from "./components/Profile";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Composant de protection des routes
@@ -91,6 +92,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute>
                   <CitizenForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
                 </ProtectedRoute>
               }
             />

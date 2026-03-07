@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Bars3Icon,
@@ -26,6 +27,8 @@ const Navbar = () => {
         return "Agent";
       case "USER":
         return "Utilisateur";
+      case "CITIZEN":
+        return "Citoyen";
       default:
         return role;
     }
@@ -82,13 +85,14 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  <button
+                  <Link
+                    to="/profile"
                     onClick={() => setIsUserMenuOpen(false)}
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <Cog6ToothIcon className="h-4 w-4 mr-2" />
-                    Paramètres
-                  </button>
+                    Mon profil
+                  </Link>
 
                   <button
                     onClick={handleLogout}
@@ -135,13 +139,14 @@ const Navbar = () => {
               </div>
             </div>
 
-            <button
+            <Link
+              to="/profile"
               onClick={() => setIsMobileMenuOpen(false)}
               className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
             >
               <Cog6ToothIcon className="h-4 w-4 mr-2" />
-              Paramètres
-            </button>
+              Mon profil
+            </Link>
 
             <button
               onClick={handleLogout}

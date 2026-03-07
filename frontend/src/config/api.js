@@ -59,9 +59,10 @@ const API_CONFIG = {
     DOCUMENT_TYPES: "/api/demandes/document-types",
   },
 
-  // Endpoints utilisateurs
+  // Endpoints utilisateurs (profil = utilisateur connecté)
   USERS: {
     PROFILE: "/api/users",
+    PROFILE_ME: "/api/users/me",
     USER_UPDATE: (id) => `/api/users/${id}`,
     USER_DELETE: (id) => `/api/users/${id}`,
   },

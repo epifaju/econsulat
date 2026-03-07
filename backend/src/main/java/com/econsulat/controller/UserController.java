@@ -1,10 +1,14 @@
 package com.econsulat.controller;
 
+import com.econsulat.dto.ProfileResponse;
+import com.econsulat.dto.ProfileUpdateRequest;
 import com.econsulat.model.User;
 import com.econsulat.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +20,34 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    /**
+     * Profil de l'utilisateur connecté (tout utilisateur authentifié).
+     */
+    @GetMapping("/me")
+    public ResponseEntity<ProfileResponse> getMyProfile() {
+        String email = getCurrentUserEmail();
+        ProfileResponse profile = userService.getProfileByEmail(email);
+        return ResponseEntity.ok(profile);
+    }
+
+    /**
+     * Mise à jour du profil de l'utilisateur connecté.
+     */
+    @PutMapping("/me")
+    public ResponseEntity<ProfileResponse> updateMyProfile(@RequestBody ProfileUpdateRequest request) {
+        String email = getCurrentUserEmail();
+        ProfileResponse updated = userService.updateProfileByEmail(email, request);
+        return ResponseEntity.ok(updated);
+    }
+
+    private String getCurrentUserEmail() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new RuntimeException("Utilisateur non authentifié");
+        }
+        return auth.getName();
+    }
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

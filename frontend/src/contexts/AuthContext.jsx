@@ -37,9 +37,9 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
       });
-      const { token, email: userEmail, role } = response.data;
+      const { token, id, firstName, lastName, email: userEmail, role } = response.data;
 
-      const userData = { email: userEmail, role };
+      const userData = { id, firstName, lastName, email: userEmail, role };
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
@@ -52,6 +52,13 @@ export const AuthProvider = ({ children }) => {
         success: false,
         error: error.response?.data?.message || "Erreur de connexion",
       };
+    }
+  };
+
+  const updateUser = (userData) => {
+    if (userData) {
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
     }
   };
 
@@ -93,6 +100,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateUser,
     loading,
   };
 

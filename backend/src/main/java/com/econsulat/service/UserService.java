@@ -1,10 +1,11 @@
 package com.econsulat.service;
 
+import com.econsulat.dto.ProfileResponse;
+import com.econsulat.dto.ProfileUpdateRequest;
 import com.econsulat.model.User;
 import com.econsulat.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -136,5 +137,49 @@ public class UserService implements UserDetailsService {
         // Pour l'instant, on simule une vérification d'email
         // TODO: Implémenter la vraie logique de vérification d'email
         return true;
+    }
+
+    /**
+     * Retourne le profil de l'utilisateur (sans mot de passe).
+     */
+    public ProfileResponse getProfileByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        return ProfileResponse.from(user);
+    }
+
+    /**
+     * Met à jour le profil de l'utilisateur connecté (prénom, nom, email, mot de passe).
+     */
+    public ProfileResponse updateProfileByEmail(String email, ProfileUpdateRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (request.getFirstName() != null && !request.getFirstName().isBlank()) {
+            user.setFirstName(request.getFirstName().trim());
+        }
+        if (request.getLastName() != null && !request.getLastName().isBlank()) {
+            user.setLastName(request.getLastName().trim());
+        }
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            String newEmail = request.getEmail().trim();
+            if (!newEmail.equalsIgnoreCase(user.getEmail()) && userRepository.existsByEmailAndIdNot(newEmail, user.getId())) {
+                throw new RuntimeException("Un autre compte utilise déjà cette adresse email");
+            }
+            user.setEmail(newEmail);
+        }
+
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            if (request.getCurrentPassword() == null || request.getCurrentPassword().isBlank()) {
+                throw new RuntimeException("Le mot de passe actuel est requis pour en définir un nouveau");
+            }
+            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new RuntimeException("Mot de passe actuel incorrect");
+            }
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        user = userRepository.save(user);
+        return ProfileResponse.from(user);
     }
 }
