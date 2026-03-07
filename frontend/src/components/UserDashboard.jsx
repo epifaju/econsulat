@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useDemandes } from "../hooks/useDemandes";
+import API_CONFIG from "../config/api";
 import {
   DocumentTextIcon,
   ClockIcon,
@@ -353,6 +354,35 @@ const UserDashboard = () => {
     }));
   };
 
+  const handlePayDemande = async (demandeId) => {
+    try {
+      const res = await fetch(
+        `${API_CONFIG.BASE_URL}${API_CONFIG.PAYMENT.CREATE_SESSION}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ demandeId }),
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showNotification("error", "Erreur", err?.error || "Impossible de créer le paiement");
+        return;
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        showNotification("error", "Erreur", "Impossible de rediriger vers le paiement");
+      }
+    } catch (e) {
+      showNotification("error", "Erreur", "Problème de connexion");
+    }
+  };
+
   const handleGenerateDocument = async (demandeId) => {
     try {
       const response = await fetch(
@@ -418,12 +448,16 @@ const UserDashboard = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
+      case "PENDING_PAYMENT":
+        return <span className="badge bg-amber-100 text-amber-800">En attente de paiement</span>;
       case "PENDING":
         return <span className="badge badge-pending">En attente</span>;
       case "APPROVED":
         return <span className="badge badge-approved">Approuvé</span>;
       case "REJECTED":
         return <span className="badge badge-rejected">Rejeté</span>;
+      case "COMPLETED":
+        return <span className="badge bg-blue-100 text-blue-800">Terminé</span>;
       default:
         return <span className="badge badge-pending">{status}</span>;
     }
@@ -431,6 +465,8 @@ const UserDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case "PENDING_PAYMENT":
+        return "bg-amber-100 text-amber-800";
       case "PENDING":
         return "bg-yellow-100 text-yellow-800";
       case "APPROVED":
@@ -449,9 +485,11 @@ const UserDashboard = () => {
     status: {
       label: "Statut",
       values: [
+        { value: "PENDING_PAYMENT", label: "En attente de paiement" },
         { value: "PENDING", label: "En attente" },
         { value: "APPROVED", label: "Approuvé" },
         { value: "REJECTED", label: "Rejeté" },
+        { value: "COMPLETED", label: "Terminé" },
       ],
     },
     documentType: {
@@ -690,6 +728,15 @@ const UserDashboard = () => {
                     </td>
                     <td className="table-cell">
                       <div className="flex space-x-2">
+                        {demande.status === "PENDING_PAYMENT" && (
+                          <button
+                            onClick={() => handlePayDemande(demande.id)}
+                            className="px-2 py-1 text-sm bg-amber-500 text-white rounded hover:bg-amber-600"
+                            title="Payer la demande"
+                          >
+                            Payer
+                          </button>
+                        )}
                         {demande.status === "APPROVED" && (
                           <button
                             onClick={() => handleGenerateDocument(demande.id)}

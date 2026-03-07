@@ -580,6 +580,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
+      PENDING_PAYMENT: { color: "bg-amber-100 text-amber-800", label: "En attente de paiement" },
       PENDING: { color: "bg-yellow-100 text-yellow-800", label: "En attente" },
       APPROVED: { color: "bg-green-100 text-green-800", label: "Approuvé" },
       REJECTED: { color: "bg-red-100 text-red-800", label: "Rejeté" },
@@ -798,6 +799,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="">Tous les statuts</option>
+            <option value="PENDING_PAYMENT">En attente de paiement</option>
             <option value="PENDING">En attente</option>
             <option value="APPROVED">Approuvé</option>
             <option value="REJECTED">Rejeté</option>
@@ -941,6 +943,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       }
                       className="text-xs border border-gray-300 rounded px-2 py-1"
                     >
+                      <option value="PENDING_PAYMENT">En attente de paiement</option>
                       <option value="PENDING">En attente</option>
                       <option value="APPROVED">Approuvé</option>
                       <option value="REJECTED">Rejeté</option>

@@ -13,6 +13,8 @@ import UserDashboard from "./components/UserDashboard";
 import UserManagement from "./components/UserManagement";
 import CitizenForm from "./components/CitizenForm";
 import EmailVerification from "./components/EmailVerification";
+import PaymentSuccess from "./components/PaymentSuccess";
+import PaymentCancel from "./components/PaymentCancel";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 // Composant de protection des routes
@@ -40,6 +42,8 @@ const AppContent = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </>
@@ -52,6 +56,8 @@ const AppContent = () => {
         <Navbar />
         <main className="pt-16">
           <Routes>
+            <Route path="/payment/success" element={<PaymentSuccess />} />
+            <Route path="/payment/cancel" element={<PaymentCancel />} />
             <Route
               path="/dashboard"
               element={

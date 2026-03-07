@@ -108,6 +108,7 @@ public class DemandeService {
                                         ? String.join(",", request.getDocumentFiles())
                                         : "");
                         demande.setUser(user);
+                        demande.setStatus(Demande.Status.PENDING_PAYMENT);
 
                         Demande savedDemande = demandeRepository.save(demande);
                         return convertToResponse(savedDemande);
@@ -306,6 +307,7 @@ public class DemandeService {
 
                 response.setStatus(demande.getStatus().name());
                 response.setStatusDisplay(demande.getStatus().getDisplayName());
+                response.setPaid(demande.getStatus() != Demande.Status.PENDING_PAYMENT);
                 response.setCreatedAt(demande.getCreatedAt());
                 response.setUpdatedAt(demande.getUpdatedAt());
                 response.setUserEmail(demande.getUser().getEmail());

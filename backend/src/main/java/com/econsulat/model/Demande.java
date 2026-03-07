@@ -109,6 +109,7 @@ public class Demande {
     // public enum DocumentType { ... } ← SUPPRIMER TOUT CECI
 
     public enum Status {
+        PENDING_PAYMENT("En attente de paiement"),
         PENDING("En attente"),
         APPROVED("Approuvé"),
         REJECTED("Rejeté"),

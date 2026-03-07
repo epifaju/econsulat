@@ -41,6 +41,11 @@ const API_CONFIG = {
     STATS: "/api/admin/stats",
   },
 
+  // Paiement Stripe (option B : demande puis paiement)
+  PAYMENT: {
+    CREATE_SESSION: "/api/payment/create-session",
+  },
+
   // Endpoints de demandes
   DEMANDES: {
     CREATE: "/api/demandes",

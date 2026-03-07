@@ -56,6 +56,8 @@ public class DemandeResponse {
     // Statut et métadonnées
     private String status;
     private String statusDisplay;
+    /** true si la demande a été payée (ou si pas de flux paiement). */
+    private Boolean paid;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

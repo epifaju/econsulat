@@ -171,6 +171,37 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
       if (response.ok) {
         const result = await response.json();
         console.log("✅ Demande créée avec succès:", result);
+
+        if (result.status === "PENDING_PAYMENT") {
+          const sessionRes = await fetch(
+            `${API_CONFIG.BASE_URL}${API_CONFIG.PAYMENT.CREATE_SESSION}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ demandeId: result.id }),
+            }
+          );
+          if (!sessionRes.ok) {
+            const errData = await sessionRes.json().catch(() => ({}));
+            setError(
+              errData?.error || "Impossible de créer la session de paiement"
+            );
+            setLoading(false);
+            return;
+          }
+          const sessionData = await sessionRes.json();
+          if (sessionData.url) {
+            window.location.href = sessionData.url;
+            return;
+          }
+          setError("Impossible de rediriger vers le paiement");
+          setLoading(false);
+          return;
+        }
+
         onSuccess(result);
         onClose();
       } else {

@@ -23,6 +23,10 @@ public class DocumentType {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    /** Prix en centimes (ex: 1000 = 10,00 EUR). Null = utiliser le montant par défaut. */
+    @Column(name = "price_cents")
+    private Integer priceCents;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -90,6 +94,14 @@ public class DocumentType {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Integer getPriceCents() {
+        return priceCents;
+    }
+
+    public void setPriceCents(Integer priceCents) {
+        this.priceCents = priceCents;
     }
 
     public LocalDateTime getCreatedAt() {
