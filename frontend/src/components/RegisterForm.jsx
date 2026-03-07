@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   EyeIcon,
@@ -35,7 +36,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       showNotification(
         "error",
         "Erreur de validation",
-        "Les mots de passe ne correspondent pas"
+        "Les mots de passe ne correspondent pas",
       );
       return false;
     }
@@ -44,7 +45,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       showNotification(
         "error",
         "Erreur de validation",
-        "Le mot de passe doit contenir au moins 6 caractères"
+        "Le mot de passe doit contenir au moins 6 caractères",
       );
       return false;
     }
@@ -68,7 +69,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
         showNotification(
           "success",
           "Inscription réussie",
-          result.message || "Votre compte a été créé avec succès !"
+          result.message || "Votre compte a été créé avec succès !",
         );
 
         // Vider le formulaire
@@ -89,14 +90,15 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           "error",
           "Erreur d'inscription",
           result.error ||
-            "Une erreur est survenue lors de la création du compte"
+            "Une erreur est survenue lors de la création du compte",
         );
       }
     } catch (error) {
       showNotification(
         "error",
         "Erreur d'inscription",
-        error.message || "Une erreur est survenue lors de la création du compte"
+        error.message ||
+          "Une erreur est survenue lors de la création du compte",
       );
     } finally {
       setLoading(false);
@@ -110,6 +112,14 @@ const RegisterForm = ({ onSwitchToLogin }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="absolute top-4 left-4">
+        <Link
+          to="/"
+          className="text-sm font-medium text-gray-600 hover:text-primary-600"
+        >
+          ← Retour à l'accueil
+        </Link>
+      </div>
       {/* Notifications */}
       {notification && (
         <Notification
@@ -320,7 +330,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-500">
-          © 2024 eConsulat. Tous droits réservés.
+          © 2026 eConsulat. Tous droits réservés.
         </p>
       </div>
     </div>

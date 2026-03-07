@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import {
   EyeIcon,
@@ -11,7 +12,14 @@ import RegisterForm from "./RegisterForm";
 
 const Login = () => {
   const { login } = useAuth();
+  const location = useLocation();
   const [showRegister, setShowRegister] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.showRegister) {
+      setShowRegister(true);
+    }
+  }, [location.state?.showRegister]);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -38,7 +46,7 @@ const Login = () => {
         showNotification(
           "success",
           "Connexion réussie",
-          "Bienvenue dans eConsulat !"
+          "Bienvenue dans eConsulat !",
         );
         // La navigation sera gérée automatiquement par le composant App
         // grâce à la propriété isAuthenticated
@@ -46,14 +54,14 @@ const Login = () => {
         showNotification(
           "error",
           "Erreur de connexion",
-          result.error || "Email ou mot de passe incorrect"
+          result.error || "Email ou mot de passe incorrect",
         );
       }
     } catch (error) {
       showNotification(
         "error",
         "Erreur de connexion",
-        error.message || "Email ou mot de passe incorrect"
+        error.message || "Email ou mot de passe incorrect",
       );
     } finally {
       setLoading(false);
@@ -80,6 +88,14 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="absolute top-4 left-4">
+        <Link
+          to="/"
+          className="text-sm font-medium text-gray-600 hover:text-primary-600"
+        >
+          ← Retour à l'accueil
+        </Link>
+      </div>
       {/* Notifications */}
       {notification && (
         <Notification
@@ -235,7 +251,7 @@ const Login = () => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-500">
-          © 2024 eConsulat. Tous droits réservés.
+          © 2026 eConsulat. Tous droits réservés.
         </p>
       </div>
     </div>
