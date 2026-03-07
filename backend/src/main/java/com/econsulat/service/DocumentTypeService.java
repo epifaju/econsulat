@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DocumentTypeService {
@@ -38,6 +37,7 @@ public class DocumentTypeService {
         documentType.setDescription(request.getDescription());
         documentType.setTemplatePath(request.getTemplatePath());
         documentType.setIsActive(request.getIsActive() != null ? request.getIsActive() : true);
+        documentType.setPriceCents(request.getPriceCents());
 
         return documentTypeRepository.save(documentType);
     }
@@ -56,6 +56,7 @@ public class DocumentTypeService {
         if (request.getIsActive() != null) {
             documentType.setIsActive(request.getIsActive());
         }
+        documentType.setPriceCents(request.getPriceCents());
 
         return documentTypeRepository.save(documentType);
     }

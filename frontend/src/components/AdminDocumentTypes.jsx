@@ -20,6 +20,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
     description: "",
     templatePath: "",
     isActive: true,
+    priceEur: "",
   });
 
   useEffect(() => {
@@ -58,6 +59,18 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
     }
   };
 
+  const formDataToPayload = (data) => {
+    const payload = {
+      libelle: data.libelle,
+      description: data.description || null,
+      templatePath: data.templatePath || null,
+      isActive: data.isActive,
+    };
+    const priceEur = data.priceEur !== "" && !isNaN(parseFloat(data.priceEur)) ? parseFloat(data.priceEur) : null;
+    payload.priceCents = priceEur != null ? Math.round(priceEur * 100) : null;
+    return payload;
+  };
+
   const handleCreateDocumentType = async (e) => {
     e.preventDefault();
     try {
@@ -69,7 +82,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(formDataToPayload(formData)),
         }
       );
 
@@ -85,6 +98,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
           description: "",
           templatePath: "",
           isActive: true,
+          priceEur: "",
         });
         fetchDocumentTypes();
       } else {
@@ -110,7 +124,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(formDataToPayload(formData)),
         }
       );
 
@@ -212,8 +226,14 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       description: documentType.description || "",
       templatePath: documentType.templatePath || "",
       isActive: documentType.isActive,
+      priceEur: documentType.priceCents != null ? (documentType.priceCents / 100).toFixed(2) : "",
     });
     setShowEditModal(true);
+  };
+
+  const formatPrice = (priceCents) => {
+    if (priceCents == null) return "—";
+    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(priceCents / 100);
   };
 
   const filteredDocumentTypes = documentTypes.filter(
@@ -330,6 +350,10 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
               </p>
             )}
 
+            <div className="text-sm font-medium text-gray-700 mb-2">
+              Prix : {formatPrice(docType.priceCents)}
+            </div>
+
             {docType.templatePath && (
               <div className="text-xs text-gray-500">
                 Template: {docType.templatePath}
@@ -415,6 +439,25 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   placeholder="Ex: templates/certificat_residence.docx"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Prix (€) — optionnel
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.priceEur}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priceEur: e.target.value })
+                  }
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Ex: 10.50 (vide = montant par défaut)"
+                />
+                <p className="mt-0.5 text-xs text-gray-500">
+                  Si vide, le montant par défaut (application.properties) sera utilisé au paiement.
+                </p>
+              </div>
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -498,6 +541,22 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                     setFormData({ ...formData, templatePath: e.target.value })
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Prix (€) — optionnel
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.priceEur}
+                  onChange={(e) =>
+                    setFormData({ ...formData, priceEur: e.target.value })
+                  }
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Ex: 10.50 (vide = montant par défaut)"
                 />
               </div>
               <div className="flex items-center">

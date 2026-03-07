@@ -5,6 +5,8 @@ public class DocumentTypeRequest {
     private String description;
     private String templatePath;
     private Boolean isActive;
+    /** Prix en centimes (ex: 1000 = 10,00 EUR). Null = montant par défaut au paiement. */
+    private Integer priceCents;
 
     public DocumentTypeRequest() {
     }
@@ -47,5 +49,13 @@ public class DocumentTypeRequest {
 
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+
+    public Integer getPriceCents() {
+        return priceCents;
+    }
+
+    public void setPriceCents(Integer priceCents) {
+        this.priceCents = priceCents;
     }
 }
