@@ -1,6 +1,6 @@
 package com.econsulat.dto;
 
-import com.econsulat.model.Demande;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -11,6 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DemandeRequest {
 
     // Étape 1: Informations personnelles

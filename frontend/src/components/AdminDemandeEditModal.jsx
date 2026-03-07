@@ -49,14 +49,14 @@ const AdminDemandeEditModal = ({
         motherBirthDate: demande.motherBirthDate,
         motherBirthPlace: demande.motherBirthPlace,
         motherBirthCountryId: demande.motherBirthCountryId,
-        documentType: demande.documentType,
+        documentTypeId: demande.documentTypeId ?? demande.documentType?.id ?? null,
         documentFiles: demande.documentFiles || [],
       };
 
       console.log("🔍 Debug - Demande reçue:", demande);
       console.log(
-        "🔍 Debug - DocumentType de la demande:",
-        demande.documentType
+        "🔍 Debug - DocumentTypeId de la demande:",
+        demande.documentTypeId ?? demande.documentType?.id
       );
       console.log("🔍 Debug - FormData créé:", formDataFromDemande);
 
@@ -118,6 +118,10 @@ const AdminDemandeEditModal = ({
     setLoading(true);
 
     try {
+      // Payload attendu par le backend (DemandeRequest) : pas de champ "documentType"
+      const { documentType, ...payload } = formData;
+      const body = { ...payload, documentTypeId: payload.documentTypeId != null ? Number(payload.documentTypeId) : null };
+
       const response = await fetch(
         `http://localhost:8080/api/admin/demandes/${demande.id}`,
         {
@@ -126,7 +130,7 @@ const AdminDemandeEditModal = ({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(body),
         }
       );
 
@@ -539,8 +543,8 @@ const AdminDemandeEditModal = ({
                 Type de document
               </label>
               <select
-                value={formData.documentType || ""}
-                onChange={(e) => updateFormData("documentType", e.target.value)}
+                value={formData.documentTypeId != null ? String(formData.documentTypeId) : ""}
+                onChange={(e) => updateFormData("documentTypeId", e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 required
               >
