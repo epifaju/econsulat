@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -13,6 +14,7 @@ const SearchAndFilters = ({
   filterOptions = {},
   placeholder = "Rechercher...",
 }) => {
+  const { t } = useTranslation();
   const [showFilters, setShowFilters] = useState(false);
 
   const handleFilterChange = (key, value) => {
@@ -57,7 +59,7 @@ const SearchAndFilters = ({
           } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500`}
         >
           <FunnelIcon className="h-4 w-4 mr-2" />
-          Filtres
+          {t("dashboard.searchAndFilters.filters")}
           {hasActiveFilters && (
             <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
               {Object.keys(filters).length}
@@ -70,13 +72,13 @@ const SearchAndFilters = ({
       {showFilters && (
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Filtres</h3>
+            <h3 className="text-lg font-medium text-gray-900">{t("dashboard.searchAndFilters.filters")}</h3>
             <button
               onClick={clearAllFilters}
               className="text-sm text-gray-500 hover:text-gray-700 flex items-center"
             >
               <XMarkIcon className="h-4 w-4 mr-1" />
-              Effacer tous les filtres
+              {t("dashboard.searchAndFilters.clearAll")}
             </button>
           </div>
 
@@ -91,7 +93,7 @@ const SearchAndFilters = ({
                   onChange={(e) => handleFilterChange(key, e.target.value)}
                   className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 >
-                  <option value="">Tous</option>
+                  <option value="">{t("dashboard.searchAndFilters.all")}</option>
                   {options.values.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}

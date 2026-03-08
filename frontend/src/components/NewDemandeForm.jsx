@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import API_CONFIG from "../config/api";
 import Step1PersonalInfo from "./demande/Step1PersonalInfo";
@@ -9,6 +10,7 @@ import Step5Documents from "./demande/Step5Documents";
 import Step6Summary from "./demande/Step6Summary";
 
 const NewDemandeForm = ({ onClose, onSuccess }) => {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -107,7 +109,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
           );
         }
       } catch (err) {
-        setError("Erreur lors du chargement des données de référence");
+        setError(t("newDemande.errors.loadRef"));
         console.error(err);
       }
     };
@@ -143,9 +145,8 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
       );
       console.log("🔍 Debug - Données à envoyer:", formData);
 
-      // ✅ Vérification que documentTypeId est présent
       if (!formData.documentTypeId) {
-        setError("Veuillez sélectionner un type de document");
+        setError(t("newDemande.errors.selectDocType"));
         setLoading(false);
         return;
       }
@@ -186,9 +187,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
           );
           if (!sessionRes.ok) {
             const errData = await sessionRes.json().catch(() => ({}));
-            setError(
-              errData?.error || "Impossible de créer la session de paiement"
-            );
+            setError(errData?.error || t("newDemande.errors.paymentSession"));
             setLoading(false);
             return;
           }
@@ -197,7 +196,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
             window.location.href = sessionData.url;
             return;
           }
-          setError("Impossible de rediriger vers le paiement");
+          setError(t("newDemande.errors.paymentRedirect"));
           setLoading(false);
           return;
         }
@@ -211,8 +210,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
           response.statusText
         );
 
-        // ✅ Gestion améliorée des erreurs
-        let errorMessage = "Erreur lors de la soumission de la demande";
+        let errorMessage = t("newDemande.errors.submitError");
         let errorDetails = "";
 
         try {
@@ -256,8 +254,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
         if (response.status === 400) {
           setError(`${errorMessage}${errorDetails}`);
         } else if (response.status === 403) {
-          setError("Erreur d'authentification. Veuillez vous reconnecter.");
-          // Rediriger vers la page de connexion
+          setError(t("newDemande.errors.authError"));
           window.location.href = "/login";
         } else {
           setError(`${errorMessage}${errorDetails}`);
@@ -265,7 +262,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
       }
     } catch (err) {
       console.error("❌ Erreur de connexion:", err);
-      setError("Erreur de connexion au serveur");
+      setError(t("newDemande.errors.connectionError"));
     } finally {
       setLoading(false);
     }
@@ -326,17 +323,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
     }
   };
 
-  const getStepTitle = () => {
-    const titles = {
-      1: "Informations personnelles",
-      2: "Adresse",
-      3: "Filiation",
-      4: "Type de document",
-      5: "Documents justificatifs",
-      6: "Récapitulatif",
-    };
-    return titles[currentStep] || "";
-  };
+  const getStepTitle = () => t(`newDemande.stepTitles.${currentStep}`) || "";
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -344,7 +331,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
         {/* Header */}
         <div className="bg-blue-600 text-white p-6 rounded-t-lg">
           <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Nouvelle demande</h2>
+            <h2 className="text-2xl font-bold">{t("newDemande.title")}</h2>
             <button
               onClick={onClose}
               className="text-white hover:text-gray-200 text-xl"
@@ -401,7 +388,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
                   : "bg-gray-500 text-white hover:bg-gray-600"
               }`}
             >
-              Précédent
+              {t("newDemande.previous")}
             </button>
 
             {currentStep < 6 ? (
@@ -409,7 +396,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
                 onClick={nextStep}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
               >
-                Suivant
+                {t("newDemande.next")}
               </button>
             ) : (
               <button
@@ -421,7 +408,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
-                {loading ? "Soumission..." : "Soumettre la demande"}
+                {loading ? t("newDemande.submitting") : t("newDemande.submit")}
               </button>
             )}
           </div>

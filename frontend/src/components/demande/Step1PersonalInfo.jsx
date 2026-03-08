@@ -1,6 +1,8 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
+  const { t } = useTranslation();
   const handleChange = (field, value) => {
     updateFormData({ [field]: value });
   };
@@ -9,18 +11,17 @@ const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">
-          Informations personnelles
+          {t("newDemande.step1.title")}
         </h3>
         <p className="text-gray-600">
-          Veuillez remplir vos informations personnelles
+          {t("newDemande.step1.subtitle")}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Civilité */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Civilité <span className="text-red-500">*</span>
+            {t("newDemande.step1.civility")} <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.civiliteId}
@@ -28,7 +29,7 @@ const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           >
-            <option value="">Sélectionnez une civilité</option>
+            <option value="">{t("newDemande.step1.selectCivility")}</option>
             {civilites.map((civilite) => (
               <option key={civilite.id} value={civilite.id}>
                 {civilite.libelle}
@@ -37,40 +38,37 @@ const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
           </select>
         </div>
 
-        {/* Prénom */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Prénom <span className="text-red-500">*</span>
+            {t("newDemande.step1.firstName")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.firstName}
             onChange={(e) => handleChange("firstName", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Votre prénom"
+            placeholder={t("newDemande.step1.firstNamePlaceholder")}
             required
           />
         </div>
 
-        {/* Nom de famille */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nom de famille <span className="text-red-500">*</span>
+            {t("newDemande.step1.lastName")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.lastName}
             onChange={(e) => handleChange("lastName", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Votre nom de famille"
+            placeholder={t("newDemande.step1.lastNamePlaceholder")}
             required
           />
         </div>
 
-        {/* Date de naissance */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date de naissance <span className="text-red-500">*</span>
+            {t("newDemande.step1.birthDate")} <span className="text-red-500">*</span>
           </label>
           <input
             type="date"
@@ -81,25 +79,23 @@ const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
           />
         </div>
 
-        {/* Lieu de naissance */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Lieu de naissance <span className="text-red-500">*</span>
+            {t("newDemande.step1.birthPlace")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.birthPlace}
             onChange={(e) => handleChange("birthPlace", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ville de naissance"
+            placeholder={t("newDemande.step1.birthPlacePlaceholder")}
             required
           />
         </div>
 
-        {/* Pays de naissance */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Pays de naissance <span className="text-red-500">*</span>
+            {t("newDemande.step1.birthCountry")} <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.birthCountryId}
@@ -107,7 +103,7 @@ const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           >
-            <option value="">Sélectionnez un pays</option>
+            <option value="">{t("newDemande.step1.selectCountry")}</option>
             {pays.map((pays) => (
               <option key={pays.id} value={pays.id}>
                 {pays.libelle}
@@ -134,15 +130,10 @@ const Step1PersonalInfo = ({ formData, updateFormData, civilites, pays }) => {
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">
-              Informations importantes
+              {t("newDemande.step1.infoTitle")}
             </h3>
             <div className="mt-2 text-sm text-blue-700">
-              <p>
-                Tous les champs marqués d'un{" "}
-                <span className="text-red-500">*</span> sont obligatoires.
-                Assurez-vous que les informations fournies correspondent à vos
-                documents d'identité.
-              </p>
+              <p>{t("newDemande.step1.infoRequired")}</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const Step3Filiation = ({ formData, updateFormData, pays }) => {
+  const { t } = useTranslation();
   const handleChange = (field, value) => {
     updateFormData({ [field]: value });
   };
@@ -8,13 +10,10 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">Filiation</h3>
-        <p className="text-gray-600">
-          Veuillez remplir les informations concernant vos parents
-        </p>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">{t("newDemande.step3.title")}</h3>
+        <p className="text-gray-600">{t("newDemande.step3.subtitle")}</p>
       </div>
 
-      {/* Informations du père */}
       <div className="bg-gray-50 p-6 rounded-lg">
         <h4 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
           <svg
@@ -28,41 +27,41 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
               clipRule="evenodd"
             />
           </svg>
-          Informations du père
+          {t("newDemande.step3.fatherTitle")}
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prénom du père <span className="text-red-500">*</span>
+              {t("newDemande.step3.fatherFirstName")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.fatherFirstName}
               onChange={(e) => handleChange("fatherFirstName", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Prénom du père"
+              placeholder={t("newDemande.step3.fatherFirstNamePlaceholder")}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nom du père <span className="text-red-500">*</span>
+              {t("newDemande.step3.fatherLastName")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.fatherLastName}
               onChange={(e) => handleChange("fatherLastName", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nom du père"
+              placeholder={t("newDemande.step3.fatherLastNamePlaceholder")}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date de naissance du père <span className="text-red-500">*</span>
+              {t("newDemande.step3.fatherBirthDate")} <span className="text-red-500">*</span>
             </label>
             <input
               type="date"
@@ -75,21 +74,21 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lieu de naissance du père <span className="text-red-500">*</span>
+              {t("newDemande.step3.fatherBirthPlace")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.fatherBirthPlace}
               onChange={(e) => handleChange("fatherBirthPlace", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ville de naissance"
+              placeholder={t("newDemande.step3.birthPlacePlaceholder")}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pays de naissance du père <span className="text-red-500">*</span>
+              {t("newDemande.step3.fatherBirthCountry")} <span className="text-red-500">*</span>
             </label>
             <select
               value={formData.fatherBirthCountryId}
@@ -99,7 +98,7 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="">Sélectionnez un pays</option>
+              <option value="">{t("newDemande.step3.selectCountry")}</option>
               {pays.map((pays) => (
                 <option key={pays.id} value={pays.id}>
                   {pays.libelle}
@@ -124,41 +123,41 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
               clipRule="evenodd"
             />
           </svg>
-          Informations de la mère
+          {t("newDemande.step3.motherTitle")}
         </h4>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Prénom de la mère <span className="text-red-500">*</span>
+              {t("newDemande.step3.motherFirstName")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.motherFirstName}
               onChange={(e) => handleChange("motherFirstName", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Prénom de la mère"
+              placeholder={t("newDemande.step3.motherFirstNamePlaceholder")}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nom de la mère <span className="text-red-500">*</span>
+              {t("newDemande.step3.motherLastName")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               value={formData.motherLastName}
               onChange={(e) => handleChange("motherLastName", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Nom de la mère"
+              placeholder={t("newDemande.step3.motherLastNamePlaceholder")}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date de naissance de la mère{" "}
+              {t("newDemande.step3.motherBirthDate")}{" "}
               <span className="text-red-500">*</span>
             </label>
             <input
@@ -172,7 +171,7 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Lieu de naissance de la mère{" "}
+              {t("newDemande.step3.motherBirthPlace")}{" "}
               <span className="text-red-500">*</span>
             </label>
             <input
@@ -180,14 +179,14 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
               value={formData.motherBirthPlace}
               onChange={(e) => handleChange("motherBirthPlace", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ville de naissance"
+              placeholder={t("newDemande.step3.birthPlacePlaceholder")}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Pays de naissance de la mère{" "}
+              {t("newDemande.step3.motherBirthCountry")}{" "}
               <span className="text-red-500">*</span>
             </label>
             <select
@@ -198,7 +197,7 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="">Sélectionnez un pays</option>
+              <option value="">{t("newDemande.step3.selectCountry")}</option>
               {pays.map((pays) => (
                 <option key={pays.id} value={pays.id}>
                   {pays.libelle}
@@ -226,14 +225,10 @@ const Step3Filiation = ({ formData, updateFormData, pays }) => {
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">
-              Informations de filiation
+              {t("newDemande.step3.infoTitle")}
             </h3>
             <div className="mt-2 text-sm text-blue-700">
-              <p>
-                Ces informations sont nécessaires pour l'établissement de
-                documents officiels. Assurez-vous qu'elles correspondent aux
-                actes de naissance de vos parents.
-              </p>
+              <p>{t("newDemande.step3.infoBody")}</p>
             </div>
           </div>
         </div>

@@ -1,5 +1,7 @@
 package com.econsulat.exception;
 
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -7,15 +9,30 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
+
+    private Locale getLocale() {
+        Locale requestLocale = LocaleContextHolder.getLocale();
+        if ("pt".equals(requestLocale.getLanguage())) {
+            return new Locale("pt");
+        }
+        return Locale.FRENCH;
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex, WebRequest request) {
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Erreur de validation");
+        errorResponse.put("error", messageSource.getMessage("error.validation", null, getLocale()));
         errorResponse.put("message", ex.getMessage());
         errorResponse.put("timestamp", System.currentTimeMillis());
         errorResponse.put("path", request.getDescription(false));
@@ -33,7 +50,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(IllegalArgumentException ex,
             WebRequest request) {
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Données invalides");
+        errorResponse.put("error", messageSource.getMessage("error.invalidData", null, getLocale()));
         errorResponse.put("message", ex.getMessage());
         errorResponse.put("timestamp", System.currentTimeMillis());
         errorResponse.put("path", request.getDescription(false));
@@ -48,9 +65,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, WebRequest request) {
+        Locale locale = getLocale();
         Map<String, Object> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Erreur interne du serveur");
-        errorResponse.put("message", "Une erreur inattendue s'est produite");
+        errorResponse.put("error", messageSource.getMessage("error.internal", null, locale));
+        errorResponse.put("message", messageSource.getMessage("error.unexpected", null, locale));
         errorResponse.put("timestamp", System.currentTimeMillis());
         errorResponse.put("path", request.getDescription(false));
 

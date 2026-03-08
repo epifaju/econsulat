@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   FaEnvelope,
   FaEye,
@@ -8,6 +9,8 @@ import {
 } from "react-icons/fa";
 
 const UserNotifications = () => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language?.startsWith("pt") ? "pt-PT" : "fr-FR";
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,7 +36,7 @@ const UserNotifications = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des notifications");
+        throw new Error(t("dashboard.notificationsTable.fetchError"));
       }
 
       const data = await response.json();
@@ -53,13 +56,13 @@ const UserNotifications = () => {
   const getStatusIcon = (statut) => {
     switch (statut) {
       case "ENVOYE":
-        return <FaCheckCircle className="text-green-500" title="Envoyé" />;
+        return <FaCheckCircle className="text-green-500" title={t("dashboard.notificationsTable.statusSent")} />;
       case "ECHEC":
-        return <FaExclamationTriangle className="text-red-500" title="Échec" />;
+        return <FaExclamationTriangle className="text-red-500" title={t("dashboard.notificationsTable.statusFailure")} />;
       case "EN_COURS":
-        return <FaClock className="text-yellow-500" title="En cours" />;
+        return <FaClock className="text-yellow-500" title={t("dashboard.notificationsTable.statusInProgress")} />;
       default:
-        return <FaEnvelope className="text-gray-500" title="Inconnu" />;
+        return <FaEnvelope className="text-gray-500" title={t("dashboard.notificationsTable.statusUnknown")} />;
     }
   };
 
@@ -78,7 +81,7 @@ const UserNotifications = () => {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", {
+    return date.toLocaleDateString(dateLocale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -116,7 +119,7 @@ const UserNotifications = () => {
         <div className="flex">
           <FaExclamationTriangle className="text-red-400 mr-2 mt-1" />
           <div className="text-red-700">
-            <p className="font-medium">Erreur</p>
+            <p className="font-medium">{t("common.error")}</p>
             <p className="text-sm">{error}</p>
           </div>
         </div>
@@ -129,10 +132,10 @@ const UserNotifications = () => {
       <div className="px-6 py-4 border-b border-gray-200">
         <h2 className="text-xl font-semibold text-gray-900 flex items-center">
           <FaEnvelope className="mr-2 text-blue-600" />
-          Mes Notifications
+          {t("dashboard.notificationsTable.title")}
         </h2>
         <p className="text-sm text-gray-600 mt-1">
-          Historique de tous les emails de notification reçus
+          {t("dashboard.notificationsTable.subtitle")}
         </p>
       </div>
 
@@ -140,10 +143,10 @@ const UserNotifications = () => {
         <div className="px-6 py-8 text-center">
           <FaEnvelope className="mx-auto h-12 w-12 text-gray-400" />
           <h3 className="mt-2 text-sm font-medium text-gray-900">
-            Aucune notification
+            {t("dashboard.notificationsTable.noNotifications")}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            Vous n'avez pas encore reçu de notifications.
+            {t("dashboard.notificationsTable.noNotificationsHint")}
           </p>
         </div>
       ) : (
@@ -153,16 +156,16 @@ const UserNotifications = () => {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
+                    {t("dashboard.notificationsTable.status")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Objet
+                    {t("dashboard.notificationsTable.subject")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date d'envoi
+                    {t("dashboard.notificationsTable.sentDate")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                    {t("dashboard.notificationsTable.actions")}
                   </th>
                 </tr>
               </thead>
@@ -195,7 +198,7 @@ const UserNotifications = () => {
                         className="text-blue-600 hover:text-blue-900 flex items-center"
                       >
                         <FaEye className="mr-1" />
-                        Voir le contenu
+                        {t("dashboard.notificationsTable.viewContent")}
                       </button>
                     </td>
                   </tr>
@@ -209,7 +212,7 @@ const UserNotifications = () => {
             <div className="px-6 py-3 border-t border-gray-200">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-700">
-                  Page {currentPage} sur {totalPages}
+                  {t("dashboard.notificationsTable.pageOf", { current: currentPage, total: totalPages })}
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -217,7 +220,7 @@ const UserNotifications = () => {
                     disabled={currentPage === 1}
                     className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
-                    Précédent
+                    {t("dashboard.notificationsTable.previous")}
                   </button>
                   <button
                     onClick={() =>
@@ -226,7 +229,7 @@ const UserNotifications = () => {
                     disabled={currentPage === totalPages}
                     className="px-3 py-1 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
                   >
-                    Suivant
+                    {t("dashboard.notificationsTable.next")}
                   </button>
                 </div>
               </div>
@@ -267,7 +270,7 @@ const UserNotifications = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Objet
+                    {t("dashboard.notificationsTable.subject")}
                   </label>
                   <p className="mt-1 text-sm text-gray-900">
                     {selectedNotification.objet}
@@ -276,7 +279,7 @@ const UserNotifications = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Date d'envoi
+                    {t("dashboard.notificationsTable.sentDate")}
                   </label>
                   <p className="mt-1 text-sm text-gray-900">
                     {formatDate(selectedNotification.dateEnvoi)}
@@ -285,7 +288,7 @@ const UserNotifications = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Statut
+                    {t("dashboard.notificationsTable.status")}
                   </label>
                   <div className="mt-1 flex items-center">
                     {getStatusIcon(selectedNotification.statut)}
@@ -301,7 +304,7 @@ const UserNotifications = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Contenu
+                    {t("dashboard.notificationsTable.content")}
                   </label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
                     <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans">
@@ -316,7 +319,7 @@ const UserNotifications = () => {
                   onClick={closeModal}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  Fermer
+                  {t("common.close")}
                 </button>
               </div>
             </div>

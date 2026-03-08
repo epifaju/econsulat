@@ -1,6 +1,8 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const Step2Address = ({ formData, updateFormData, pays }) => {
+  const { t } = useTranslation();
   const handleChange = (field, value) => {
     updateFormData({ [field]: value });
   };
@@ -8,91 +10,83 @@ const Step2Address = ({ formData, updateFormData, pays }) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">Adresse</h3>
-        <p className="text-gray-600">
-          Veuillez indiquer votre adresse actuelle
-        </p>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">{t("newDemande.step2.title")}</h3>
+        <p className="text-gray-600">{t("newDemande.step2.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Nom de rue */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nom de rue <span className="text-red-500">*</span>
+            {t("newDemande.step2.streetName")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.streetName}
             onChange={(e) => handleChange("streetName", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ex: Avenue de la République"
+            placeholder={t("newDemande.step2.streetNamePlaceholder")}
             required
           />
         </div>
 
-        {/* Numéro */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Numéro <span className="text-red-500">*</span>
+            {t("newDemande.step2.streetNumber")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.streetNumber}
             onChange={(e) => handleChange("streetNumber", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ex: 123"
+            placeholder={t("newDemande.step2.streetNumberPlaceholder")}
             required
           />
         </div>
 
-        {/* Boîte */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Boîte (facultatif)
+            {t("newDemande.step2.box")}
           </label>
           <input
             type="text"
             value={formData.boxNumber}
             onChange={(e) => handleChange("boxNumber", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ex: Bte 5"
+            placeholder={t("newDemande.step2.boxPlaceholder")}
           />
         </div>
 
-        {/* Code postal */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Code postal <span className="text-red-500">*</span>
+            {t("newDemande.step2.postalCode")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.postalCode}
             onChange={(e) => handleChange("postalCode", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ex: 75001"
+            placeholder={t("newDemande.step2.postalCodePlaceholder")}
             required
           />
         </div>
 
-        {/* Ville */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Ville <span className="text-red-500">*</span>
+            {t("newDemande.step2.city")} <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={formData.city}
             onChange={(e) => handleChange("city", e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Ex: Paris"
+            placeholder={t("newDemande.step2.cityPlaceholder")}
             required
           />
         </div>
 
-        {/* Pays */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Pays <span className="text-red-500">*</span>
+            {t("newDemande.step2.country")} <span className="text-red-500">*</span>
           </label>
           <select
             value={formData.countryId}
@@ -100,7 +94,7 @@ const Step2Address = ({ formData, updateFormData, pays }) => {
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           >
-            <option value="">Sélectionnez un pays</option>
+            <option value="">{t("newDemande.step2.selectCountry")}</option>
             {pays.map((pays) => (
               <option key={pays.id} value={pays.id}>
                 {pays.libelle}
@@ -127,13 +121,10 @@ const Step2Address = ({ formData, updateFormData, pays }) => {
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">
-              Adresse de correspondance
+              {t("newDemande.step2.infoTitle")}
             </h3>
             <div className="mt-2 text-sm text-blue-700">
-              <p>
-                Cette adresse sera utilisée pour vous envoyer des documents
-                officiels. Assurez-vous qu'elle soit complète et à jour.
-              </p>
+              <p>{t("newDemande.step2.infoBody")}</p>
             </div>
           </div>
         </div>

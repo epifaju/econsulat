@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import {
   EyeIcon,
@@ -9,8 +10,10 @@ import {
 } from "@heroicons/react/24/outline";
 import Notification from "./Notification";
 import RegisterForm from "./RegisterForm";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Login = () => {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const location = useLocation();
   const [showRegister, setShowRegister] = useState(false);
@@ -45,23 +48,21 @@ const Login = () => {
       if (result.success) {
         showNotification(
           "success",
-          "Connexion réussie",
-          "Bienvenue dans eConsulat !",
+          t("auth.loginSuccess"),
+          t("auth.loginSuccessMessage"),
         );
-        // La navigation sera gérée automatiquement par le composant App
-        // grâce à la propriété isAuthenticated
       } else {
         showNotification(
           "error",
-          "Erreur de connexion",
-          result.error || "Email ou mot de passe incorrect",
+          t("auth.loginError"),
+          result.error || t("auth.emailOrPasswordIncorrect"),
         );
       }
     } catch (error) {
       showNotification(
         "error",
-        "Erreur de connexion",
-        error.message || "Email ou mot de passe incorrect",
+        t("auth.loginError"),
+        error.message || t("auth.emailOrPasswordIncorrect"),
       );
     } finally {
       setLoading(false);
@@ -88,13 +89,14 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex items-center gap-4">
         <Link
           to="/"
           className="text-sm font-medium text-gray-600 hover:text-primary-600"
         >
-          ← Retour à l'accueil
+          {t("common.backToHome")}
         </Link>
+        <LanguageSwitcher />
       </div>
       {/* Notifications */}
       {notification && (
@@ -113,10 +115,10 @@ const Login = () => {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Connexion à eConsulat
+          {t("auth.loginTitle")}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Accédez à votre espace personnel pour gérer vos demandes de documents
+          {t("auth.loginSubtitle")}
         </p>
       </div>
 
@@ -125,7 +127,7 @@ const Login = () => {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="form-label">
-                Adresse email
+                {t("auth.email")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -140,14 +142,14 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="form-input pl-10"
-                  placeholder="votre@email.com"
+                  placeholder={t("auth.emailPlaceholder")}
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="password" className="form-label">
-                Mot de passe
+                {t("auth.password")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -162,7 +164,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="form-input pl-10 pr-10"
-                  placeholder="Votre mot de passe"
+                  placeholder={t("auth.passwordPlaceholder")}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
@@ -192,7 +194,7 @@ const Login = () => {
                   htmlFor="remember-me"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  Se souvenir de moi
+                  {t("auth.rememberMe")}
                 </label>
               </div>
 
@@ -201,7 +203,7 @@ const Login = () => {
                   href="#"
                   className="font-medium text-primary-600 hover:text-primary-500"
                 >
-                  Mot de passe oublié ?
+                  {t("auth.forgotPassword")}
                 </a>
               </div>
             </div>
@@ -215,10 +217,10 @@ const Login = () => {
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Connexion en cours...
+                    {t("auth.loggingIn")}
                   </div>
                 ) : (
-                  "Se connecter"
+                  t("auth.loginButton")
                 )}
               </button>
             </div>
@@ -231,7 +233,7 @@ const Login = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Nouveau sur eConsulat ?
+                  {t("auth.newToApp")}
                 </span>
               </div>
             </div>
@@ -241,7 +243,7 @@ const Login = () => {
                 onClick={handleSwitchToRegister}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
-                Créer un compte
+                {t("common.createAccount")}
               </button>
             </div>
           </div>
@@ -251,7 +253,7 @@ const Login = () => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-500">
-          © 2026 eConsulat. Tous droits réservés.
+          {t("common.allRightsReserved", { year: new Date().getFullYear() })}
         </p>
       </div>
     </div>

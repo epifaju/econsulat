@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import {
   EyeIcon,
@@ -9,8 +10,10 @@ import {
   EnvelopeIcon,
 } from "@heroicons/react/24/outline";
 import Notification from "./Notification";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const RegisterForm = ({ onSwitchToLogin }) => {
+  const { t } = useTranslation();
   const { register } = useAuth();
   const [formData, setFormData] = useState({
     firstName: "",
@@ -35,8 +38,8 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     if (formData.password !== formData.confirmPassword) {
       showNotification(
         "error",
-        "Erreur de validation",
-        "Les mots de passe ne correspondent pas",
+        t("auth.validationError"),
+        t("auth.passwordsDoNotMatch"),
       );
       return false;
     }
@@ -44,8 +47,8 @@ const RegisterForm = ({ onSwitchToLogin }) => {
     if (formData.password.length < 6) {
       showNotification(
         "error",
-        "Erreur de validation",
-        "Le mot de passe doit contenir au moins 6 caractères",
+        t("auth.validationError"),
+        t("auth.passwordMinLength"),
       );
       return false;
     }
@@ -68,8 +71,8 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       if (result.success) {
         showNotification(
           "success",
-          "Inscription réussie",
-          result.message || "Votre compte a été créé avec succès !",
+          t("auth.registerSuccess"),
+          result.message || t("auth.registerSuccessMessage"),
         );
 
         // Vider le formulaire
@@ -88,17 +91,15 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       } else {
         showNotification(
           "error",
-          "Erreur d'inscription",
-          result.error ||
-            "Une erreur est survenue lors de la création du compte",
+          t("auth.registerError"),
+          result.error || t("auth.registerErrorMessage"),
         );
       }
     } catch (error) {
       showNotification(
         "error",
-        "Erreur d'inscription",
-        error.message ||
-          "Une erreur est survenue lors de la création du compte",
+        t("auth.registerError"),
+        error.message || t("auth.registerErrorMessage"),
       );
     } finally {
       setLoading(false);
@@ -112,13 +113,14 @@ const RegisterForm = ({ onSwitchToLogin }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-4 left-4 flex items-center gap-4">
         <Link
           to="/"
           className="text-sm font-medium text-gray-600 hover:text-primary-600"
         >
-          ← Retour à l'accueil
+          {t("common.backToHome")}
         </Link>
+        <LanguageSwitcher />
       </div>
       {/* Notifications */}
       {notification && (
@@ -137,10 +139,10 @@ const RegisterForm = ({ onSwitchToLogin }) => {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-          Créer un compte eConsulat
+          {t("auth.registerTitle")}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Rejoignez eConsulat pour gérer vos demandes de documents
+          {t("auth.registerSubtitle")}
         </p>
       </div>
 
@@ -150,7 +152,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="form-label">
-                  Prénom
+                  {t("auth.firstName")}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -165,14 +167,14 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                     value={formData.firstName}
                     onChange={handleChange}
                     className="form-input pl-10"
-                    placeholder="Votre prénom"
+                    placeholder={t("auth.firstNamePlaceholder")}
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="lastName" className="form-label">
-                  Nom
+                  {t("auth.lastName")}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -187,7 +189,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                     value={formData.lastName}
                     onChange={handleChange}
                     className="form-input pl-10"
-                    placeholder="Votre nom"
+                    placeholder={t("auth.lastNamePlaceholder")}
                   />
                 </div>
               </div>
@@ -210,14 +212,14 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                   value={formData.email}
                   onChange={handleChange}
                   className="form-input pl-10"
-                  placeholder="votre@email.com"
+                  placeholder={t("auth.emailPlaceholder")}
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="password" className="form-label">
-                Mot de passe
+                {t("auth.password")}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -232,7 +234,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                   value={formData.password}
                   onChange={handleChange}
                   className="form-input pl-10 pr-10"
-                  placeholder="Votre mot de passe"
+                  placeholder={t("auth.passwordPlaceholder")}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
@@ -267,7 +269,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className="form-input pl-10 pr-10"
-                  placeholder="Confirmez votre mot de passe"
+                  placeholder={t("auth.confirmPasswordPlaceholder")}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
@@ -294,10 +296,10 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Création en cours...
+                    {t("auth.creatingAccount")}
                   </div>
                 ) : (
-                  "Créer mon compte"
+                  t("auth.createAccountButton")
                 )}
               </button>
             </div>
@@ -310,7 +312,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  Déjà un compte ?
+                  {t("auth.alreadyHaveAccount")}
                 </span>
               </div>
             </div>
@@ -320,7 +322,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
                 onClick={onSwitchToLogin}
                 className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
-                Se connecter
+                {t("common.login")}
               </button>
             </div>
           </div>
@@ -330,7 +332,7 @@ const RegisterForm = ({ onSwitchToLogin }) => {
       {/* Footer */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-500">
-          © 2026 eConsulat. Tous droits réservés.
+          {t("common.allRightsReserved", { year: new Date().getFullYear() })}
         </p>
       </div>
     </div>

@@ -8,11 +8,14 @@ import com.econsulat.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.econsulat.model.User;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -20,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,8 +32,19 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @Slf4j
 public class AuthController {
 
+    private static final List<Locale> SUPPORTED = List.of(Locale.FRENCH, new Locale("pt"));
+
     private final AuthenticationService authenticationService;
     private final UserService userService;
+    private final MessageSource messageSource;
+
+    private Locale getLocale() {
+        Locale requestLocale = LocaleContextHolder.getLocale();
+        if (SUPPORTED.stream().anyMatch(l -> l.getLanguage().equals(requestLocale.getLanguage()))) {
+            return requestLocale.getLanguage().equals("pt") ? new Locale("pt") : Locale.FRENCH;
+        }
+        return Locale.FRENCH;
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
@@ -44,42 +59,44 @@ public class AuthController {
 
         try {
             // Validation des données reçues
+            Locale locale = getLocale();
+
             if (request.getFirstName() == null || request.getFirstName().trim().isEmpty()) {
                 log.error("❌ Erreur de validation: firstName est vide ou null");
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Le prénom est obligatoire"));
+                        .body(Map.of("error", messageSource.getMessage("validation.firstName.required", null, locale)));
             }
 
             if (request.getLastName() == null || request.getLastName().trim().isEmpty()) {
                 log.error("❌ Erreur de validation: lastName est vide ou null");
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Le nom est obligatoire"));
+                        .body(Map.of("error", messageSource.getMessage("validation.lastName.required", null, locale)));
             }
 
             if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
                 log.error("❌ Erreur de validation: email est vide ou null");
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "L'email est obligatoire"));
+                        .body(Map.of("error", messageSource.getMessage("validation.email.required", null, locale)));
             }
 
             if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
                 log.error("❌ Erreur de validation: password est vide ou null");
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Le mot de passe est obligatoire"));
+                        .body(Map.of("error", messageSource.getMessage("validation.password.required", null, locale)));
             }
 
             if (request.getPassword().length() < 6) {
                 log.error("❌ Erreur de validation: password trop court ({} caractères)",
                         request.getPassword().length());
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Le mot de passe doit contenir au moins 6 caractères"));
+                        .body(Map.of("error", messageSource.getMessage("validation.password.minLength", null, locale)));
             }
 
             // Vérifier si l'email existe déjà
             if (userService.findByEmail(request.getEmail()).isPresent()) {
                 log.warn("⚠️ Tentative d'inscription avec un email existant: {}", request.getEmail());
                 return ResponseEntity.badRequest()
-                        .body(Map.of("error", "Un utilisateur avec cet email existe déjà"));
+                        .body(Map.of("error", messageSource.getMessage("auth.emailAlreadyExists", null, locale)));
             }
 
             // Créer l'utilisateur avec le rôle USER par défaut
@@ -91,8 +108,7 @@ public class AuthController {
 
             // Retourner une réponse de succès
             Map<String, Object> response = new HashMap<>();
-            response.put("message",
-                    "Compte créé avec succès. Veuillez vérifier votre email pour activer votre compte.");
+            response.put("message", messageSource.getMessage("auth.registerSuccess", null, getLocale()));
             response.put("userId", user.getId());
             response.put("email", user.getEmail());
             response.put("firstName", user.getFirstName());
@@ -107,39 +123,40 @@ public class AuthController {
         } catch (Exception e) {
             log.error("❌ Erreur lors de la création du compte pour l'email {}: {}",
                     request.getEmail(), e.getMessage(), e);
-
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Erreur lors de la création du compte: " + e.getMessage()));
+            String msg = messageSource.getMessage("auth.registerError", null, getLocale()) + " " + e.getMessage();
+            return ResponseEntity.badRequest().body(Map.of("error", msg));
         }
     }
 
     @GetMapping("/confirm")
     public ResponseEntity<String> confirmEmail(@RequestParam String token) {
+        Locale locale = getLocale();
         try {
             boolean verified = userService.verifyEmail(token);
             if (verified) {
-                return ResponseEntity.ok("Email vérifié avec succès. Vous pouvez maintenant vous connecter.");
+                return ResponseEntity.ok(messageSource.getMessage("auth.confirmEmailSuccess", null, locale));
             } else {
-                return ResponseEntity.badRequest().body("Token invalide ou expiré.");
+                return ResponseEntity.badRequest().body(messageSource.getMessage("auth.confirmEmailInvalidToken", null, locale));
             }
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Erreur lors de la vérification: " + e.getMessage());
+            return ResponseEntity.badRequest().body(messageSource.getMessage("auth.confirmEmailError", null, locale) + " " + e.getMessage());
         }
     }
 
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser() {
+        Locale locale = getLocale();
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Non authentifié"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", messageSource.getMessage("auth.unauthorized", null, locale)));
             }
 
             String email = authentication.getName();
             User user = userService.findByEmail(email).orElse(null);
 
             if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Utilisateur non trouvé"));
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", messageSource.getMessage("auth.userNotFound", null, locale)));
             }
 
             Map<String, Object> userInfo = new HashMap<>();
@@ -156,8 +173,7 @@ public class AuthController {
             return ResponseEntity.ok(userInfo);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error",
-                            "Erreur lors de la récupération des informations utilisateur: " + e.getMessage()));
+                    .body(Map.of("error", messageSource.getMessage("auth.getUserError", null, getLocale()) + " " + e.getMessage()));
         }
     }
 
@@ -181,7 +197,7 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> handleGeneralExceptions(Exception ex) {
         log.error("❌ Erreur générale dans AuthController: {}", ex.getMessage(), ex);
         Map<String, String> error = new HashMap<>();
-        error.put("error", "Une erreur interne s'est produite: " + ex.getMessage());
+        error.put("error", messageSource.getMessage("error.generic", null, getLocale()) + " " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }

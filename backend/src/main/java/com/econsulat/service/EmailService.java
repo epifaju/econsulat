@@ -3,9 +3,12 @@ package com.econsulat.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -13,6 +16,7 @@ import org.springframework.stereotype.Service;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final MessageSource messageSource;
 
     @Value("${app.url}")
     private String appUrl;
@@ -20,24 +24,38 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    public void sendEmailVerification(String toEmail, String token) {
+    /**
+     * Envoie l'email de vérification de compte dans la langue demandée (fr/pt).
+     */
+    public void sendEmailVerification(String toEmail, String token, Locale locale) {
+        if (locale == null) {
+            locale = Locale.FRENCH;
+        }
+        if (!"pt".equals(locale.getLanguage())) {
+            locale = Locale.FRENCH;
+        }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Validation de votre compte eConsulat");
+            message.setSubject(messageSource.getMessage("email.verification.subject", null, locale));
 
             String verificationUrl = appUrl + "/verify-email?token=" + token;
+            String greeting = messageSource.getMessage("email.verification.greeting", null, locale);
+            String intro = messageSource.getMessage("email.verification.body.intro", null, locale);
+            String activate = messageSource.getMessage("email.verification.body.activate", null, locale);
+            String expiry = messageSource.getMessage("email.verification.body.expiry", null, locale);
+            String ignore = messageSource.getMessage("email.verification.body.ignore", null, locale);
+            String signature = messageSource.getMessage("email.verification.signature", null, locale);
 
             message.setText(
-                    "Bonjour,\n\n" +
-                            "Votre compte eConsulat a été créé avec succès.\n\n" +
-                            "Pour activer votre compte, veuillez cliquer sur le lien suivant :\n" +
+                    greeting + "\n\n" +
+                            intro + "\n\n" +
+                            activate + "\n" +
                             verificationUrl + "\n\n" +
-                            "Ce lien expire dans 24 heures.\n\n" +
-                            "Si vous n'avez pas créé ce compte, vous pouvez ignorer cet email.\n\n" +
-                            "Cordialement,\n" +
-                            "L'équipe eConsulat");
+                            expiry + "\n\n" +
+                            ignore + "\n\n" +
+                            signature);
 
             mailSender.send(message);
             log.info("Email de validation envoyé à : {}", toEmail);
@@ -47,19 +65,32 @@ public class EmailService {
         }
     }
 
-    public void sendWelcomeEmail(String toEmail, String firstName) {
+    /**
+     * Envoie l'email de bienvenue après activation du compte (fr/pt).
+     */
+    public void sendWelcomeEmail(String toEmail, String firstName, Locale locale) {
+        if (locale == null) {
+            locale = Locale.FRENCH;
+        }
+        if (!"pt".equals(locale.getLanguage())) {
+            locale = Locale.FRENCH;
+        }
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(toEmail);
-            message.setSubject("Bienvenue sur eConsulat");
+            message.setSubject(messageSource.getMessage("email.welcome.subject", null, locale));
+
+            String greeting = messageSource.getMessage("email.welcome.greeting", new Object[]{firstName}, locale);
+            String intro = messageSource.getMessage("email.welcome.body.intro", null, locale);
+            String login = messageSource.getMessage("email.welcome.body.login", null, locale);
+            String signature = messageSource.getMessage("email.welcome.signature", null, locale);
 
             message.setText(
-                    "Bonjour " + firstName + ",\n\n" +
-                            "Votre compte eConsulat a été activé avec succès.\n\n" +
-                            "Vous pouvez maintenant vous connecter à l'application.\n\n" +
-                            "Cordialement,\n" +
-                            "L'équipe eConsulat");
+                    greeting + "\n\n" +
+                            intro + "\n\n" +
+                            login + "\n\n" +
+                            signature);
 
             mailSender.send(message);
             log.info("Email de bienvenue envoyé à : {}", toEmail);

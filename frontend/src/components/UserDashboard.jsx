@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useDemandes } from "../hooks/useDemandes";
 import API_CONFIG from "../config/api";
@@ -20,6 +21,8 @@ import DemandesList from "./DemandesList";
 import UserNotifications from "./UserNotifications";
 
 const UserDashboard = () => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language?.startsWith("pt") ? "pt-PT" : "fr-FR";
   const { user, token } = useAuth();
   const { demandes, loading, error, refreshDemandes, addDemande } =
     useDemandes();
@@ -39,6 +42,14 @@ const UserDashboard = () => {
   const [documentTypes, setDocumentTypes] = useState([]);
   const [documentTypesLoading, setDocumentTypesLoading] = useState(false);
 
+  const getDefaultDocumentTypes = () => [
+    { value: "PASSEPORT", label: t("dashboard.filters.passport"), translationKey: "dashboard.filters.passport", aliases: ["passeport", "passport"] },
+    { value: "ACTE_NAISSANCE", label: t("dashboard.filters.birthCertificate"), translationKey: "dashboard.filters.birthCertificate", aliases: ["acte de naissance", "actenaissance", "naissance"] },
+    { value: "CERTIFICAT_MARIAGE", label: t("dashboard.filters.marriageCertificate"), translationKey: "dashboard.filters.marriageCertificate", aliases: ["certificat de mariage", "certificatmariage", "mariage"] },
+    { value: "CARTE_IDENTITE", label: t("dashboard.filters.idCard"), translationKey: "dashboard.filters.idCard", aliases: ["carte d'identite", "carteidentite", "identite"] },
+    { value: "AUTRE", label: t("dashboard.filters.other"), translationKey: "dashboard.filters.other", aliases: ["autre"] },
+  ];
+
   const showNotification = (type, title, message) => {
     setNotification({ type, title, message });
     setTimeout(() => setNotification(null), 5000);
@@ -48,8 +59,8 @@ const UserDashboard = () => {
     setShowNewDemandeForm(false);
     showNotification(
       "success",
-      "Succès",
-      "Votre demande a été soumise avec succès"
+      t("common.success"),
+      t("dashboard.notifications.requestSubmitted")
     );
     // Ajouter la nouvelle demande à la liste et rafraîchir
     addDemande(demande);
@@ -62,7 +73,7 @@ const UserDashboard = () => {
 
   const handleRefreshData = () => {
     refreshDemandes();
-    showNotification("info", "Info", "Données actualisées");
+    showNotification("info", t("dashboard.notifications.info"), t("dashboard.notifications.dataRefreshed"));
   };
 
   const handleViewDetails = async (demandeId) => {
@@ -83,13 +94,13 @@ const UserDashboard = () => {
       } else {
         showNotification(
           "error",
-          "Erreur",
-          "Impossible de charger les détails de la demande"
+          t("common.error"),
+          t("dashboard.notifications.cannotLoadDetails")
         );
       }
     } catch (err) {
       console.error("Erreur:", err);
-      showNotification("error", "Erreur", "Problème de connexion");
+      showNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -188,61 +199,11 @@ const UserDashboard = () => {
             "Erreur lors du chargement des types de documents:",
             response.status
           );
-          // En cas d'erreur, utiliser les types par défaut
-          setDocumentTypes([
-            {
-              value: "PASSEPORT",
-              label: "Passeport",
-              aliases: ["passeport", "passport"],
-            },
-            {
-              value: "ACTE_NAISSANCE",
-              label: "Acte de naissance",
-              aliases: ["acte de naissance", "actenaissance", "naissance"],
-            },
-            {
-              value: "CERTIFICAT_MARIAGE",
-              label: "Certificat de mariage",
-              aliases: [
-                "certificat de mariage",
-                "certificatmariage",
-                "mariage",
-              ],
-            },
-            {
-              value: "CARTE_IDENTITE",
-              label: "Carte d'identité",
-              aliases: ["carte d'identite", "carteidentite", "identite"],
-            },
-            { value: "AUTRE", label: "Autre", aliases: ["autre"] },
-          ]);
+          setDocumentTypes(getDefaultDocumentTypes());
         }
       } catch (err) {
         console.error("Erreur lors du chargement des types de documents:", err);
-        // En cas d'erreur, utiliser les types par défaut
-        setDocumentTypes([
-          {
-            value: "PASSEPORT",
-            label: "Passeport",
-            aliases: ["passeport", "passport"],
-          },
-          {
-            value: "ACTE_NAISSANCE",
-            label: "Acte de naissance",
-            aliases: ["acte de naissance", "actenaissance", "naissance"],
-          },
-          {
-            value: "CERTIFICAT_MARIAGE",
-            label: "Certificat de mariage",
-            aliases: ["certificat de mariage", "certificatmariage", "mariage"],
-          },
-          {
-            value: "CARTE_IDENTITE",
-            label: "Carte d'identité",
-            aliases: ["carte d'identite", "carteidentite", "identite"],
-          },
-          { value: "AUTRE", label: "Autre", aliases: ["autre"] },
-        ]);
+        setDocumentTypes(getDefaultDocumentTypes());
       } finally {
         setDocumentTypesLoading(false);
       }
@@ -369,17 +330,17 @@ const UserDashboard = () => {
       );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        showNotification("error", "Erreur", err?.error || "Impossible de créer le paiement");
+        showNotification("error", t("common.error"), err?.error || t("dashboard.notifications.cannotCreatePayment"));
         return;
       }
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        showNotification("error", "Erreur", "Impossible de rediriger vers le paiement");
+        showNotification("error", t("common.error"), t("dashboard.notifications.cannotRedirectPayment"));
       }
     } catch (e) {
-      showNotification("error", "Erreur", "Problème de connexion");
+      showNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -397,7 +358,7 @@ const UserDashboard = () => {
 
       if (response.ok) {
         const data = await response.json();
-        showNotification("success", "Succès", "Document généré avec succès");
+        showNotification("success", t("common.success"), t("dashboard.notifications.documentGenerated"));
 
         // Télécharger le document
         const downloadResponse = await fetch(
@@ -422,45 +383,41 @@ const UserDashboard = () => {
 
           showNotification(
             "success",
-            "Succès",
-            "Document téléchargé avec succès"
+            t("common.success"),
+            t("dashboard.notifications.documentDownloaded")
           );
         } else {
           showNotification(
             "error",
-            "Erreur",
-            "Impossible de télécharger le document"
+            t("common.error"),
+            t("dashboard.notifications.cannotDownload")
           );
         }
       } else {
         const errorData = await response.json();
         showNotification(
           "error",
-          "Erreur",
-          errorData.error || "Impossible de générer le document"
+          t("common.error"),
+          errorData.error || t("dashboard.notifications.cannotGenerate")
         );
       }
     } catch (err) {
       console.error("Erreur:", err);
-      showNotification("error", "Erreur", "Problème lors de la génération");
+      showNotification("error", t("common.error"), t("dashboard.notifications.generateError"));
     }
   };
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "PENDING_PAYMENT":
-        return <span className="badge bg-amber-100 text-amber-800">En attente de paiement</span>;
-      case "PENDING":
-        return <span className="badge badge-pending">En attente</span>;
-      case "APPROVED":
-        return <span className="badge badge-approved">Approuvé</span>;
-      case "REJECTED":
-        return <span className="badge badge-rejected">Rejeté</span>;
-      case "COMPLETED":
-        return <span className="badge bg-blue-100 text-blue-800">Terminé</span>;
-      default:
-        return <span className="badge badge-pending">{status}</span>;
-    }
+    const key = `dashboard.status.${status}`;
+    const label = t(key);
+    const className = {
+      PENDING_PAYMENT: "badge bg-amber-100 text-amber-800",
+      PENDING: "badge badge-pending",
+      APPROVED: "badge badge-approved",
+      REJECTED: "badge badge-rejected",
+      COMPLETED: "badge bg-blue-100 text-blue-800",
+    }[status] || "badge badge-pending";
+    return <span className={className}>{label !== key ? label : status}</span>;
   };
 
   const getStatusColor = (status) => {
@@ -480,38 +437,37 @@ const UserDashboard = () => {
     }
   };
 
-  // Options de filtres dynamiques basées sur les types de documents de la base
+  // Options de filtres dynamiques (labels traduits)
   const filterOptions = {
     status: {
-      label: "Statut",
+      label: t("dashboard.filters.status"),
       values: [
-        { value: "PENDING_PAYMENT", label: "En attente de paiement" },
-        { value: "PENDING", label: "En attente" },
-        { value: "APPROVED", label: "Approuvé" },
-        { value: "REJECTED", label: "Rejeté" },
-        { value: "COMPLETED", label: "Terminé" },
+        { value: "PENDING_PAYMENT", label: t("dashboard.status.PENDING_PAYMENT") },
+        { value: "PENDING", label: t("dashboard.status.PENDING") },
+        { value: "APPROVED", label: t("dashboard.status.APPROVED") },
+        { value: "REJECTED", label: t("dashboard.status.REJECTED") },
+        { value: "COMPLETED", label: t("dashboard.status.COMPLETED") },
       ],
     },
     documentType: {
-      label: "Type de document",
+      label: t("dashboard.filters.documentType"),
       values: documentTypesLoading
-        ? [{ value: "", label: "Chargement des types..." }]
+        ? [{ value: "", label: t("dashboard.filters.loadingTypes") }]
         : documentTypes.length > 0
         ? [
-            { value: "", label: "Tous les types" },
+            { value: "", label: t("dashboard.filters.allTypes") },
             ...documentTypes.map((type) => ({
               value: type.value,
-              label: type.label,
+              label: type.translationKey ? t(type.translationKey) : type.label,
             })),
           ]
         : [
-            // Fallback si aucun type n'est chargé
-            { value: "", label: "Tous les types" },
-            { value: "PASSEPORT", label: "Passeport" },
-            { value: "ACTE_NAISSANCE", label: "Acte de naissance" },
-            { value: "CERTIFICAT_MARIAGE", label: "Certificat de mariage" },
-            { value: "CARTE_IDENTITE", label: "Carte d'identité" },
-            { value: "AUTRE", label: "Autre" },
+            { value: "", label: t("dashboard.filters.allTypes") },
+            { value: "PASSEPORT", label: t("dashboard.filters.passport") },
+            { value: "ACTE_NAISSANCE", label: t("dashboard.filters.birthCertificate") },
+            { value: "CERTIFICAT_MARIAGE", label: t("dashboard.filters.marriageCertificate") },
+            { value: "CARTE_IDENTITE", label: t("dashboard.filters.idCard") },
+            { value: "AUTRE", label: t("dashboard.filters.other") },
           ],
     },
   };
@@ -521,7 +477,7 @@ const UserDashboard = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
+          <p className="mt-4 text-gray-600">{t("common.loading")}</p>
         </div>
       </div>
     );
@@ -554,47 +510,46 @@ const UserDashboard = () => {
         {/* En-tête */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Mon tableau de bord
+            {t("dashboard.title")}
           </h1>
           <p className="mt-2 text-gray-600">
-            Suivez vos demandes de documents et gérez vos informations
-            personnelles.
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
         {/* Cartes de statistiques */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
-            title="Total Demandes"
+            title={t("dashboard.stats.totalRequests")}
             value={stats.totalRequests}
             icon={DocumentTextIcon}
             change="+2"
             changeType="positive"
-            description="ce mois"
+            description={t("dashboard.stats.thisMonth")}
           />
           <StatsCard
-            title="En attente"
+            title={t("dashboard.stats.pending")}
             value={stats.pendingRequests}
             icon={ClockIcon}
             change="+1"
             changeType="neutral"
-            description="ce mois"
+            description={t("dashboard.stats.thisMonth")}
           />
           <StatsCard
-            title="Approuvées"
+            title={t("dashboard.stats.approved")}
             value={stats.approvedRequests}
             icon={CheckCircleIcon}
             change="+1"
             changeType="positive"
-            description="ce mois"
+            description={t("dashboard.stats.thisMonth")}
           />
           <StatsCard
-            title="Rejetées"
+            title={t("dashboard.stats.rejected")}
             value={stats.rejectedRequests}
             icon={XCircleIcon}
             change="0"
             changeType="neutral"
-            description="ce mois"
+            description={t("dashboard.stats.thisMonth")}
           />
         </div>
 
@@ -602,12 +557,12 @@ const UserDashboard = () => {
         <div className="card">
           <div className="card-header">
             <div className="flex items-center justify-between">
-              <h2 className="card-title">Mes Demandes</h2>
+              <h2 className="card-title">{t("dashboard.requests.myRequests")}</h2>
               <div className="flex space-x-2">
                 <button
                   className="btn-secondary"
                   onClick={handleRefreshData}
-                  title="Actualiser les données"
+                  title={t("dashboard.requests.refreshData")}
                 >
                   <svg
                     className="h-4 w-4"
@@ -628,7 +583,7 @@ const UserDashboard = () => {
                   onClick={() => setShowNewDemandeForm(true)}
                 >
                   <PlusIcon className="h-4 w-4 mr-2" />
-                  Nouvelle demande
+                  {t("dashboard.requests.newRequest")}
                 </button>
               </div>
             </div>
@@ -641,7 +596,7 @@ const UserDashboard = () => {
             filters={filters}
             onFiltersChange={setFilters}
             filterOptions={filterOptions}
-            placeholder="Rechercher dans mes demandes..."
+            placeholder={t("dashboard.requests.searchPlaceholder")}
           />
 
           {/* Tableau */}
@@ -664,7 +619,7 @@ const UserDashboard = () => {
                     className="table-header-cell"
                     onClick={() => handleSort("documentType")}
                   >
-                    Type de document
+                    {t("dashboard.requests.documentType")}
                     {sortConfig.key === "documentType" && (
                       <span className="ml-1">
                         {sortConfig.direction === "asc" ? "↑" : "↓"}
@@ -686,14 +641,14 @@ const UserDashboard = () => {
                     className="table-header-cell"
                     onClick={() => handleSort("createdAt")}
                   >
-                    Date de création
+                    {t("dashboard.requests.createdAt")}
                     {sortConfig.key === "createdAt" && (
                       <span className="ml-1">
                         {sortConfig.direction === "asc" ? "↑" : "↓"}
                       </span>
                     )}
                   </th>
-                  <th className="table-header-cell">Actions</th>
+                  <th className="table-header-cell">{t("dashboard.requests.actions")}</th>
                 </tr>
               </thead>
               <tbody className="table-body">
@@ -705,7 +660,7 @@ const UserDashboard = () => {
                           {demande.firstName} {demande.lastName}
                         </div>
                         <div className="text-gray-500">
-                          Demande #{demande.id}
+                          {t("dashboard.requests.requestId", { id: demande.id })}
                         </div>
                       </div>
                     </td>
@@ -718,7 +673,7 @@ const UserDashboard = () => {
                       {getStatusBadge(demande.status)}
                     </td>
                     <td className="table-cell">
-                      {new Date(demande.createdAt).toLocaleDateString("fr-FR", {
+                      {new Date(demande.createdAt).toLocaleDateString(dateLocale, {
                         year: "numeric",
                         month: "long",
                         day: "numeric",
@@ -732,23 +687,23 @@ const UserDashboard = () => {
                           <button
                             onClick={() => handlePayDemande(demande.id)}
                             className="px-2 py-1 text-sm bg-amber-500 text-white rounded hover:bg-amber-600"
-                            title="Payer la demande"
+                            title={t("dashboard.requests.payRequest")}
                           >
-                            Payer
+                            {t("dashboard.requests.pay")}
                           </button>
                         )}
                         {demande.status === "APPROVED" && (
                           <button
                             onClick={() => handleGenerateDocument(demande.id)}
                             className="btn-success btn-sm"
-                            title="Télécharger document"
+                            title={t("dashboard.requests.downloadDoc")}
                           >
                             <DocumentArrowDownIcon className="h-4 w-4" />
                           </button>
                         )}
                         <button
                           className="btn-secondary btn-sm"
-                          title="Voir détails"
+                          title={t("dashboard.requests.viewDetails")}
                           onClick={() => handleViewDetails(demande.id)}
                         >
                           <EyeIcon className="h-4 w-4" />
@@ -775,13 +730,13 @@ const UserDashboard = () => {
           {filteredDemandes.length === 0 && (
             <div className="text-center py-8">
               <DocumentTextIcon className="h-12 w-12 text-gray-400 mx-auto" />
-              <p className="mt-2 text-gray-500">Aucune demande trouvée</p>
+              <p className="mt-2 text-gray-500">{t("dashboard.requests.noRequests")}</p>
               <button
                 className="btn-primary mt-4"
                 onClick={() => setShowNewDemandeForm(true)}
               >
                 <PlusIcon className="h-4 w-4 mr-2" />
-                Créer votre première demande
+                {t("dashboard.requests.createFirstRequest")}
               </button>
             </div>
           )}
@@ -808,7 +763,7 @@ const UserDashboard = () => {
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Détails de la demande #{selectedDemande.id}
+                  {t("dashboard.modal.detailsTitle", { id: selectedDemande.id })}
                 </h3>
                 <button
                   onClick={closeDetailsModal}
@@ -834,15 +789,15 @@ const UserDashboard = () => {
                 {/* Informations générales */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">
-                    Informations générales
+                    {t("dashboard.modal.generalInfo")}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="font-medium">Type de document:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.documentTypeLabel")}</span>{" "}
                       {selectedDemande.documentTypeDisplay}
                     </div>
                     <div>
-                      <span className="font-medium">Statut:</span>
+                      <span className="font-medium">{t("dashboard.modal.statusLabel")}</span>
                       <span
                         className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
                           selectedDemande.status
@@ -852,9 +807,9 @@ const UserDashboard = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="font-medium">Date de création:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.createdAtLabel")}</span>{" "}
                       {new Date(selectedDemande.createdAt).toLocaleDateString(
-                        "fr-FR",
+                        dateLocale,
                         {
                           year: "numeric",
                           month: "long",
@@ -865,9 +820,9 @@ const UserDashboard = () => {
                       )}
                     </div>
                     <div>
-                      <span className="font-medium">Dernière mise à jour:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.updatedAtLabel")}</span>{" "}
                       {new Date(selectedDemande.updatedAt).toLocaleDateString(
-                        "fr-FR",
+                        dateLocale,
                         {
                           year: "numeric",
                           month: "long",
@@ -883,31 +838,31 @@ const UserDashboard = () => {
                 {/* Informations personnelles */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h4 className="font-medium text-gray-900 mb-2">
-                    Informations personnelles
+                    {t("dashboard.modal.personalInfo")}
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="font-medium">Nom:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.lastNameLabel")}</span>{" "}
                       {selectedDemande.lastName}
                     </div>
                     <div>
-                      <span className="font-medium">Prénom:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.firstNameLabel")}</span>{" "}
                       {selectedDemande.firstName}
                     </div>
                     <div>
-                      <span className="font-medium">Date de naissance:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.birthDateLabel")}</span>{" "}
                       {selectedDemande.birthDate}
                     </div>
                     <div>
-                      <span className="font-medium">Lieu de naissance:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.birthPlaceLabel")}</span>{" "}
                       {selectedDemande.birthPlace}
                     </div>
                     <div>
-                      <span className="font-medium">Pays de naissance:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.birthCountryLabel")}</span>{" "}
                       {selectedDemande.birthCountry}
                     </div>
                     <div>
-                      <span className="font-medium">Civilité:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.civilityLabel")}</span>{" "}
                       {selectedDemande.civilite}
                     </div>
                   </div>
@@ -915,27 +870,27 @@ const UserDashboard = () => {
 
                 {/* Adresse */}
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Adresse</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">{t("dashboard.modal.address")}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="font-medium">Rue:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.streetLabel")}</span>{" "}
                       {selectedDemande.streetNumber}{" "}
                       {selectedDemande.streetName}
                     </div>
                     <div>
-                      <span className="font-medium">Boîte:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.boxLabel")}</span>{" "}
                       {selectedDemande.boxNumber || "N/A"}
                     </div>
                     <div>
-                      <span className="font-medium">Code postal:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.postalCodeLabel")}</span>{" "}
                       {selectedDemande.postalCode}
                     </div>
                     <div>
-                      <span className="font-medium">Ville:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.cityLabel")}</span>{" "}
                       {selectedDemande.city}
                     </div>
                     <div>
-                      <span className="font-medium">Pays:</span>{" "}
+                      <span className="font-medium">{t("dashboard.modal.countryLabel")}</span>{" "}
                       {selectedDemande.country}
                     </div>
                   </div>
@@ -946,33 +901,29 @@ const UserDashboard = () => {
                   selectedDemande.motherFirstName) && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="font-medium text-gray-900 mb-2">
-                      Filiation
+                      {t("dashboard.modal.filiation")}
                     </h4>
                     <div className="space-y-4">
                       {selectedDemande.fatherFirstName && (
                         <div>
                           <h5 className="font-medium text-sm text-gray-700 mb-1">
-                            Père
+                            {t("dashboard.modal.father")}
                           </h5>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="font-medium">Nom:</span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.lastNameLabel")}</span>{" "}
                               {selectedDemande.fatherLastName}
                             </div>
                             <div>
-                              <span className="font-medium">Prénom:</span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.firstNameLabel")}</span>{" "}
                               {selectedDemande.fatherFirstName}
                             </div>
                             <div>
-                              <span className="font-medium">
-                                Date de naissance:
-                              </span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.birthDateLabel")}</span>{" "}
                               {selectedDemande.fatherBirthDate}
                             </div>
                             <div>
-                              <span className="font-medium">
-                                Lieu de naissance:
-                              </span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.birthPlaceLabel")}</span>{" "}
                               {selectedDemande.fatherBirthPlace}
                             </div>
                           </div>
@@ -981,27 +932,23 @@ const UserDashboard = () => {
                       {selectedDemande.motherFirstName && (
                         <div>
                           <h5 className="font-medium text-sm text-gray-700 mb-1">
-                            Mère
+                            {t("dashboard.modal.mother")}
                           </h5>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                             <div>
-                              <span className="font-medium">Nom:</span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.lastNameLabel")}</span>{" "}
                               {selectedDemande.motherLastName}
                             </div>
                             <div>
-                              <span className="font-medium">Prénom:</span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.firstNameLabel")}</span>{" "}
                               {selectedDemande.motherFirstName}
                             </div>
                             <div>
-                              <span className="font-medium">
-                                Date de naissance:
-                              </span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.birthDateLabel")}</span>{" "}
                               {selectedDemande.motherBirthDate}
                             </div>
                             <div>
-                              <span className="font-medium">
-                                Lieu de naissance:
-                              </span>{" "}
+                              <span className="font-medium">{t("dashboard.modal.birthPlaceLabel")}</span>{" "}
                               {selectedDemande.motherBirthPlace}
                             </div>
                           </div>
@@ -1016,7 +963,7 @@ const UserDashboard = () => {
                   selectedDemande.documentFiles.length > 0 && (
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h4 className="font-medium text-gray-900 mb-2">
-                        Documents joints
+                        {t("dashboard.modal.attachedDocs")}
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {selectedDemande.documentFiles.map((file, index) => (
@@ -1048,14 +995,14 @@ const UserDashboard = () => {
                   onClick={closeDetailsModal}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
                 >
-                  Fermer
+                  {t("common.close")}
                 </button>
                 {selectedDemande.status === "APPROVED" && (
                   <button
                     className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
                     onClick={() => handleGenerateDocument(selectedDemande.id)}
                   >
-                    Générer document
+                    {t("dashboard.modal.generateDocument")}
                   </button>
                 )}
               </div>

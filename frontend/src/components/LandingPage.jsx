@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   DocumentTextIcon,
   CreditCardIcon,
@@ -9,8 +10,10 @@ import {
   UserPlusIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/outline";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const LandingPage = () => {
+  const { t } = useTranslation();
   const scrollToSection = (id) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth" });
@@ -28,7 +31,7 @@ const LandingPage = () => {
                   <span className="text-white font-bold text-sm">EC</span>
                 </div>
                 <span className="text-xl font-semibold text-gray-900">
-                  eConsulat
+                  {t("common.appName")}
                 </span>
               </Link>
               <nav className="hidden md:flex gap-6">
@@ -36,22 +39,23 @@ const LandingPage = () => {
                   onClick={() => scrollToSection("fonctionnalites")}
                   className="text-sm font-medium text-gray-600 hover:text-primary-600"
                 >
-                  Fonctionnalités
+                  {t("landing.nav.features")}
                 </button>
                 <button
                   onClick={() => scrollToSection("comment-ca-marche")}
                   className="text-sm font-medium text-gray-600 hover:text-primary-600"
                 >
-                  Comment ça marche
+                  {t("landing.nav.howItWorks")}
                 </button>
               </nav>
             </div>
             <div className="flex items-center gap-3">
+              <LanguageSwitcher />
               <Link
                 to="/login"
                 className="text-sm font-medium text-gray-700 hover:text-primary-600"
               >
-                Se connecter
+                {t("common.login")}
               </Link>
               <Link
                 to="/login"
@@ -59,7 +63,7 @@ const LandingPage = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium text-white bg-primary-600 hover:bg-primary-700"
               >
                 <UserPlusIcon className="h-4 w-4" />
-                Créer un compte
+                {t("common.createAccount")}
               </Link>
             </div>
           </div>
@@ -71,19 +75,17 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight">
-              Vos démarches consulat en ligne, simplifiées
+              {t("landing.hero.title")}
             </h1>
             <p className="mt-6 text-lg text-gray-600">
-              Demandez vos documents officiels (passeport, actes d'état civil…),
-              payez en ligne de manière sécurisée et suivez l'avancement de vos
-              demandes en temps réel.
+              {t("landing.hero.subtitle")}
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/login"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-base font-medium text-white bg-primary-600 hover:bg-primary-700"
               >
-                Se connecter
+                {t("landing.hero.ctaLogin")}
                 <ArrowRightIcon className="h-5 w-5" />
               </Link>
               <button
@@ -91,7 +93,7 @@ const LandingPage = () => {
                 onClick={() => scrollToSection("comment-ca-marche")}
                 className="inline-flex items-center justify-center px-6 py-3 rounded-md text-base font-medium text-primary-600 bg-white border border-primary-200 hover:bg-primary-50"
               >
-                Comment ça marche
+                {t("landing.hero.ctaHowItWorks")}
               </button>
             </div>
           </div>
@@ -99,18 +101,14 @@ const LandingPage = () => {
       </section>
 
       {/* Fonctionnalités */}
-      <section
-        id="fonctionnalites"
-        className="py-16 sm:py-24 bg-white"
-      >
+      <section id="fonctionnalites" className="py-16 sm:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-gray-900">
-              Un service complet et sécurisé
+              {t("landing.features.title")}
             </h2>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-              De la création de votre demande jusqu'à la récupération de votre
-              document, tout se fait en ligne.
+              {t("landing.features.subtitle")}
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -119,11 +117,10 @@ const LandingPage = () => {
                 <DocumentTextIcon className="h-6 w-6 text-primary-600" />
               </div>
               <h3 className="mt-4 font-semibold text-gray-900">
-                Création de demandes
+                {t("landing.features.createRequests")}
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                Remplissez vos formulaires en ligne pour les types de documents
-                proposés par le consulat.
+                {t("landing.features.createRequestsDesc")}
               </p>
             </div>
             <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
@@ -131,11 +128,10 @@ const LandingPage = () => {
                 <CreditCardIcon className="h-6 w-6 text-primary-600" />
               </div>
               <h3 className="mt-4 font-semibold text-gray-900">
-                Paiement en ligne
+                {t("landing.features.onlinePayment")}
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                Paiement sécurisé par carte bancaire. Les frais sont indiqués
-                clairement avant validation.
+                {t("landing.features.onlinePaymentDesc")}
               </p>
             </div>
             <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
@@ -143,11 +139,10 @@ const LandingPage = () => {
                 <ChartBarIcon className="h-6 w-6 text-primary-600" />
               </div>
               <h3 className="mt-4 font-semibold text-gray-900">
-                Suivi en temps réel
+                {t("landing.features.realtimeTracking")}
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                Consultez le statut de vos demandes à tout moment depuis votre
-                espace personnel.
+                {t("landing.features.realtimeTrackingDesc")}
               </p>
             </div>
             <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
@@ -155,11 +150,10 @@ const LandingPage = () => {
                 <ArrowDownTrayIcon className="h-6 w-6 text-primary-600" />
               </div>
               <h3 className="mt-4 font-semibold text-gray-900">
-                Documents à télécharger
+                {t("landing.features.downloadDocs")}
               </h3>
               <p className="mt-2 text-sm text-gray-600">
-                Une fois votre demande traitée, récupérez vos documents
-                générés directement en ligne.
+                {t("landing.features.downloadDocsDesc")}
               </p>
             </div>
           </div>
@@ -167,40 +161,37 @@ const LandingPage = () => {
       </section>
 
       {/* Comment ça marche */}
-      <section
-        id="comment-ca-marche"
-        className="py-16 sm:py-24 bg-gray-50"
-      >
+      <section id="comment-ca-marche" className="py-16 sm:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-3xl font-bold text-gray-900">
-              Comment ça marche
+              {t("landing.howItWorks.title")}
             </h2>
             <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-              Quatre étapes simples pour obtenir vos documents.
+              {t("landing.howItWorks.subtitle")}
             </p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
                 step: 1,
-                title: "Connectez-vous",
-                desc: "Accédez à votre espace avec vos identifiants.",
+                titleKey: "landing.howItWorks.step1Title",
+                descKey: "landing.howItWorks.step1Desc",
               },
               {
                 step: 2,
-                title: "Créez votre demande",
-                desc: "Choisissez le type de document et remplissez le formulaire.",
+                titleKey: "landing.howItWorks.step2Title",
+                descKey: "landing.howItWorks.step2Desc",
               },
               {
                 step: 3,
-                title: "Payez en ligne",
-                desc: "Réglez les frais de manière sécurisée par carte bancaire.",
+                titleKey: "landing.howItWorks.step3Title",
+                descKey: "landing.howItWorks.step3Desc",
               },
               {
                 step: 4,
-                title: "Suivez et récupérez",
-                desc: "Consultez le statut et téléchargez votre document une fois prêt.",
+                titleKey: "landing.howItWorks.step4Title",
+                descKey: "landing.howItWorks.step4Desc",
               },
             ].map((item) => (
               <div
@@ -210,8 +201,10 @@ const LandingPage = () => {
                 <div className="h-12 w-12 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-lg">
                   {item.step}
                 </div>
-                <h3 className="mt-4 font-semibold text-gray-900">{item.title}</h3>
-                <p className="mt-2 text-sm text-gray-600">{item.desc}</p>
+                <h3 className="mt-4 font-semibold text-gray-900">
+                  {t(item.titleKey)}
+                </h3>
+                <p className="mt-2 text-sm text-gray-600">{t(item.descKey)}</p>
               </div>
             ))}
           </div>
@@ -226,12 +219,10 @@ const LandingPage = () => {
               <ShieldCheckIcon className="h-7 w-7 text-primary-600" />
             </div>
             <h2 className="mt-6 text-2xl font-bold text-gray-900">
-              Un cadre officiel et sécurisé
+              {t("landing.trust.title")}
             </h2>
             <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-              eConsulat est le portail officiel pour vos démarches consulat. Vos
-              données et vos paiements sont protégés. Les traitements sont
-              effectués dans le respect des règles en vigueur.
+              {t("landing.trust.body")}
             </p>
           </div>
         </div>
@@ -241,18 +232,17 @@ const LandingPage = () => {
       <section className="py-16 sm:py-20 bg-gray-50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl font-bold text-gray-900">
-            Prêt à commencer ?
+            {t("landing.cta.title")}
           </h2>
           <p className="mt-4 text-gray-600">
-            Connectez-vous à votre espace ou créez un compte pour déposer votre
-            première demande.
+            {t("landing.cta.subtitle")}
           </p>
           <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/login"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-md text-base font-medium text-white bg-primary-600 hover:bg-primary-700"
             >
-              Se connecter
+              {t("landing.cta.login")}
               <ArrowRightIcon className="h-5 w-5" />
             </Link>
             <Link
@@ -260,7 +250,7 @@ const LandingPage = () => {
               state={{ showRegister: true }}
               className="inline-flex items-center justify-center px-6 py-3 rounded-md text-base font-medium text-primary-600 bg-white border border-gray-300 hover:bg-gray-50"
             >
-              Créer un compte
+              {t("landing.cta.createAccount")}
             </Link>
           </div>
         </div>
@@ -275,7 +265,7 @@ const LandingPage = () => {
                 <span className="text-white font-bold text-xs">EC</span>
               </div>
               <span className="text-sm font-medium text-gray-700">
-                eConsulat
+                {t("common.appName")}
               </span>
             </div>
             <div className="flex gap-6">
@@ -283,12 +273,12 @@ const LandingPage = () => {
                 to="/login"
                 className="text-sm text-gray-600 hover:text-primary-600"
               >
-                Se connecter
+                {t("landing.footer.login")}
               </Link>
             </div>
           </div>
           <p className="mt-6 text-center sm:text-left text-xs text-gray-500">
-            © {new Date().getFullYear()} eConsulat. Tous droits réservés.
+            {t("common.allRightsReserved", { year: new Date().getFullYear() })}
           </p>
         </div>
       </footer>

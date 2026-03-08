@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Bars3Icon,
@@ -8,8 +9,10 @@ import {
   ArrowRightOnRectangleIcon,
   Cog6ToothIcon,
 } from "@heroicons/react/24/outline";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -20,18 +23,10 @@ const Navbar = () => {
   };
 
   const getRoleLabel = (role) => {
-    switch (role) {
-      case "ADMIN":
-        return "Administrateur";
-      case "AGENT":
-        return "Agent";
-      case "USER":
-        return "Utilisateur";
-      case "CITIZEN":
-        return "Citoyen";
-      default:
-        return role;
-    }
+    if (!role) return "";
+    const key = `nav.roles.${role}`;
+    const label = t(key);
+    return label !== key ? label : role;
   };
 
   return (
@@ -45,15 +40,16 @@ const Navbar = () => {
                 <span className="text-white font-bold text-sm">EC</span>
               </div>
               <span className="ml-3 text-xl font-semibold text-gray-900">
-                eConsulat
+                {t("common.appName")}
               </span>
             </div>
           </div>
 
           {/* Navigation desktop */}
           <div className="hidden md:flex md:items-center md:space-x-6">
+            <LanguageSwitcher />
             <span className="text-sm text-gray-500">
-              Connecté en tant que{" "}
+              {t("nav.connectedAs")}{" "}
               <span className="font-medium text-gray-900">
                 {user?.firstName} {user?.lastName}
               </span>
@@ -91,7 +87,7 @@ const Navbar = () => {
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <Cog6ToothIcon className="h-4 w-4 mr-2" />
-                    Mon profil
+                    {t("nav.myProfile")}
                   </Link>
 
                   <button
@@ -99,7 +95,7 @@ const Navbar = () => {
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-                    Déconnexion
+                    {t("nav.logout")}
                   </button>
                 </div>
               )}
@@ -112,7 +108,7 @@ const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
             >
-              <span className="sr-only">Ouvrir le menu principal</span>
+              <span className="sr-only">{t("nav.openMainMenu")}</span>
               {isMobileMenuOpen ? (
                 <XMarkIcon className="block h-6 w-6" />
               ) : (
@@ -145,7 +141,7 @@ const Navbar = () => {
               className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
             >
               <Cog6ToothIcon className="h-4 w-4 mr-2" />
-              Mon profil
+              {t("nav.myProfile")}
             </Link>
 
             <button
@@ -153,7 +149,7 @@ const Navbar = () => {
               className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
             >
               <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-              Déconnexion
+              {t("nav.logout")}
             </button>
           </div>
         </div>

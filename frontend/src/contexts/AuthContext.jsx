@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || "Erreur de connexion",
+        error: error.response?.data?.error || error.response?.data?.message || "Erreur de connexion",
       };
     }
   };

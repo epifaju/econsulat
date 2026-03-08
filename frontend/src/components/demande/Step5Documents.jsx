@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 const Step5Documents = ({ formData, updateFormData }) => {
+  const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
 
@@ -39,16 +41,12 @@ const Step5Documents = ({ formData, updateFormData }) => {
       const maxSize = 10 * 1024 * 1024; // 10MB
 
       if (!validTypes.includes(file.type)) {
-        alert(
-          `Le fichier ${file.name} n'est pas un type de fichier valide. Formats acceptés: PDF, JPG, PNG`
-        );
+        alert(t("newDemande.step5.invalidType", { name: file.name }));
         return false;
       }
 
       if (file.size > maxSize) {
-        alert(
-          `Le fichier ${file.name} est trop volumineux. Taille maximale: 10MB`
-        );
+        alert(t("newDemande.step5.fileTooBig", { name: file.name }));
         return false;
       }
 
@@ -127,10 +125,10 @@ const Step5Documents = ({ formData, updateFormData }) => {
     <div className="space-y-6">
       <div className="text-center">
         <h3 className="text-xl font-semibold text-gray-800 mb-2">
-          Documents justificatifs
+          {t("newDemande.step5.title")}
         </h3>
         <p className="text-gray-600">
-          Téléchargez les documents nécessaires pour votre demande
+          {t("newDemande.step5.subtitle")}
         </p>
       </div>
 
@@ -161,10 +159,8 @@ const Step5Documents = ({ formData, updateFormData }) => {
         </svg>
 
         <div className="text-gray-600 mb-4">
-          <p className="text-lg font-medium">
-            Glissez-déposez vos fichiers ici ou
-          </p>
-          <p className="text-sm">cliquez pour sélectionner des fichiers</p>
+          <p className="text-lg font-medium">{t("newDemande.step5.dragDrop")}</p>
+          <p className="text-sm">{t("newDemande.step5.clickToSelect")}</p>
         </div>
 
         <input
@@ -179,12 +175,12 @@ const Step5Documents = ({ formData, updateFormData }) => {
           htmlFor="file-upload"
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
         >
-          Sélectionner des fichiers
+          {t("newDemande.step5.selectFiles")}
         </label>
 
         <div className="mt-4 text-sm text-gray-500">
-          <p>Formats acceptés: PDF, JPG, PNG</p>
-          <p>Taille maximale: 10MB par fichier</p>
+          <p>{t("newDemande.step5.formatsAccepted")}</p>
+          <p>{t("newDemande.step5.maxSize")}</p>
         </div>
       </div>
 
@@ -192,7 +188,7 @@ const Step5Documents = ({ formData, updateFormData }) => {
       {formData.documentFiles.length > 0 && (
         <div className="space-y-3">
           <h4 className="text-lg font-medium text-gray-800">
-            Fichiers sélectionnés ({formData.documentFiles.length})
+            {t("newDemande.step5.filesSelected", { count: formData.documentFiles.length })}
           </h4>
 
           <div className="space-y-2">
@@ -210,7 +206,7 @@ const Step5Documents = ({ formData, updateFormData }) => {
                     <p className="text-xs text-gray-500">
                       {uploadProgress[fileName]
                         ? `${uploadProgress[fileName]}%`
-                        : "Prêt"}
+                        : t("newDemande.step5.ready")}
                     </p>
                   </div>
                 </div>
@@ -218,7 +214,7 @@ const Step5Documents = ({ formData, updateFormData }) => {
                 <button
                   onClick={() => removeFile(index)}
                   className="text-red-500 hover:text-red-700 p-1"
-                  title="Supprimer le fichier"
+                  title={t("newDemande.step5.removeFile")}
                 >
                   <svg
                     className="w-5 h-5"
@@ -256,17 +252,15 @@ const Step5Documents = ({ formData, updateFormData }) => {
           </div>
           <div className="ml-3">
             <h3 className="text-sm font-medium text-blue-800">
-              Documents requis
+              {t("newDemande.step5.requiredTitle")}
             </h3>
-            <div className="mt-2 text-sm text-blue-700">
-              <ul className="list-disc list-inside space-y-1">
-                <li>Copie de votre pièce d'identité (recto/verso)</li>
-                <li>Justificatif de domicile récent</li>
-                <li>Photo d'identité récente (pour passeport)</li>
-                <li>Acte de naissance (si demandé)</li>
-                <li>Tout autre document justificatif pertinent</li>
-              </ul>
-            </div>
+            <ul className="mt-2 text-sm text-blue-700 list-disc list-inside space-y-1">
+              <li>{t("newDemande.step5.requiredId")}</li>
+              <li>{t("newDemande.step5.requiredDomicile")}</li>
+              <li>{t("newDemande.step5.requiredPhoto")}</li>
+              <li>{t("newDemande.step5.requiredBirth")}</li>
+              <li>{t("newDemande.step5.requiredOther")}</li>
+            </ul>
           </div>
         </div>
       </div>
