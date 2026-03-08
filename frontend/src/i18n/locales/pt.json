@@ -224,7 +224,22 @@
       "statusSent": "Enviado",
       "statusFailure": "Falha",
       "statusInProgress": "Em curso",
-      "statusUnknown": "Desconhecido"
+      "statusUnknown": "Desconhecido",
+      "emailPreview": {
+        "subject": "[eConsulat] Atualização do seu pedido",
+        "greeting": "Olá {{firstName}} {{lastName}},",
+        "bodyIntro": "Informamos que o estado do seu pedido n.º {{demandeId}} foi atualizado:",
+        "bodyNewStatus": "Novo estado: {{status}}.",
+        "bodyMoreInfo": "Para mais informações, aceda ao seu espaço cidadão:",
+        "signature": "Com os melhores cumprimentos,\nA equipa eConsulat",
+        "status": {
+          "PENDING_PAYMENT": "Aguardando pagamento",
+          "PENDING": "Em espera",
+          "APPROVED": "Aprovado",
+          "REJECTED": "Rejeitado",
+          "COMPLETED": "Concluído"
+        }
+      }
     }
   },
   "newDemande": {

@@ -6,6 +6,7 @@ import com.econsulat.model.User;
 import com.econsulat.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class EmailNotificationService {
 
     private final JavaMailSender mailSender;
     private final NotificationRepository notificationRepository;
+    private final MessageSource messageSource;
 
     @Value("${app.url}")
     private String appUrl;
@@ -28,17 +31,24 @@ public class EmailNotificationService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    private static Locale toLocale(String preferredLocale) {
+        if (preferredLocale != null && "pt".equalsIgnoreCase(preferredLocale.trim())) {
+            return new Locale("pt");
+        }
+        return Locale.FRENCH;
+    }
+
     /**
-     * Envoie une notification par email lors du changement de statut d'une demande
+     * Envoie une notification par email lors du changement de statut d'une demande.
+     * La langue utilisée est celle préférée de l'utilisateur (ou français par défaut).
      */
     @Transactional
     public void sendStatusChangeNotification(Demande demande, User user, Demande.Status newStatus) {
+        Locale locale = toLocale(user.getPreferredLocale());
         try {
-            // Créer le contenu de l'email
-            String objet = "[eConsulat] Mise à jour de votre demande";
-            String contenu = buildEmailContent(user, demande, newStatus);
+            String objet = messageSource.getMessage("email.notification.subject", null, locale);
+            String contenu = buildEmailContent(user, demande, newStatus, locale);
 
-            // Envoyer l'email
             SimpleMailMessage message = new SimpleMailMessage();
             message.setFrom(fromEmail);
             message.setTo(user.getEmail());
@@ -47,13 +57,13 @@ public class EmailNotificationService {
 
             mailSender.send(message);
 
-            // Enregistrer la notification dans la base de données
             Notification notification = new Notification();
             notification.setDemande(demande);
             notification.setUtilisateur(user);
             notification.setEmailDestinataire(user.getEmail());
             notification.setObjet(objet);
             notification.setContenu(contenu);
+            notification.setNewStatus(newStatus.name());
             notification.setStatut(Notification.Statut.ENVOYE);
             notification.setDateEnvoi(LocalDateTime.now());
 
@@ -66,14 +76,16 @@ public class EmailNotificationService {
             log.error("Erreur lors de l'envoi de la notification de changement de statut à {} : {}",
                     user.getEmail(), e.getMessage());
 
-            // Enregistrer l'échec dans la base de données
             try {
+                String objet = messageSource.getMessage("email.notification.subject", null, locale);
+                String contenu = buildEmailContent(user, demande, newStatus, locale);
                 Notification notification = new Notification();
                 notification.setDemande(demande);
                 notification.setUtilisateur(user);
                 notification.setEmailDestinataire(user.getEmail());
-                notification.setObjet("[eConsulat] Mise à jour de votre demande");
-                notification.setContenu(buildEmailContent(user, demande, newStatus));
+                notification.setObjet(objet);
+                notification.setContenu(contenu);
+                notification.setNewStatus(newStatus.name());
                 notification.setStatut(Notification.Statut.ECHEC);
                 notification.setDateEnvoi(LocalDateTime.now());
 
@@ -81,30 +93,23 @@ public class EmailNotificationService {
             } catch (Exception saveException) {
                 log.error("Erreur lors de la sauvegarde de l'échec de notification : {}", saveException.getMessage());
             }
-
-            // Ne plus lancer d'exception pour éviter d'affecter la transaction principale
-            // throw new RuntimeException("Erreur lors de l'envoi de la notification par
-            // email", e);
         }
     }
 
     /**
-     * Construit le contenu de l'email selon le template spécifié
+     * Construit le contenu de l'email selon la locale (FR/PT).
      */
-    private String buildEmailContent(User user, Demande demande, Demande.Status newStatus) {
-        return String.format(
-                "Bonjour %s %s,\n\n" +
-                        "Nous vous informons que le statut de votre demande n°%d a été mis à jour :\n" +
-                        "Nouveau statut : %s.\n\n" +
-                        "Pour plus d'informations, connectez-vous à votre espace citoyen :\n" +
-                        "%s/espace-citoyen\n\n" +
-                        "Cordialement,\n" +
-                        "L'équipe eConsulat",
-                user.getFirstName(),
-                user.getLastName(),
-                demande.getId(),
-                newStatus.getDisplayName(),
-                appUrl);
+    private String buildEmailContent(User user, Demande demande, Demande.Status newStatus, Locale locale) {
+        String greeting = messageSource.getMessage("email.notification.greeting",
+                new Object[]{user.getFirstName(), user.getLastName()}, locale);
+        String intro = messageSource.getMessage("email.notification.body.intro", new Object[]{demande.getId()}, locale);
+        String statusKey = "demand.status." + newStatus.name();
+        String statusLabel = messageSource.getMessage(statusKey, null, newStatus.getDisplayName(), locale);
+        String newStatusLine = messageSource.getMessage("email.notification.body.newStatus", new Object[]{statusLabel}, locale);
+        String moreInfo = messageSource.getMessage("email.notification.body.moreInfo", null, locale);
+        String signature = messageSource.getMessage("email.notification.signature", null, locale);
+
+        return greeting + "\n\n" + intro + "\n" + newStatusLine + "\n\n" + moreInfo + "\n" + appUrl + "/espace-citoyen\n\n" + signature;
     }
 
     /**

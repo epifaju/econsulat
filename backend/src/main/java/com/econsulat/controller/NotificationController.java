@@ -1,5 +1,6 @@
 package com.econsulat.controller;
 
+import com.econsulat.dto.NotificationResponse;
 import com.econsulat.model.Notification;
 import com.econsulat.model.User;
 import com.econsulat.repository.NotificationRepository;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/notifications")
@@ -28,20 +30,24 @@ public class NotificationController {
     private final EmailNotificationService emailNotificationService;
 
     /**
-     * Récupère toutes les notifications de l'utilisateur connecté
+     * Récupère toutes les notifications de l'utilisateur connecté (avec données pour affichage traduit).
      */
     @GetMapping("/my")
     @PreAuthorize("hasAnyRole('USER', 'CITIZEN')")
-    public ResponseEntity<List<Notification>> getMyNotifications() {
+    public ResponseEntity<List<NotificationResponse>> getMyNotifications() {
         try {
             String userEmail = getCurrentUserEmail();
             User user = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
             List<Notification> notifications = notificationRepository
-                    .findByUtilisateurOrderByDateEnvoiDesc(user);
+                    .findByUtilisateurWithRelationsOrderByDateEnvoiDesc(user);
 
-            return ResponseEntity.ok(notifications);
+            List<NotificationResponse> responses = notifications.stream()
+                    .map(NotificationResponse::from)
+                    .collect(Collectors.toList());
+
+            return ResponseEntity.ok(responses);
         } catch (Exception e) {
             log.error("Erreur lors de la récupération des notifications : {}", e.getMessage());
             return ResponseEntity.internalServerError().build();

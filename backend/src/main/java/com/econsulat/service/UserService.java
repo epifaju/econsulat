@@ -179,6 +179,15 @@ public class UserService implements UserDetailsService {
             user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         }
 
+        if (request.getPreferredLocale() != null) {
+            String locale = request.getPreferredLocale().trim().toLowerCase();
+            if ("fr".equals(locale) || "pt".equals(locale)) {
+                user.setPreferredLocale(locale);
+            } else if (locale.isEmpty()) {
+                user.setPreferredLocale(null);
+            }
+        }
+
         user = userRepository.save(user);
         return ProfileResponse.from(user);
     }

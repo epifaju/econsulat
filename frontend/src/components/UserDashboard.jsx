@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import { useDemandes } from "../hooks/useDemandes";
@@ -78,29 +79,11 @@ const UserDashboard = () => {
 
   const handleViewDetails = async (demandeId) => {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8080/api/demandes/${demandeId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const demande = await response.json();
-        setSelectedDemande(demande);
-        setShowDetailsModal(true);
-      } else {
-        showNotification(
-          "error",
-          t("common.error"),
-          t("dashboard.notifications.cannotLoadDetails")
-        );
-      }
+      const response = await axios.get(`/api/demandes/${demandeId}`);
+      setSelectedDemande(response.data);
+      setShowDetailsModal(true);
     } catch (err) {
-      console.error("Erreur:", err);
-      showNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
+      showNotification("error", t("common.error"), err.response?.status === 403 ? t("dashboard.notifications.cannotLoadDetails") : t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -122,17 +105,8 @@ const UserDashboard = () => {
     const fetchDocumentTypes = async () => {
       try {
         setDocumentTypesLoading(true);
-        const response = await fetch(
-          "http://127.0.0.1:8080/api/demandes/document-types",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
+        const response = await axios.get("/api/demandes/document-types");
+        const data = response.data;
 
           // Normaliser les données pour gérer différents formats
           const normalizedTypes = data.map((type) => {
@@ -191,16 +165,6 @@ const UserDashboard = () => {
           });
 
           setDocumentTypes(normalizedTypes);
-
-          // Debug : afficher les types normalisés
-          console.log("🔍 Types de documents normalisés:", normalizedTypes);
-        } else {
-          console.error(
-            "Erreur lors du chargement des types de documents:",
-            response.status
-          );
-          setDocumentTypes(getDefaultDocumentTypes());
-        }
       } catch (err) {
         console.error("Erreur lors du chargement des types de documents:", err);
         setDocumentTypes(getDefaultDocumentTypes());
@@ -317,93 +281,43 @@ const UserDashboard = () => {
 
   const handlePayDemande = async (demandeId) => {
     try {
-      const res = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.PAYMENT.CREATE_SESSION}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ demandeId }),
-        }
-      );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        showNotification("error", t("common.error"), err?.error || t("dashboard.notifications.cannotCreatePayment"));
-        return;
-      }
-      const data = await res.json();
-      if (data.url) {
+      const { data } = await axios.post(API_CONFIG.PAYMENT.CREATE_SESSION, { demandeId });
+      if (data?.url) {
         window.location.href = data.url;
       } else {
         showNotification("error", t("common.error"), t("dashboard.notifications.cannotRedirectPayment"));
       }
     } catch (e) {
-      showNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
+      const msg = e.response?.data?.error || e.response?.data?.message || t("dashboard.notifications.cannotCreatePayment");
+      showNotification("error", t("common.error"), msg);
     }
   };
 
   const handleGenerateDocument = async (demandeId) => {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8080/api/demandes/${demandeId}/generate-document`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await axios.post(`/api/demandes/${demandeId}/generate-document`);
+      const data = response.data;
+      showNotification("success", t("common.success"), t("dashboard.notifications.documentGenerated"));
+
+      const downloadResponse = await axios.get(`/api/demandes/${demandeId}/download-document`, { responseType: "blob" });
+      const blob = downloadResponse.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.fileName || "document.docx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      showNotification(
+        "success",
+        t("common.success"),
+        t("dashboard.notifications.documentDownloaded")
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        showNotification("success", t("common.success"), t("dashboard.notifications.documentGenerated"));
-
-        // Télécharger le document
-        const downloadResponse = await fetch(
-          `http://127.0.0.1:8080/api/demandes/${demandeId}/download-document`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (downloadResponse.ok) {
-          const blob = await downloadResponse.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = data.fileName || "document.docx";
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-
-          showNotification(
-            "success",
-            t("common.success"),
-            t("dashboard.notifications.documentDownloaded")
-          );
-        } else {
-          showNotification(
-            "error",
-            t("common.error"),
-            t("dashboard.notifications.cannotDownload")
-          );
-        }
-      } else {
-        const errorData = await response.json();
-        showNotification(
-          "error",
-          t("common.error"),
-          errorData.error || t("dashboard.notifications.cannotGenerate")
-        );
-      }
     } catch (err) {
-      console.error("Erreur:", err);
-      showNotification("error", t("common.error"), t("dashboard.notifications.generateError"));
+      const msg = err.response?.data?.error || err.response?.data?.message || t("dashboard.notifications.generateError");
+      showNotification("error", t("common.error"), msg);
     }
   };
 

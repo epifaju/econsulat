@@ -42,6 +42,10 @@ public class User implements UserDetails {
     @Column(name = "email_verified", nullable = false)
     private Boolean emailVerified = false;
 
+    /** Langue préférée pour les e-mails et l'interface (fr, pt). Null = français par défaut. */
+    @Column(name = "preferred_locale", length = 5)
+    private String preferredLocale;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

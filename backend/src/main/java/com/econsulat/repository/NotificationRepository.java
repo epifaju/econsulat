@@ -13,9 +13,12 @@ import java.util.List;
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     /**
-     * Trouve toutes les notifications d'un utilisateur
+     * Trouve toutes les notifications d'un utilisateur (avec demande et utilisateur chargés pour le DTO).
      */
     List<Notification> findByUtilisateurOrderByDateEnvoiDesc(User utilisateur);
+
+    @Query("SELECT n FROM Notification n JOIN FETCH n.demande JOIN FETCH n.utilisateur WHERE n.utilisateur = :user ORDER BY n.dateEnvoi DESC")
+    List<Notification> findByUtilisateurWithRelationsOrderByDateEnvoiDesc(@Param("user") User user);
 
     /**
      * Trouve toutes les notifications d'une demande par son ID

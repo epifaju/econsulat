@@ -1,4 +1,5 @@
 import React from "react";
+import axios from "axios";
 import { useTranslation } from "react-i18next";
 
 const LanguageSwitcher = ({ className = "" }) => {
@@ -6,6 +7,16 @@ const LanguageSwitcher = ({ className = "" }) => {
 
   const setLanguage = (lng) => {
     i18n.changeLanguage(lng);
+    const token = localStorage.getItem("token");
+    if (token) {
+      axios
+        .put(
+          "/api/users/me",
+          { preferredLocale: lng },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .catch(() => {});
+    }
   };
 
   return (

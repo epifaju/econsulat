@@ -20,4 +20,6 @@ public class ProfileUpdateRequest {
     private String currentPassword;
     /** Nouveau mot de passe (optionnel). */
     private String newPassword;
+    /** Langue préférée (fr, pt) pour les e-mails et l'interface. */
+    private String preferredLocale;
 }

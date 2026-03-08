@@ -21,6 +21,7 @@ public class ProfileResponse {
     private String email;
     private User.Role role;
     private Boolean emailVerified;
+    private String preferredLocale;
     private LocalDateTime createdAt;
 
     public static ProfileResponse from(User user) {
@@ -32,6 +33,7 @@ public class ProfileResponse {
         r.setEmail(user.getEmail());
         r.setRole(user.getRole());
         r.setEmailVerified(user.getEmailVerified());
+        r.setPreferredLocale(user.getPreferredLocale());
         r.setCreatedAt(user.getCreatedAt());
         return r;
     }

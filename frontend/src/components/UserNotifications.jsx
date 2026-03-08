@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { useTranslation } from "react-i18next";
 import {
   FaEnvelope,
@@ -27,27 +28,14 @@ const UserNotifications = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch("/api/notifications/my", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(t("dashboard.notificationsTable.fetchError"));
-      }
-
-      const data = await response.json();
-      setNotifications(data);
-
-      // Calculer le nombre total de pages
-      setTotalPages(Math.ceil(data.length / itemsPerPage));
+      const response = await axios.get("/api/notifications/my");
+      const data = response.data;
+      const list = Array.isArray(data) ? data : [];
+      setNotifications(list);
+      setTotalPages(Math.ceil(list.length / itemsPerPage));
       setError(null);
     } catch (err) {
-      setError(err.message);
-      console.error("Erreur:", err);
+      setError(err.response?.data?.message || err.message || t("dashboard.notificationsTable.fetchError"));
     } finally {
       setLoading(false);
     }
@@ -77,6 +65,99 @@ const UserNotifications = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getStatusLabel = (statut) => {
+    switch (statut) {
+      case "ENVOYE":
+        return t("dashboard.notificationsTable.statusSent");
+      case "ECHEC":
+        return t("dashboard.notificationsTable.statusFailure");
+      case "EN_COURS":
+        return t("dashboard.notificationsTable.statusInProgress");
+      default:
+        return t("dashboard.notificationsTable.statusUnknown");
+    }
+  };
+
+  /** Accès aux champs notification (camelCase ou snake_case selon la réponse API). */
+  const getNotificationData = (n) => {
+    if (!n) return null;
+    return {
+      newStatus: n.newStatus ?? n.new_status ?? null,
+      demandeId: n.demandeId ?? n.demande_id ?? null,
+      recipientFirstName: n.recipientFirstName ?? n.recipient_first_name ?? "",
+      recipientLastName: n.recipientLastName ?? n.recipient_last_name ?? "",
+    };
+  };
+
+  /**
+   * Parse le contenu stocké (FR ou PT) pour en extraire demandeId et statut (anciennes notifications).
+   * Retourne { demandeId, newStatus, recipientFirstName, recipientLastName } ou null.
+   */
+  const parseNotificationContent = (contenu) => {
+    if (!contenu || typeof contenu !== "string") return null;
+    const idMatch = contenu.match(/(?:demande\s+)?n[°º.]?\s*(\d+)|pedido\s+n[°º.]?\s*(\d+)/i);
+    const demandeId = idMatch ? parseInt(idMatch[1] || idMatch[2], 10) : null;
+    if (demandeId == null || isNaN(demandeId)) return null;
+
+    const statusPhraseMatch = contenu.match(/Nouveau statut\s*:\s*([^\n.]+)|Novo estado\s*:\s*([^\n.]+)/i);
+    const statusPhrase = (statusPhraseMatch ? (statusPhraseMatch[1] || statusPhraseMatch[2] || "") : "").trim().replace(/\.$/, "");
+    const labelToKey = {
+      "Approuvé": "APPROVED", "Aprovado": "APPROVED",
+      "En attente": "PENDING", "Em espera": "PENDING",
+      "Rejeté": "REJECTED", "Rejeitado": "REJECTED",
+      "Terminé": "COMPLETED", "Concluído": "COMPLETED",
+      "En attente de paiement": "PENDING_PAYMENT", "Aguardando pagamento": "PENDING_PAYMENT",
+    };
+    const newStatus = labelToKey[statusPhrase] || null;
+    if (!newStatus) return null;
+
+    const greetingMatch = contenu.match(/Bonjour\s+([^\s,]+)\s+([^,\n]+),|Olá\s+([^\s,]+)\s+([^,\n]+),/i);
+    const firstName = greetingMatch ? (greetingMatch[1] || greetingMatch[3] || "").trim() : "";
+    const lastName = greetingMatch ? (greetingMatch[2] || greetingMatch[4] || "").trim() : "";
+
+    return { demandeId, newStatus, recipientFirstName: firstName, recipientLastName: lastName };
+  };
+
+  /** Données utilisables pour la traduction (API ou parsing du contenu). */
+  const getTranslatableData = (n) => {
+    const fromApi = getNotificationData(n);
+    if (fromApi && fromApi.newStatus && fromApi.demandeId != null) {
+      return {
+        newStatus: fromApi.newStatus,
+        demandeId: fromApi.demandeId,
+        recipientFirstName: fromApi.recipientFirstName || "",
+        recipientLastName: fromApi.recipientLastName || "",
+      };
+    }
+    const parsed = parseNotificationContent(n?.contenu);
+    if (parsed) return parsed;
+    return null;
+  };
+
+  /** Sujet traduit pour la notification (changement de statut). */
+  const getTranslatedSubject = (n) => {
+    const data = getTranslatableData(n);
+    if (!data) return null;
+    return t("dashboard.notificationsTable.emailPreview.subject");
+  };
+
+  /** Contenu traduit pour la notification (changement de statut). */
+  const getTranslatedContent = (n) => {
+    const data = getTranslatableData(n);
+    if (!data) return null;
+    const statusKey = "dashboard.notificationsTable.emailPreview.status." + data.newStatus;
+    const statusLabel = t(statusKey);
+    const firstName = data.recipientFirstName || "";
+    const lastName = data.recipientLastName || "";
+    const greeting = t("dashboard.notificationsTable.emailPreview.greeting", { firstName, lastName });
+    const bodyIntro = t("dashboard.notificationsTable.emailPreview.bodyIntro", { demandeId: data.demandeId });
+    const bodyNewStatus = t("dashboard.notificationsTable.emailPreview.bodyNewStatus", { status: statusLabel });
+    const bodyMoreInfo = t("dashboard.notificationsTable.emailPreview.bodyMoreInfo");
+    const signature = t("dashboard.notificationsTable.emailPreview.signature");
+    const citizenSpaceUrl = typeof window !== "undefined" ? `${window.location.origin}/espace-citoyen` : "";
+    return `${greeting}\n\n${bodyIntro}\n${bodyNewStatus}\n\n${bodyMoreInfo}\n${citizenSpaceUrl}\n\n${signature}`;
   };
 
   const formatDate = (dateString) => {
@@ -180,13 +261,13 @@ const UserNotifications = () => {
                             notification.statut
                           )}`}
                         >
-                          {notification.statut}
+                          {getStatusLabel(notification.statut)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900 max-w-xs truncate">
-                        {notification.objet}
+                        {getTranslatedSubject(notification) ?? notification.objet}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -245,7 +326,7 @@ const UserNotifications = () => {
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Détails de la notification
+                  {t("dashboard.notificationsTable.modalTitle")}
                 </h3>
                 <button
                   onClick={closeModal}
@@ -273,7 +354,7 @@ const UserNotifications = () => {
                     {t("dashboard.notificationsTable.subject")}
                   </label>
                   <p className="mt-1 text-sm text-gray-900">
-                    {selectedNotification.objet}
+                    {getTranslatedSubject(selectedNotification) ?? selectedNotification.objet}
                   </p>
                 </div>
 
@@ -297,7 +378,7 @@ const UserNotifications = () => {
                         selectedNotification.statut
                       )}`}
                     >
-                      {selectedNotification.statut}
+                      {getStatusLabel(selectedNotification.statut)}
                     </span>
                   </div>
                 </div>
@@ -308,7 +389,7 @@ const UserNotifications = () => {
                   </label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
                     <pre className="text-sm text-gray-900 whitespace-pre-wrap font-sans">
-                      {selectedNotification.contenu}
+                      {getTranslatedContent(selectedNotification) ?? selectedNotification.contenu}
                     </pre>
                   </div>
                 </div>

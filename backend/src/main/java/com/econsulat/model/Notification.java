@@ -35,6 +35,10 @@ public class Notification {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String contenu;
 
+    /** Statut de la demande au moment de l'envoi (pour réaffichage traduit dans l'UI). */
+    @Column(name = "new_status", length = 32)
+    private String newStatus;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Statut statut = Statut.ENVOYE;

@@ -224,7 +224,22 @@
       "statusSent": "Envoyé",
       "statusFailure": "Échec",
       "statusInProgress": "En cours",
-      "statusUnknown": "Inconnu"
+      "statusUnknown": "Inconnu",
+      "emailPreview": {
+        "subject": "[eConsulat] Mise à jour de votre demande",
+        "greeting": "Bonjour {{firstName}} {{lastName}},",
+        "bodyIntro": "Nous vous informons que le statut de votre demande n°{{demandeId}} a été mis à jour :",
+        "bodyNewStatus": "Nouveau statut : {{status}}.",
+        "bodyMoreInfo": "Pour plus d'informations, connectez-vous à votre espace citoyen :",
+        "signature": "Cordialement,\nL'équipe eConsulat",
+        "status": {
+          "PENDING_PAYMENT": "En attente de paiement",
+          "PENDING": "En attente",
+          "APPROVED": "Approuvé",
+          "REJECTED": "Rejeté",
+          "COMPLETED": "Terminé"
+        }
+      }
     }
   },
   "newDemande": {

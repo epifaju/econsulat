@@ -1,8 +1,15 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import i18n from "../i18n";
 
 // Configuration de l'URL de base pour axios
 axios.defaults.baseURL = "http://127.0.0.1:8080";
+
+const syncUILocale = (preferredLocale) => {
+  if (preferredLocale && ["fr", "pt"].includes(preferredLocale)) {
+    i18n.changeLanguage(preferredLocale);
+  }
+};
 
 const AuthContext = createContext();
 
@@ -19,13 +26,13 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Vérifier si un token existe dans le localStorage
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
     if (token && userData) {
       setUser(JSON.parse(userData));
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      axios.get("/api/users/me").then((r) => syncUILocale(r.data?.preferredLocale)).catch(() => {});
     }
 
     setLoading(false);
@@ -46,6 +53,7 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       setUser(userData);
+      axios.get("/api/users/me").then((r) => syncUILocale(r.data?.preferredLocale)).catch(() => {});
       return { success: true };
     } catch (error) {
       return {
