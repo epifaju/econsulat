@@ -109,6 +109,27 @@
       "CITIZEN": "Cidadão"
     }
   },
+  "profile": {
+    "title": "O meu perfil",
+    "fetchError": "Não foi possível carregar o perfil",
+    "connectionError": "Problema de ligação",
+    "passwordsDoNotMatch": "As duas palavras-passe não coincidem",
+    "updateSuccess": "Perfil atualizado com sucesso",
+    "updateError": "Não foi possível atualizar o perfil",
+    "serverError": "Problema de ligação ao servidor",
+    "firstName": "Nome próprio",
+    "lastName": "Apelido",
+    "email": "E-mail",
+    "changePassword": "Alterar palavra-passe",
+    "passwordHint": "Deixe em branco para não alterar a palavra-passe.",
+    "currentPassword": "Palavra-passe atual",
+    "newPassword": "Nova palavra-passe",
+    "confirmPassword": "Confirmar nova palavra-passe",
+    "currentPasswordPlaceholder": "Obrigatório se alterar a palavra-passe",
+    "cancel": "Cancelar",
+    "saving": "A guardar...",
+    "saveChanges": "Guardar alterações"
+  },
   "dashboard": {
     "title": "O meu painel",
     "subtitle": "Acompanhe os seus pedidos de documentos e gere as suas informações pessoais.",

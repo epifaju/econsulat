@@ -9,6 +9,35 @@ import Step4DocumentType from "./demande/Step4DocumentType";
 import Step5Documents from "./demande/Step5Documents";
 import Step6Summary from "./demande/Step6Summary";
 
+// Champs obligatoires par étape (bouton "Suivant" actif uniquement si tous remplis)
+const STEP_REQUIRED_FIELDS = {
+  1: ["civiliteId", "firstName", "lastName", "birthDate", "birthPlace", "birthCountryId"],
+  2: ["streetName", "streetNumber", "postalCode", "city", "countryId"],
+  3: [
+    "fatherFirstName", "fatherLastName", "fatherBirthDate", "fatherBirthPlace", "fatherBirthCountryId",
+    "motherFirstName", "motherLastName", "motherBirthDate", "motherBirthPlace", "motherBirthCountryId",
+  ],
+  4: ["documentTypeId"],
+  5: "documentFiles", // au moins un fichier
+};
+
+const isValueFilled = (value) => {
+  if (value == null) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length >= 1;
+  return true;
+};
+
+const isStepValid = (step, formData) => {
+  if (step === 6) return true;
+  const required = STEP_REQUIRED_FIELDS[step];
+  if (!required) return true;
+  if (required === "documentFiles") {
+    return Array.isArray(formData.documentFiles) && formData.documentFiles.length >= 1;
+  }
+  return required.every((key) => isValueFilled(formData[key]));
+};
+
 const NewDemandeForm = ({ onClose, onSuccess }) => {
   const { t } = useTranslation();
   const { token } = useAuth();
@@ -324,6 +353,7 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
   };
 
   const getStepTitle = () => t(`newDemande.stepTitles.${currentStep}`) || "";
+  const isCurrentStepValid = isStepValid(currentStep, formData);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -394,7 +424,12 @@ const NewDemandeForm = ({ onClose, onSuccess }) => {
             {currentStep < 6 ? (
               <button
                 onClick={nextStep}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+                disabled={!isCurrentStepValid}
+                className={`px-6 py-2 rounded-lg font-medium ${
+                  !isCurrentStepValid
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
               >
                 {t("newDemande.next")}
               </button>

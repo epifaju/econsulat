@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
-import API_CONFIG from "../config/api";
 import {
   UserCircleIcon,
   EnvelopeIcon,
@@ -9,8 +10,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 const Profile = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, token, updateUser } = useAuth();
+  const { token, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notification, setNotification] = useState(null);
@@ -25,40 +27,30 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
-        const res = await fetch(
-          `${API_CONFIG.BASE_URL}${API_CONFIG.USERS.PROFILE_ME}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        if (res.ok) {
-          const data = await res.json();
-          setFormData((prev) => ({
-            ...prev,
-            firstName: data.firstName || "",
-            lastName: data.lastName || "",
-            email: data.email || "",
-          }));
-        } else {
-          setNotification({
-            type: "error",
-            title: "Erreur",
-            message: "Impossible de charger le profil",
-          });
-        }
+        const { data } = await axios.get("/api/users/me");
+        setFormData((prev) => ({
+          ...prev,
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          email: data.email || "",
+        }));
       } catch (err) {
         setNotification({
           type: "error",
-          title: "Erreur",
-          message: "Problème de connexion",
+          title: t("common.error"),
+          message: err.response?.data?.message || t("profile.fetchError"),
         });
       } finally {
         setLoading(false);
       }
     };
-    if (token) fetchProfile();
-  }, [token]);
+    fetchProfile();
+  }, [token, t]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,8 +68,8 @@ const Profile = () => {
     ) {
       setNotification({
         type: "error",
-        title: "Erreur",
-        message: "Les deux mots de passe ne correspondent pas",
+        title: t("common.error"),
+        message: t("profile.passwordsDoNotMatch"),
       });
       setSaving(false);
       return;
@@ -94,54 +86,34 @@ const Profile = () => {
         payload.newPassword = formData.newPassword;
       }
 
-      const res = await fetch(
-        `${API_CONFIG.BASE_URL}${API_CONFIG.USERS.PROFILE_ME}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        updateUser({
-          id: data.id,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          role: data.role,
-        });
-        setFormData((prev) => ({
-          ...prev,
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        }));
-        setNotification({
-          type: "success",
-          title: "Succès",
-          message: "Profil mis à jour avec succès",
-        });
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        setNotification({
-          type: "error",
-          title: "Erreur",
-          message:
-            errData.message ||
-            errData.error ||
-            "Impossible de mettre à jour le profil",
-        });
-      }
+      const { data } = await axios.put("/api/users/me", payload);
+      updateUser({
+        id: data.id,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        role: data.role,
+      });
+      setFormData((prev) => ({
+        ...prev,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      }));
+      setNotification({
+        type: "success",
+        title: t("common.success"),
+        message: t("profile.updateSuccess"),
+      });
     } catch (err) {
+      const errData = err.response?.data;
       setNotification({
         type: "error",
-        title: "Erreur",
-        message: "Problème de connexion au serveur",
+        title: t("common.error"),
+        message:
+          errData?.message ||
+          errData?.error ||
+          (err.response ? t("profile.updateError") : t("profile.serverError")),
       });
     } finally {
       setSaving(false);
@@ -160,7 +132,7 @@ const Profile = () => {
     <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
         <UserCircleIcon className="h-8 w-8 mr-2 text-blue-600" />
-        Mon profil
+        {t("profile.title")}
       </h1>
 
       {notification && (
@@ -180,7 +152,7 @@ const Profile = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Prénom
+              {t("profile.firstName")}
             </label>
             <input
               type="text"
@@ -209,7 +181,7 @@ const Profile = () => {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
             <EnvelopeIcon className="h-4 w-4 mr-1" />
-            Email
+            {t("profile.email")}
           </label>
           <input
             type="email"
@@ -224,15 +196,15 @@ const Profile = () => {
         <div className="border-t border-gray-200 pt-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
             <KeyIcon className="h-5 w-5 mr-2 text-gray-500" />
-            Changer le mot de passe
+            {t("profile.changePassword")}
           </h2>
           <p className="text-sm text-gray-500 mb-4">
-            Laissez vide pour ne pas modifier le mot de passe.
+            {t("profile.passwordHint")}
           </p>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Mot de passe actuel
+                {t("profile.currentPassword")}
               </label>
               <input
                 type="password"
@@ -240,12 +212,12 @@ const Profile = () => {
                 value={formData.currentPassword}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Requis si vous changez le mot de passe"
+                placeholder={t("profile.currentPasswordPlaceholder")}
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nouveau mot de passe
+                {t("profile.newPassword")}
               </label>
               <input
                 type="password"
@@ -257,7 +229,7 @@ const Profile = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirmer le nouveau mot de passe
+                {t("profile.confirmPassword")}
               </label>
               <input
                 type="password"
@@ -276,7 +248,7 @@ const Profile = () => {
             onClick={() => navigate("/dashboard")}
             className="px-4 py-2 rounded-md font-medium border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
           >
-            Annuler
+            {t("profile.cancel")}
           </button>
           <button
             type="submit"
@@ -287,7 +259,7 @@ const Profile = () => {
                 : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
-            {saving ? "Enregistrement..." : "Enregistrer les modifications"}
+            {saving ? t("profile.saving") : t("profile.saveChanges")}
           </button>
         </div>
       </form>

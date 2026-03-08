@@ -109,6 +109,27 @@
       "CITIZEN": "Citoyen"
     }
   },
+  "profile": {
+    "title": "Mon profil",
+    "fetchError": "Impossible de charger le profil",
+    "connectionError": "Problème de connexion",
+    "passwordsDoNotMatch": "Les deux mots de passe ne correspondent pas",
+    "updateSuccess": "Profil mis à jour avec succès",
+    "updateError": "Impossible de mettre à jour le profil",
+    "serverError": "Problème de connexion au serveur",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "changePassword": "Changer le mot de passe",
+    "passwordHint": "Laissez vide pour ne pas modifier le mot de passe.",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "currentPasswordPlaceholder": "Requis si vous changez le mot de passe",
+    "cancel": "Annuler",
+    "saving": "Enregistrement...",
+    "saveChanges": "Enregistrer les modifications"
+  },
   "dashboard": {
     "title": "Mon tableau de bord",
     "subtitle": "Suivez vos demandes de documents et gérez vos informations personnelles.",
