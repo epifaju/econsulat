@@ -16,7 +16,8 @@
   "landing": {
     "nav": {
       "features": "Funcionalidades",
-      "howItWorks": "Como funciona"
+      "howItWorks": "Como funciona",
+      "contact": "Contacto"
     },
     "hero": {
       "title": "Os seus procedimentos consulares em linha, simplificados",
@@ -60,6 +61,18 @@
     },
     "footer": {
       "login": "Iniciar sessão"
+    },
+    "contact": {
+      "title": "Contacte-nos",
+      "subtitle": "Morada e contactos do eConsulat MultiServices",
+      "name": "eConsulat MultiServices",
+      "address": "59 rue du Val au Roi\n78200 Buchelay - França",
+      "phoneLabel": "Telefone",
+      "phone": "+33 (0)1 55 53 11 22",
+      "emailLabel": "E-mail",
+      "email": "contact@econsulat.com",
+      "hoursLabel": "Dias e horário de atendimento",
+      "hours": "De segunda a sexta-feira: das 09h30 às 18h00"
     }
   },
   "auth": {

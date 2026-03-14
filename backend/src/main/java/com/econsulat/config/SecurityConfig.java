@@ -3,6 +3,7 @@ package com.econsulat.config;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -12,11 +13,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.util.StringUtils;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -25,6 +30,9 @@ import java.util.Arrays;
 public class SecurityConfig {
 
         private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
+        @Value("${app.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
+        private String corsAllowedOrigins;
 
         private final JwtAuthenticationFilter jwtAuthFilter;
         private final RateLimitingFilter rateLimitingFilter;
@@ -35,6 +43,16 @@ public class SecurityConfig {
                 http
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
+                                .headers(headers -> headers
+                                                .frameOptions(frame -> frame.deny())
+                                                .contentTypeOptions(content -> {})
+                                                .xssProtection(xss -> xss.disable())
+                                                .referrerPolicy(ref -> ref.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
+                                )
+                                .exceptionHandling(ex -> ex
+                                                .authenticationEntryPoint((request, response, authException) ->
+                                                                response.sendError(401, "Unauthorized"))
+                                )
                                 .authorizeHttpRequests(auth -> auth
                                                 // Actuator (health / info pour load balancer)
                                                 .requestMatchers("/actuator/health", "/actuator/info").permitAll()
@@ -79,12 +97,14 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                // Autoriser les origines du frontend (Vite dev server)
-                configuration.setAllowedOrigins(Arrays.asList(
-                                "http://localhost:5173",
-                                "http://127.0.0.1:5173",
-                                "http://localhost:3000",
-                                "http://127.0.0.1:3000"));
+                List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(StringUtils::hasText)
+                                .collect(Collectors.toList());
+                if (origins.isEmpty()) {
+                        origins.add("http://localhost:5173");
+                }
+                configuration.setAllowedOrigins(origins);
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(Arrays.asList("*"));
                 configuration.setAllowCredentials(true);
@@ -93,7 +113,7 @@ public class SecurityConfig {
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);
 
-                log.debug("CORS configuré pour les origines: {}", configuration.getAllowedOrigins());
+                log.info("CORS configuré pour les origines: {}", origins);
 
                 return source;
         }

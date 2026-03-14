@@ -9,6 +9,10 @@ import {
   ShieldCheckIcon,
   UserPlusIcon,
   ArrowRightIcon,
+  MapPinIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import LanguageSwitcher from "./LanguageSwitcher";
 
@@ -46,6 +50,12 @@ const LandingPage = () => {
                   className="text-sm font-medium text-gray-600 hover:text-primary-600"
                 >
                   {t("landing.nav.howItWorks")}
+                </button>
+                <button
+                  onClick={() => scrollToSection("contact")}
+                  className="text-sm font-medium text-gray-600 hover:text-primary-600"
+                >
+                  {t("landing.nav.contact")}
                 </button>
               </nav>
             </div>
@@ -252,6 +262,72 @@ const LandingPage = () => {
             >
               {t("landing.cta.createAccount")}
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section id="contact" className="py-16 sm:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-gray-900">
+              {t("landing.contact.title")}
+            </h2>
+            <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+              {t("landing.contact.subtitle")}
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center">
+                <MapPinIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="mt-4 font-semibold text-gray-900">
+                {t("landing.contact.name")}
+              </h3>
+              <p className="mt-2 text-sm text-gray-600 whitespace-pre-line">
+                {t("landing.contact.address")}
+              </p>
+            </div>
+            <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center">
+                <PhoneIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="mt-4 font-semibold text-gray-900">
+                {t("landing.contact.phoneLabel")}
+              </h3>
+              <a
+                href="tel:+33155531122"
+                className="mt-2 text-sm text-gray-600 hover:text-primary-600 block"
+              >
+                {t("landing.contact.phone")}
+              </a>
+            </div>
+            <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center">
+                <EnvelopeIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="mt-4 font-semibold text-gray-900">
+                {t("landing.contact.emailLabel")}
+              </h3>
+              <a
+                href="mailto:contact@econsulat.com"
+                className="mt-2 text-sm text-gray-600 hover:text-primary-600 block break-all"
+              >
+                {t("landing.contact.email")}
+              </a>
+            </div>
+            <div className="rounded-xl border border-gray-200 p-6 bg-gray-50/50">
+              <div className="h-12 w-12 rounded-lg bg-primary-100 flex items-center justify-center">
+                <ClockIcon className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="mt-4 font-semibold text-gray-900">
+                {t("landing.contact.hoursLabel")}
+              </h3>
+              <p className="mt-2 text-sm text-gray-600">
+                {t("landing.contact.hours")}
+              </p>
+            </div>
           </div>
         </div>
       </section>

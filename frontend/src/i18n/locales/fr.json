@@ -16,7 +16,8 @@
   "landing": {
     "nav": {
       "features": "Fonctionnalités",
-      "howItWorks": "Comment ça marche"
+      "howItWorks": "Comment ça marche",
+      "contact": "Contact"
     },
     "hero": {
       "title": "Vos démarches consulaires en ligne, simplifiées",
@@ -60,6 +61,18 @@
     },
     "footer": {
       "login": "Se connecter"
+    },
+    "contact": {
+      "title": "Nous contacter",
+      "subtitle": "Adresse et coordonnées d'eConsulat MultiServices",
+      "name": "eConsulat MultiServices",
+      "address": "59 rue du Val au Roi\n78200 Buchelay - France",
+      "phoneLabel": "Téléphone",
+      "phone": "+33 (0)1 55 53 11 22",
+      "emailLabel": "Email",
+      "email": "contact@econsulat.com",
+      "hoursLabel": "Jours et horaires d'ouverture",
+      "hours": "Du lundi au vendredi : de 09h30 à 18h00"
     }
   },
   "auth": {

@@ -1,6 +1,7 @@
 package com.econsulat.service;
 
 import com.econsulat.model.Citizen;
+import com.econsulat.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -10,11 +11,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +25,7 @@ import java.util.regex.Pattern;
 public class PassportDocumentService {
 
     private static final String TEMPLATE_PATH = "FORMULARIO DE PEDIDO DE PASSAPORTE.docx";
-    private static final String UPLOAD_DIR = "uploads";
+    private final StorageService storageService;
 
     /**
      * Génère un document de passeport pour un citoyen
@@ -35,44 +33,28 @@ public class PassportDocumentService {
     public String generatePassportDocument(Citizen citizen) throws IOException {
         log.info("Génération du document de passeport pour le citoyen: {}", citizen.getId());
 
-        // Créer le dossier uploads s'il n'existe pas
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // Charger le template
         ClassPathResource resource = new ClassPathResource(TEMPLATE_PATH);
         if (!resource.exists()) {
             throw new IOException("Template de passeport non trouvé: " + TEMPLATE_PATH);
         }
 
-        // Générer le nom du fichier
         String filename = String.format("passport_%d_%s.docx",
                 citizen.getId(), UUID.randomUUID().toString());
 
         try (FileInputStream fis = new FileInputStream(resource.getFile());
-                XWPFDocument document = new XWPFDocument(fis)) {
+                XWPFDocument document = new XWPFDocument(fis);
+                OutputStream out = storageService.openPassportOutputStream(filename)) {
 
-            // Remplacer les placeholders dans tous les paragraphes
             for (XWPFParagraph paragraph : document.getParagraphs()) {
                 replacePlaceholdersInParagraph(paragraph, citizen);
             }
-
-            // Remplacer les placeholders dans les tableaux
             document.getTables().forEach(
                     table -> table.getRows().forEach(row -> row.getTableCells().forEach(cell -> cell.getParagraphs()
                             .forEach(paragraph -> replacePlaceholdersInParagraph(paragraph, citizen)))));
 
-            // Sauvegarder le document
-            Path outputPath = uploadPath.resolve(filename);
-            try (FileOutputStream fos = new FileOutputStream(outputPath.toFile())) {
-                document.write(fos);
-            }
-
+            document.write(out);
             log.info("Document de passeport généré: {}", filename);
             return filename;
-
         } catch (Exception e) {
             log.error("Erreur lors de la génération du document de passeport", e);
             throw new IOException("Erreur lors de la génération du document: " + e.getMessage());
@@ -188,20 +170,15 @@ public class PassportDocumentService {
      * Récupère un document généré
      */
     public byte[] getDocument(String filename) throws IOException {
-        Path filePath = Paths.get(UPLOAD_DIR, filename);
-        if (!Files.exists(filePath)) {
-            throw new IOException("Document non trouvé: " + filename);
-        }
-        return Files.readAllBytes(filePath);
+        return storageService.readPassport(filename);
     }
 
     /**
      * Supprime un document généré
      */
     public void deleteDocument(String filename) throws IOException {
-        Path filePath = Paths.get(UPLOAD_DIR, filename);
-        if (Files.exists(filePath)) {
-            Files.delete(filePath);
+        if (storageService.passportExists(filename)) {
+            storageService.deletePassport(filename);
             log.info("Document supprimé: {}", filename);
         }
     }

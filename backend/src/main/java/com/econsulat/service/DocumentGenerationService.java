@@ -7,14 +7,13 @@ import com.econsulat.model.User;
 import com.econsulat.repository.DemandeRepository;
 import com.econsulat.repository.DocumentTypeRepository;
 import com.econsulat.repository.GeneratedDocumentRepository;
-import com.econsulat.service.WatermarkService;
+import com.econsulat.storage.StorageService;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -44,11 +43,8 @@ public class DocumentGenerationService {
     @Autowired
     private WatermarkService watermarkService;
 
-    @Value("${app.upload.dir:uploads}")
-    private String uploadDir;
-
-    @Value("${app.documents.dir:documents}")
-    private String documentsDir;
+    @Autowired
+    private StorageService storageService;
 
     public GeneratedDocument generateDocument(Long demandeId, Long documentTypeId, User currentUser) {
         Demande demande = demandeRepository.findById(demandeId)
@@ -71,25 +67,21 @@ public class DocumentGenerationService {
         }
 
         try {
-            // Créer le dossier de documents s'il n'existe pas
-            Path documentsPath = Paths.get(documentsDir);
-            if (!Files.exists(documentsPath)) {
-                Files.createDirectories(documentsPath);
+            String fileName = generateFileName(demande, documentType);
+            Path tempPath = Files.createTempFile("docgen_", ".docx");
+            try {
+                generateDocumentFromTemplate(demande, tempPath.toString());
+                byte[] bytes = Files.readAllBytes(tempPath);
+                storageService.writeDocument(fileName, bytes);
+            } finally {
+                Files.deleteIfExists(tempPath);
             }
 
-            // Générer le nom du fichier
-            String fileName = generateFileName(demande, documentType);
-            String filePath = documentsPath.resolve(fileName).toString();
-
-            // Générer le document
-            generateDocumentFromTemplate(demande, filePath);
-
-            // Créer l'enregistrement en base avec le DocumentType
             GeneratedDocument generatedDocument = new GeneratedDocument();
             generatedDocument.setDemande(demande);
             generatedDocument.setDocumentType(documentType);
             generatedDocument.setFileName(fileName);
-            generatedDocument.setFilePath(filePath);
+            generatedDocument.setFilePath(storageService.getStoredDocumentPath(fileName));
             generatedDocument.setCreatedBy(currentUser);
             generatedDocument.setStatus("GENERATED");
             generatedDocument.setExpiresAt(LocalDateTime.now().plusDays(30));

@@ -4,6 +4,7 @@ import com.econsulat.model.Citizen;
 import com.econsulat.model.User;
 import com.econsulat.service.CitizenService;
 import com.econsulat.service.UserService;
+import com.econsulat.storage.StorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -14,9 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -29,6 +27,9 @@ public class CitizenController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private StorageService storageService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -85,21 +86,14 @@ public class CitizenController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<byte[]> getFile(@PathVariable String filename) {
         try {
-            Path filePath = Paths.get("uploads", filename);
-            if (!Files.exists(filePath)) {
+            if (!storageService.citizenFileExists(filename)) {
                 return ResponseEntity.notFound().build();
             }
-
-            byte[] fileBytes = Files.readAllBytes(filePath);
-
+            byte[] fileBytes = storageService.readCitizenFile(filename);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
             headers.setContentDispositionFormData("attachment", filename);
-
-            return ResponseEntity.ok()
-                    .headers(headers)
-                    .body(fileBytes);
-
+            return ResponseEntity.ok().headers(headers).body(fileBytes);
         } catch (IOException e) {
             return ResponseEntity.status(500).build();
         }

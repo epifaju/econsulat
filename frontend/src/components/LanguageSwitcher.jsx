@@ -24,27 +24,29 @@ const LanguageSwitcher = ({ className = "" }) => {
       <button
         type="button"
         onClick={() => setLanguage("fr")}
-        className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
+        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-sm font-medium transition-colors ${
           i18n.language?.startsWith("fr")
             ? "bg-primary-600 text-white"
             : "text-gray-600 hover:text-primary-600 hover:bg-gray-100"
         }`}
         aria-label="Français"
       >
-        FR
+        <span className="text-base leading-none" aria-hidden>🇫🇷</span>
+        <span>FR</span>
       </button>
       <span className="text-gray-300">|</span>
       <button
         type="button"
         onClick={() => setLanguage("pt")}
-        className={`px-2 py-1 rounded text-sm font-medium transition-colors ${
+        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded text-sm font-medium transition-colors ${
           i18n.language?.startsWith("pt")
             ? "bg-primary-600 text-white"
             : "text-gray-600 hover:text-primary-600 hover:bg-gray-100"
         }`}
         aria-label="Português"
       >
-        PT
+        <span className="text-base leading-none" aria-hidden>🇵🇹</span>
+        <span>PT</span>
       </button>
     </div>
   );
