@@ -191,4 +191,20 @@ public class UserService implements UserDetailsService {
         user = userRepository.save(user);
         return ProfileResponse.from(user);
     }
+
+    /**
+     * Réinitialise le mot de passe d'un utilisateur à l'aide d'un token de réinitialisation.
+     * Le token est consommé par le PasswordResetTokenService (usage unique).
+     */
+    public void resetPasswordWithToken(String token, String newPassword, PasswordResetTokenService tokenService) {
+        String email = tokenService.getEmailAndConsume(token);
+        if (email == null) {
+            throw new RuntimeException("Token invalide ou expiré");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        log.info("Mot de passe réinitialisé pour : {}", email);
+    }
 }

@@ -2,8 +2,12 @@ package com.econsulat.controller;
 
 import com.econsulat.dto.AuthRequest;
 import com.econsulat.dto.AuthResponse;
+import com.econsulat.dto.ForgotPasswordRequest;
+import com.econsulat.dto.ResetPasswordRequest;
 import com.econsulat.dto.UserRequest;
 import com.econsulat.service.AuthenticationService;
+import com.econsulat.service.EmailService;
+import com.econsulat.service.PasswordResetTokenService;
 import com.econsulat.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +39,8 @@ public class AuthController {
     private final AuthenticationService authenticationService;
     private final UserService userService;
     private final MessageSource messageSource;
+    private final PasswordResetTokenService passwordResetTokenService;
+    private final EmailService emailService;
 
     private Locale getLocale() {
         Locale requestLocale = LocaleContextHolder.getLocale();
@@ -129,6 +135,37 @@ public class AuthController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", messageSource.getMessage("auth.getUserError", null, getLocale()) + " " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        Locale locale = getLocale();
+        String email = request.getEmail().trim().toLowerCase();
+        userService.findByEmail(email).ifPresent(user -> {
+            String token = passwordResetTokenService.createToken(email);
+            emailService.sendPasswordResetEmail(user.getEmail(), token, locale);
+        });
+        String message = messageSource.getMessage("auth.forgotPasswordSuccess", null, locale);
+        return ResponseEntity.ok(Map.of("message", message));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        Locale locale = getLocale();
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", messageSource.getMessage("auth.passwordsDoNotMatch", null, locale)));
+        }
+        try {
+            userService.resetPasswordWithToken(request.getToken(), request.getNewPassword(), passwordResetTokenService);
+            return ResponseEntity.ok(Map.of("message", messageSource.getMessage("auth.resetPasswordSuccess", null, locale)));
+        } catch (RuntimeException e) {
+            String key = e.getMessage().contains("invalide") || e.getMessage().contains("expiré")
+                    ? "auth.resetPasswordInvalidToken"
+                    : "auth.resetPasswordError";
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", messageSource.getMessage(key, null, locale)));
         }
     }
 }

@@ -6,7 +6,7 @@ const LandingFeatures = ({ featuresData }) => {
   const { t } = useTranslation();
 
   return (
-    <section id="fonctionnalites" className="pt-12 sm:pt-16 lg:pt-20 pb-16 sm:pb-24 bg-white">
+    <section id="fonctionnalites" className="pt-8 sm:pt-12 lg:pt-16 pb-16 sm:pb-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <ScrollReveal className="text-center mb-14">
           <h2 className="text-3xl font-bold text-gray-900">{t("landing.features.title")}</h2>

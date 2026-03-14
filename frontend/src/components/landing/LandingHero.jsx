@@ -7,7 +7,7 @@ const LandingHero = ({ scrollToSection, focusRing }) => {
   const { t } = useTranslation();
 
   return (
-    <section id="main-content" className="relative bg-gradient-to-b from-primary-50 to-white py-12 sm:py-20 lg:py-28" tabIndex={-1}>
+    <section id="main-content" className="relative bg-gradient-to-b from-primary-50 to-white pt-12 sm:pt-20 lg:pt-28 pb-8 sm:pb-12 lg:pb-16" tabIndex={-1}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
           <div className="text-center lg:text-left order-1">

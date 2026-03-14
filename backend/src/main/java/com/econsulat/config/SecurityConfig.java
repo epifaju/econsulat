@@ -64,6 +64,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/demandes/pays").permitAll()
                                                 .requestMatchers("/api/payment/webhook").permitAll()
                                                 .requestMatchers("/api/payment/confirm-session").permitAll()
+                                                .requestMatchers("/api/contact").permitAll()
                                                 
                                                 // Endpoints de demandes (authentification requise)
                                                 .requestMatchers("/api/demandes").authenticated()

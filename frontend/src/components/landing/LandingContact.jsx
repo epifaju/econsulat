@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import axios from "axios";
 import { toast } from "react-toastify";
 import ScrollReveal from "./ScrollReveal";
 
@@ -21,12 +22,17 @@ const LandingContact = ({ contactData, focusRing }) => {
     }
     setSending(true);
     try {
-      // Pas d'API contact pour l'instant : simulation succès (à brancher sur un endpoint plus tard)
-      await new Promise((r) => setTimeout(r, 800));
+      await axios.post("/api/contact", {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        subject: form.subject.trim(),
+        message: form.message.trim(),
+      });
       toast.success(t("landing.contact.formSuccess"));
       setForm({ name: "", email: "", subject: "", message: "" });
-    } catch (_) {
-      toast.error(t("landing.contact.formError"));
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      toast.error(msg || t("landing.contact.formError"));
     } finally {
       setSending(false);
     }
