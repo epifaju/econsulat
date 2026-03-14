@@ -13,6 +13,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.Locale;
 
@@ -28,8 +29,26 @@ public class EmailNotificationService {
     @Value("${app.url}")
     private String appUrl;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String fromEmail;
+
+    @PostConstruct
+    public void logMailConfig() {
+        if (fromEmail == null || fromEmail.isBlank()) {
+            log.info("Mail SMTP: non configuré (MAIL_USERNAME vide) - définir dans .env ou application-local.properties");
+        } else {
+            log.info("Mail SMTP: configuré (expéditeur: {})", fromEmail);
+        }
+    }
+
+    /** Vérifie que l'envoi d'email est configuré (évite des erreurs SMTP opaques). */
+    private void ensureMailConfigured() {
+        if (fromEmail == null || fromEmail.isBlank()) {
+            throw new IllegalStateException(
+                "L'envoi d'email n'est pas configuré. Définissez MAIL_USERNAME et MAIL_PASSWORD dans le .env (Docker) ou application-local.properties."
+            );
+        }
+    }
 
     private static Locale toLocale(String preferredLocale) {
         if (preferredLocale != null && "pt".equalsIgnoreCase(preferredLocale.trim())) {
@@ -44,6 +63,7 @@ public class EmailNotificationService {
      */
     @Transactional
     public void sendStatusChangeNotification(Demande demande, User user, Demande.Status newStatus) {
+        ensureMailConfigured();
         Locale locale = toLocale(user.getPreferredLocale());
         try {
             String objet = messageSource.getMessage("email.notification.subject", null, locale);
@@ -74,7 +94,7 @@ public class EmailNotificationService {
 
         } catch (Exception e) {
             log.error("Erreur lors de l'envoi de la notification de changement de statut à {} : {}",
-                    user.getEmail(), e.getMessage());
+                    user.getEmail(), e.getMessage(), e);
 
             try {
                 String objet = messageSource.getMessage("email.notification.subject", null, locale);
@@ -117,6 +137,7 @@ public class EmailNotificationService {
      */
     @Transactional
     public void resendNotification(Long notificationId) {
+        ensureMailConfigured();
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new RuntimeException("Notification non trouvée"));
 
@@ -141,7 +162,31 @@ public class EmailNotificationService {
             log.error("Erreur lors du renvoi de la notification {} : {}", notificationId, e.getMessage());
             notification.setStatut(Notification.Statut.ECHEC);
             notificationRepository.save(notification);
-            throw new RuntimeException("Erreur lors du renvoi de la notification", e);
+            String msg = buildUserFriendlyMailError(e);
+            throw new RuntimeException(msg, e);
         }
+    }
+
+    private static String getRootCauseMessage(Throwable e) {
+        Throwable cause = e;
+        while (cause.getCause() != null) cause = cause.getCause();
+        return cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
+    }
+
+    /** Message lisible pour l'utilisateur en cas d'échec d'envoi (SMTP, auth, etc.). */
+    private String buildUserFriendlyMailError(Exception e) {
+        String detail = e.getMessage();
+        Throwable cause = e.getCause();
+        while (cause != null) {
+            if (cause.getMessage() != null) detail = cause.getMessage();
+            cause = cause.getCause();
+        }
+        if (detail != null) {
+            String lower = detail.toLowerCase();
+            if (lower.contains("auth") || lower.contains("535") || lower.contains("password") || lower.contains("username") || lower.contains("invalid login")) {
+                return "Envoi d'email impossible : identifiants SMTP invalides. Vérifiez MAIL_USERNAME et MAIL_PASSWORD (mot de passe d'application Gmail, 16 caractères SANS espaces).";
+            }
+        }
+        return "Erreur lors du renvoi de la notification. " + (detail != null ? detail : "Vérifiez la configuration SMTP.");
     }
 }

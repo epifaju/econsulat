@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   PlusIcon,
   PencilIcon,
@@ -7,8 +8,10 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 
 const AdminDocumentTypes = ({ token, onNotification }) => {
+  const { t } = useTranslation();
   const [documentTypes, setDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -30,10 +33,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
   const fetchDocumentTypes = async () => {
     try {
       setLoading(true);
-      let url = "http://localhost:8080/api/admin/document-types";
+      let url = buildApiUrl(API_CONFIG.ADMIN.DOCUMENT_TYPES);
 
       if (searchTerm) {
-        url += `?q=${encodeURIComponent(searchTerm)}`;
+        url = buildApiUrl(
+          `${API_CONFIG.ADMIN.DOCUMENT_TYPES}?q=${encodeURIComponent(searchTerm)}`
+        );
       }
 
       const response = await fetch(url, {
@@ -48,12 +53,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible de charger les types de documents"
+          t("common.error"),
+          t("adminDocumentTypes.loadError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème de connexion au serveur");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     } finally {
       setLoading(false);
     }
@@ -75,7 +80,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
     e.preventDefault();
     try {
       const response = await fetch(
-        "http://localhost:8080/api/admin/document-types",
+        buildApiUrl(API_CONFIG.ADMIN.DOCUMENT_TYPE_CREATE),
         {
           method: "POST",
           headers: {
@@ -89,8 +94,8 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       if (response.ok) {
         onNotification(
           "success",
-          "Succès",
-          "Type de document créé avec succès"
+          t("common.success"),
+          t("adminDocumentTypes.createSuccess")
         );
         setShowCreateModal(false);
         setFormData({
@@ -104,12 +109,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible de créer le type de document"
+          t("common.error"),
+          t("adminDocumentTypes.createError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la création");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -117,7 +122,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
     e.preventDefault();
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/document-types/${selectedDocumentType.id}`,
+        buildApiUrl(API_CONFIG.ADMIN.DOCUMENT_TYPE_UPDATE(selectedDocumentType.id)),
         {
           method: "PUT",
           headers: {
@@ -131,8 +136,8 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       if (response.ok) {
         onNotification(
           "success",
-          "Succès",
-          "Type de document mis à jour avec succès"
+          t("common.success"),
+          t("adminDocumentTypes.updateSuccess")
         );
         setShowEditModal(false);
         setSelectedDocumentType(null);
@@ -140,27 +145,25 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible de mettre à jour le type de document"
+          t("common.error"),
+          t("adminDocumentTypes.updateError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la mise à jour");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
   const handleDeleteDocumentType = async (documentTypeId) => {
     if (
-      !window.confirm(
-        "Êtes-vous sûr de vouloir supprimer ce type de document ?"
-      )
+      !window.confirm(t("adminDocumentTypes.deleteConfirm"))
     ) {
       return;
     }
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/document-types/${documentTypeId}`,
+        buildApiUrl(API_CONFIG.ADMIN.DOCUMENT_TYPE_DELETE(documentTypeId)),
         {
           method: "DELETE",
           headers: {
@@ -172,26 +175,26 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       if (response.ok) {
         onNotification(
           "success",
-          "Succès",
-          "Type de document supprimé avec succès"
+          t("common.success"),
+          t("adminDocumentTypes.deleteSuccess")
         );
         fetchDocumentTypes();
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible de supprimer le type de document"
+          t("common.error"),
+          t("adminDocumentTypes.deleteError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la suppression");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
   const handleActivateDocumentType = async (documentTypeId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/document-types/${documentTypeId}/activate`,
+        buildApiUrl(`${API_CONFIG.ADMIN.DOCUMENT_TYPES}/${documentTypeId}/activate`),
         {
           method: "PUT",
           headers: {
@@ -203,19 +206,19 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       if (response.ok) {
         onNotification(
           "success",
-          "Succès",
-          "Type de document activé avec succès"
+          t("common.success"),
+          t("adminDocumentTypes.activateSuccess")
         );
         fetchDocumentTypes();
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible d'activer le type de document"
+          t("common.error"),
+          t("adminDocumentTypes.activateError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de l'activation");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -233,7 +236,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
 
   const formatPrice = (priceCents) => {
     if (priceCents == null) return "—";
-    return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(priceCents / 100);
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: "EUR" }).format(priceCents / 100);
   };
 
   const filteredDocumentTypes = documentTypes.filter(
@@ -258,10 +261,10 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Types de Documents
+            {t("adminDocumentTypes.title")}
           </h2>
           <p className="text-gray-600">
-            Gérez les types de documents disponibles
+            {t("adminDocumentTypes.subtitle")}
           </p>
         </div>
         <button
@@ -269,7 +272,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
         >
           <PlusIcon className="h-4 w-4" />
-          <span>Nouveau type</span>
+          <span>{t("adminDocumentTypes.newType")}</span>
         </button>
       </div>
 
@@ -279,7 +282,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
           <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher par nom ou description..."
+            placeholder={t("adminDocumentTypes.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -312,7 +315,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                       docType.isActive ? "text-green-600" : "text-red-600"
                     }`}
                   >
-                    {docType.isActive ? "Actif" : "Inactif"}
+                    {docType.isActive ? t("adminDocumentTypes.active") : t("adminDocumentTypes.inactive")}
                   </span>
                 </div>
               </div>
@@ -320,7 +323,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                 <button
                   onClick={() => openEditModal(docType)}
                   className="text-blue-600 hover:text-blue-900"
-                  title="Modifier"
+                  title={t("adminDocumentTypes.edit")}
                 >
                   <PencilIcon className="h-4 w-4" />
                 </button>
@@ -328,7 +331,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   <button
                     onClick={() => handleActivateDocumentType(docType.id)}
                     className="text-green-600 hover:text-green-900"
-                    title="Activer"
+                    title={t("adminDocumentTypes.activate")}
                   >
                     <CheckCircleIcon className="h-4 w-4" />
                   </button>
@@ -336,7 +339,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   <button
                     onClick={() => handleDeleteDocumentType(docType.id)}
                     className="text-red-600 hover:text-red-900"
-                    title="Supprimer"
+                    title={t("adminDocumentTypes.delete")}
                   >
                     <TrashIcon className="h-4 w-4" />
                   </button>
@@ -351,17 +354,17 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
             )}
 
             <div className="text-sm font-medium text-gray-700 mb-2">
-              Prix : {formatPrice(docType.priceCents)}
+              {t("adminDocumentTypes.price")} : {formatPrice(docType.priceCents)}
             </div>
 
             {docType.templatePath && (
               <div className="text-xs text-gray-500">
-                Template: {docType.templatePath}
+                {t("adminDocumentTypes.template")}: {docType.templatePath}
               </div>
             )}
 
             <div className="text-xs text-gray-400 mt-3">
-              Créé le {new Date(docType.createdAt).toLocaleDateString("fr-FR")}
+              {t("adminDocumentTypes.createdOn", { date: new Date(docType.createdAt).toLocaleDateString() })}
             </div>
           </div>
         ))}
@@ -384,7 +387,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
               />
             </svg>
           </div>
-          <p className="text-gray-500">Aucun type de document trouvé</p>
+          <p className="text-gray-500">{t("adminDocumentTypes.noResults")}</p>
         </div>
       )}
 
@@ -393,12 +396,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">
-              Créer un nouveau type de document
+              {t("adminDocumentTypes.createTitle")}
             </h3>
             <form onSubmit={handleCreateDocumentType} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Libellé
+                  {t("adminDocumentTypes.label")}
                 </label>
                 <input
                   type="text"
@@ -408,12 +411,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                     setFormData({ ...formData, libelle: e.target.value })
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ex: Certificat de résidence"
+                  placeholder={t("adminDocumentTypes.labelPlaceholder")}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Description
+                  {t("adminDocumentTypes.description")}
                 </label>
                 <textarea
                   value={formData.description}
@@ -422,12 +425,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   }
                   rows={3}
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Description du type de document..."
+                  placeholder={t("adminDocumentTypes.descriptionPlaceholder")}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Chemin du template
+                  {t("adminDocumentTypes.templatePath")}
                 </label>
                 <input
                   type="text"
@@ -436,12 +439,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                     setFormData({ ...formData, templatePath: e.target.value })
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ex: templates/certificat_residence.docx"
+                  placeholder={t("adminDocumentTypes.templatePathPlaceholder")}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Prix (€) — optionnel
+                  {t("adminDocumentTypes.priceOptional")}
                 </label>
                 <input
                   type="number"
@@ -452,10 +455,10 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                     setFormData({ ...formData, priceEur: e.target.value })
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ex: 10.50 (vide = montant par défaut)"
+                  placeholder={t("adminDocumentTypes.pricePlaceholder")}
                 />
                 <p className="mt-0.5 text-xs text-gray-500">
-                  Si vide, le montant par défaut (application.properties) sera utilisé au paiement.
+                  {t("adminDocumentTypes.priceHint")}
                 </p>
               </div>
               <div className="flex items-center">
@@ -472,7 +475,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   htmlFor="isActive"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  Actif
+                  {t("adminDocumentTypes.active")}
                 </label>
               </div>
               <div className="flex justify-end space-x-3">
@@ -481,13 +484,13 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Annuler
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  Créer
+                  {t("adminDocumentTypes.create")}
                 </button>
               </div>
             </form>
@@ -500,12 +503,12 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">
-              Modifier le type de document
+              {t("adminDocumentTypes.editTitle")}
             </h3>
             <form onSubmit={handleUpdateDocumentType} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Libellé
+                  {t("adminDocumentTypes.label")}
                 </label>
                 <input
                   type="text"
@@ -519,7 +522,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Description
+                  {t("adminDocumentTypes.description")}
                 </label>
                 <textarea
                   value={formData.description}
@@ -532,7 +535,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Chemin du template
+                  {t("adminDocumentTypes.templatePath")}
                 </label>
                 <input
                   type="text"
@@ -545,7 +548,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Prix (€) — optionnel
+                  {t("adminDocumentTypes.priceOptional")}
                 </label>
                 <input
                   type="number"
@@ -556,7 +559,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                     setFormData({ ...formData, priceEur: e.target.value })
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ex: 10.50 (vide = montant par défaut)"
+                  placeholder={t("adminDocumentTypes.pricePlaceholder")}
                 />
               </div>
               <div className="flex items-center">
@@ -573,7 +576,7 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   htmlFor="editIsActive"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  Actif
+                  {t("adminDocumentTypes.active")}
                 </label>
               </div>
               <div className="flex justify-end space-x-3">
@@ -582,13 +585,13 @@ const AdminDocumentTypes = ({ token, onNotification }) => {
                   onClick={() => setShowEditModal(false)}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Annuler
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  Mettre à jour
+                  {t("adminDocumentTypes.update")}
                 </button>
               </div>
             </form>

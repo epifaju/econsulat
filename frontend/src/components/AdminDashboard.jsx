@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
 import {
   DocumentTextIcon,
@@ -21,6 +22,7 @@ import AdminDocumentTypes from "./AdminDocumentTypes";
 import AdminStats from "./AdminStats";
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState("stats");
   const [notification, setNotification] = useState(null);
@@ -31,10 +33,10 @@ const AdminDashboard = () => {
   };
 
   const tabs = [
-    { id: "stats", name: "Statistiques", icon: ChartBarIcon },
-    { id: "demandes", name: "Gestion des Demandes", icon: DocumentTextIcon },
-    { id: "users", name: "Gestion des Utilisateurs", icon: UsersIcon },
-    { id: "document-types", name: "Types de Documents", icon: CogIcon },
+    { id: "stats", name: t("admin.tabStats"), icon: ChartBarIcon },
+    { id: "demandes", name: t("admin.tabDemandes"), icon: DocumentTextIcon },
+    { id: "users", name: t("admin.tabUsers"), icon: UsersIcon },
+    { id: "document-types", name: t("admin.tabDocumentTypes"), icon: CogIcon },
   ];
 
   const renderTabContent = () => {
@@ -64,10 +66,10 @@ const AdminDashboard = () => {
         <div className="text-center">
           <XCircleIcon className="h-12 w-12 text-red-500 mx-auto" />
           <h2 className="mt-4 text-xl font-semibold text-gray-900">
-            Accès non autorisé
+            {t("admin.accessDeniedTitle")}
           </h2>
           <p className="mt-2 text-gray-600">
-            Vous devez être administrateur pour accéder à cette page.
+            {t("admin.accessDeniedMessage")}
           </p>
         </div>
       </div>
@@ -90,11 +92,10 @@ const AdminDashboard = () => {
         {/* En-tête */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
-            Tableau de Bord Administrateur
+            {t("admin.dashboardTitle")}
           </h1>
           <p className="mt-2 text-gray-600">
-            Gérez les demandes, utilisateurs et types de documents du système
-            eConsulat.
+            {t("admin.dashboardSubtitle")}
           </p>
         </div>
 

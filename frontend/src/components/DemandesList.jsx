@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 
 const DemandesList = ({ onRefresh, refreshTrigger }) => {
   const { token } = useAuth();
@@ -19,7 +20,7 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
       setLoading(true);
       console.log("🔍 Debug - Token utilisé pour loadDemandes:", token);
 
-      const response = await fetch("http://127.0.0.1:8080/api/demandes/my", {
+      const response = await fetch(buildApiUrl(API_CONFIG.DEMANDES.MY_DEMANDES), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -72,7 +73,7 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
       console.log("🔍 Debug - Token utilisé pour handleViewDetails:", token);
 
       const response = await fetch(
-        `http://127.0.0.1:8080/api/demandes/${demandeId}`,
+        buildApiUrl(API_CONFIG.DEMANDES.DEMANDE_UPDATE(demandeId)),
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -121,7 +122,9 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
     try {
       setGenerating(true);
       const response = await fetch(
-        `http://localhost:8080/api/user/documents/generate?demandeId=${demandeId}&documentTypeId=1`,
+        buildApiUrl(
+          `${API_CONFIG.USER_DOCUMENTS.GENERATE}?demandeId=${demandeId}&documentTypeId=1`
+        ),
         {
           method: "POST",
           headers: {
@@ -135,7 +138,7 @@ const DemandesList = ({ onRefresh, refreshTrigger }) => {
         const data = await response.json();
         // Télécharger le document
         const downloadResponse = await fetch(
-          `http://localhost:8080/api/user/documents/download/${data.id}`,
+          buildApiUrl(API_CONFIG.USER_DOCUMENTS.DOWNLOAD(data.id)),
           {
             headers: {
               Authorization: `Bearer ${token}`,

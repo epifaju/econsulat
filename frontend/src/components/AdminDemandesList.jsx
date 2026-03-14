@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   EyeIcon,
   PencilIcon,
@@ -23,8 +24,10 @@ import {
 } from "../utils/fileDownload";
 import AdminDemandeEditModal from "./AdminDemandeEditModal";
 import ConfirmationModal from "./ConfirmationModal";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 
 const AdminDemandesList = ({ token, onNotification }) => {
+  const { t } = useTranslation();
   const [demandes, setDemandes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -59,14 +62,18 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const fetchDemandes = async () => {
     try {
       setLoading(true);
-      let url = `http://127.0.0.1:8080/api/admin/demandes?page=${currentPage}&size=5&sortBy=${sortBy}&sortDir=${sortDir}`;
+      let url = buildApiUrl(
+        `${API_CONFIG.ADMIN.DEMANDES}?page=${currentPage}&size=5&sortBy=${sortBy}&sortDir=${sortDir}`
+      );
 
       if (searchTerm) {
-        url = `http://127.0.0.1:8080/api/admin/demandes/search?q=${encodeURIComponent(
-          searchTerm
-        )}&page=${currentPage}&size=5`;
+        url = buildApiUrl(
+          `${API_CONFIG.ADMIN.DEMANDES_SEARCH}?q=${encodeURIComponent(searchTerm)}&page=${currentPage}&size=5`
+        );
       } else if (statusFilter) {
-        url = `http://127.0.0.1:8080/api/admin/demandes/status/${statusFilter}?page=${currentPage}&size=5`;
+        url = buildApiUrl(
+          `${API_CONFIG.ADMIN.DEMANDES_STATUS}/${statusFilter}?page=${currentPage}&size=5`
+        );
       }
 
       const response = await fetch(url, {
@@ -93,7 +100,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
     try {
       setUpdatingStatus(true);
       const response = await fetch(
-        `http://127.0.0.1:8080/api/demandes/${demandeId}/status`,
+        buildApiUrl(`/api/demandes/${demandeId}/status`),
         {
           method: "PUT",
           headers: {
@@ -138,7 +145,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const fetchLastNotification = async (demandeId) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8080/api/notifications/demande/${demandeId}`,
+        buildApiUrl(`/api/notifications/demande/${demandeId}`),
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -207,7 +214,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
 
       // Utiliser la nouvelle API qui déclenche automatiquement l'envoi de notifications
       const response = await fetch(
-        `http://127.0.0.1:8080/api/demandes/${demandeId}/status`,
+        buildApiUrl(`/api/demandes/${demandeId}/status`),
         {
           method: "PUT",
           headers: {
@@ -262,7 +269,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+        buildApiUrl(API_CONFIG.ADMIN.WORD_GENERATE + `?demandeId=${demandeId}&documentTypeId=${documentTypeId}`),
         {
           method: "POST",
           headers: {
@@ -277,7 +284,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
 
         // Télécharger le document
         const downloadResponse = await fetch(
-          `http://localhost:8080/api/admin/documents/download/${generatedDocument.id}`,
+          buildApiUrl(API_CONFIG.ADMIN.WORD_DOWNLOAD(generatedDocument.id)),
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -332,7 +339,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       );
 
       const response = await fetch(
-        `http://127.0.0.1:8080/api/admin/pdf-documents/generate?demandeId=${demandeId}&documentTypeId=${documentTypeId}`,
+        buildApiUrl(API_CONFIG.ADMIN.PDF_GENERATE + `?demandeId=${demandeId}&documentTypeId=${documentTypeId}`),
         {
           method: "POST",
           headers: {
@@ -353,7 +360,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
         // Télécharger le document PDF
         console.log(`Téléchargement du document ${generatedDocument.id}`);
         const downloadResponse = await fetch(
-          `http://127.0.0.1:8080/api/admin/pdf-documents/download/${generatedDocument.id}`,
+          buildApiUrl(API_CONFIG.ADMIN.PDF_DOWNLOAD(generatedDocument.id)),
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -536,7 +543,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       console.log(`Suppression de la demande ${demandeToDelete.id}`);
 
       const response = await fetch(
-        `http://localhost:8080/api/admin/demandes/${demandeToDelete.id}`,
+        buildApiUrl(API_CONFIG.ADMIN.DEMANDE_DELETE(demandeToDelete.id)),
         {
           method: "DELETE",
           headers: {
@@ -580,11 +587,11 @@ const AdminDemandesList = ({ token, onNotification }) => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      PENDING_PAYMENT: { color: "bg-amber-100 text-amber-800", label: "En attente de paiement" },
-      PENDING: { color: "bg-yellow-100 text-yellow-800", label: "En attente" },
-      APPROVED: { color: "bg-green-100 text-green-800", label: "Approuvé" },
-      REJECTED: { color: "bg-red-100 text-red-800", label: "Rejeté" },
-      COMPLETED: { color: "bg-blue-100 text-blue-800", label: "Terminé" },
+      PENDING_PAYMENT: { color: "bg-amber-100 text-amber-800", label: t("admin.status.PENDING_PAYMENT") },
+      PENDING: { color: "bg-yellow-100 text-yellow-800", label: t("admin.status.PENDING") },
+      APPROVED: { color: "bg-green-100 text-green-800", label: t("admin.status.APPROVED") },
+      REJECTED: { color: "bg-red-100 text-red-800", label: t("admin.status.REJECTED") },
+      COMPLETED: { color: "bg-blue-100 text-blue-800", label: t("admin.status.COMPLETED") },
     };
 
     const config = statusConfig[status] || statusConfig.PENDING;
@@ -618,7 +625,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
   const handleResendNotification = async (notificationId, demandeId) => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8080/api/notifications/${notificationId}/resend`,
+        buildApiUrl(`/api/notifications/${notificationId}/resend`),
         {
           method: "POST",
           headers: {
@@ -656,7 +663,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       return (
         <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <span className="text-xs text-gray-500">Chargement...</span>
+          <span className="text-xs text-gray-500">{t("admin.demandes.loading")}</span>
         </div>
       );
     }
@@ -666,7 +673,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       return (
         <div className="flex items-center space-x-2">
           <EnvelopeIcon className="h-4 w-4 text-gray-400" />
-          <span className="text-xs text-gray-500">Aucune notification</span>
+          <span className="text-xs text-gray-500">{t("admin.demandes.noNotification")}</span>
         </div>
       );
     }
@@ -676,7 +683,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       return (
         <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400"></div>
-          <span className="text-xs text-gray-500">Chargement...</span>
+          <span className="text-xs text-gray-500">{t("admin.demandes.loading")}</span>
         </div>
       );
     }
@@ -713,12 +720,12 @@ const AdminDemandesList = ({ token, onNotification }) => {
           {getStatusIcon(notification.statut)}
           <span className="text-xs font-medium">
             {notification.statut === "ENVOYE"
-              ? "Notification envoyée"
+              ? t("admin.demandes.notificationSentLabel")
               : notification.statut === "ECHEC"
-              ? "Échec d'envoi"
+              ? t("admin.demandes.sendFailure")
               : notification.statut === "EN_COURS"
-              ? "Envoi en cours"
-              : "Notification"}
+              ? t("admin.demandes.sendingInProgress")
+              : t("admin.demandes.notification")}
           </span>
         </div>
         <div className="text-xs text-gray-600">
@@ -734,11 +741,11 @@ const AdminDemandesList = ({ token, onNotification }) => {
           )}`}
         >
           {notification.statut === "ENVOYE"
-            ? "✓ Envoyé"
+            ? `✓ ${t("admin.demandes.sent")}`
             : notification.statut === "ECHEC"
-            ? "✗ Échec"
+            ? `✗ ${t("admin.demandes.failure")}`
             : notification.statut === "EN_COURS"
-            ? "⏳ En cours"
+            ? `⏳ ${t("admin.demandes.inProgress")}`
             : notification.statut}
         </div>
 
@@ -747,10 +754,10 @@ const AdminDemandesList = ({ token, onNotification }) => {
           <button
             onClick={() => handleResendNotification(notification.id, demandeId)}
             className="mt-1 inline-flex items-center px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-full hover:bg-red-200 transition-colors"
-            title="Renvoyer la notification"
+            title={t("admin.demandes.resendTitle")}
           >
             <EnvelopeIcon className="h-3 w-3 mr-1" />
-            Renvoyer
+            {t("admin.demandes.resend")}
           </button>
         )}
       </div>
@@ -771,10 +778,10 @@ const AdminDemandesList = ({ token, onNotification }) => {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          Gestion des Demandes
+          {t("admin.demandes.title")}
         </h2>
         <p className="text-gray-600">
-          Consultez et gérez toutes les demandes de documents
+          {t("admin.demandes.subtitle")}
         </p>
       </div>
 
@@ -785,7 +792,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
             <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Rechercher par nom..."
+              placeholder={t("admin.demandes.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -798,12 +805,12 @@ const AdminDemandesList = ({ token, onNotification }) => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
-            <option value="">Tous les statuts</option>
-            <option value="PENDING_PAYMENT">En attente de paiement</option>
-            <option value="PENDING">En attente</option>
-            <option value="APPROVED">Approuvé</option>
-            <option value="REJECTED">Rejeté</option>
-            <option value="COMPLETED">Terminé</option>
+            <option value="">{t("admin.demandes.allStatuses")}</option>
+            <option value="PENDING_PAYMENT">{t("admin.status.PENDING_PAYMENT")}</option>
+            <option value="PENDING">{t("admin.status.PENDING")}</option>
+            <option value="APPROVED">{t("admin.status.APPROVED")}</option>
+            <option value="REJECTED">{t("admin.status.REJECTED")}</option>
+            <option value="COMPLETED">{t("admin.status.COMPLETED")}</option>
           </select>
         </div>
       </div>
@@ -818,7 +825,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 onClick={() => handleSort("firstName")}
               >
                 <div className="flex items-center">
-                  Demandeur
+                  {t("admin.demandes.requester")}
                   <SortIcon field="firstName" />
                 </div>
               </th>
@@ -827,7 +834,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 onClick={() => handleSort("documentType")}
               >
                 <div className="flex items-center">
-                  Type de document
+                  {t("admin.demandes.documentType")}
                   <SortIcon field="documentType" />
                 </div>
               </th>
@@ -836,7 +843,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 onClick={() => handleSort("status")}
               >
                 <div className="flex items-center">
-                  Statut
+                  {t("admin.demandes.status")}
                   <SortIcon field="status" />
                 </div>
               </th>
@@ -845,18 +852,18 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 onClick={() => handleSort("createdAt")}
               >
                 <div className="flex items-center">
-                  Date de création
+                  {t("admin.demandes.createdAt")}
                   <SortIcon field="createdAt" />
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 <div className="flex items-center space-x-2">
                   <EnvelopeIcon className="h-4 w-4" />
-                  <span>Notification envoyée</span>
+                  <span>{t("admin.demandes.notificationSent")}</span>
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                {t("admin.demandes.actions")}
               </th>
             </tr>
           </thead>
@@ -877,7 +884,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                   <span className="text-sm text-gray-900">
                     {demande.documentTypeDisplay ||
                       demande.documentType ||
-                      "Non spécifié"}
+                      t("admin.demandes.notSpecified")}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -897,14 +904,14 @@ const AdminDemandesList = ({ token, onNotification }) => {
                         setShowDetails(true);
                       }}
                       className="text-blue-600 hover:text-blue-900"
-                      title="Voir détails"
+                      title={t("admin.demandes.viewDetails")}
                     >
                       <EyeIcon className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleEditDemande(demande)}
                       className="text-orange-600 hover:text-orange-900"
-                      title="Modifier la demande"
+                      title={t("admin.demandes.editDemande")}
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
@@ -912,7 +919,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                     <button
                       onClick={() => handleGenerateDocument(demande.id)}
                       className="text-green-600 hover:text-green-900"
-                      title="Générer document Word"
+                      title={t("admin.demandes.generateWord")}
                     >
                       <DocumentArrowDownIcon className="h-4 w-4" />
                     </button>
@@ -926,8 +933,8 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       }`}
                       title={
                         generatingPdf
-                          ? "Génération en cours..."
-                          : "Générer document PDF"
+                          ? t("admin.demandes.generating")
+                          : t("admin.demandes.generatePdf")
                       }
                     >
                       {generatingPdf ? (
@@ -943,11 +950,11 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       }
                       className="text-xs border border-gray-300 rounded px-2 py-1"
                     >
-                      <option value="PENDING_PAYMENT">En attente de paiement</option>
-                      <option value="PENDING">En attente</option>
-                      <option value="APPROVED">Approuvé</option>
-                      <option value="REJECTED">Rejeté</option>
-                      <option value="COMPLETED">Terminé</option>
+                      <option value="PENDING_PAYMENT">{t("admin.status.PENDING_PAYMENT")}</option>
+                      <option value="PENDING">{t("admin.status.PENDING")}</option>
+                      <option value="APPROVED">{t("admin.status.APPROVED")}</option>
+                      <option value="REJECTED">{t("admin.status.REJECTED")}</option>
+                      <option value="COMPLETED">{t("admin.status.COMPLETED")}</option>
                     </select>
                     <button
                       onClick={() => handleDeleteDemande(demande)}
@@ -959,8 +966,8 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       }`}
                       title={
                         deletingDemande === demande.id
-                          ? "Suppression en cours..."
-                          : "Supprimer la demande"
+                          ? t("admin.demandes.deleting")
+                          : t("admin.demandes.deleteDemande")
                       }
                     >
                       {deletingDemande === demande.id ? (
@@ -975,7 +982,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                       lastNotifications[demande.id].statut === "ENVOYE" && (
                         <div className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           <CheckCircleIcon className="h-3 w-3 mr-1" />
-                          Notifié
+                          {t("admin.demandes.notified")}
                         </div>
                       )}
                   </div>
@@ -990,7 +997,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Page {currentPage + 1} sur {totalPages}
+            {t("admin.demandes.pageOf", { current: currentPage + 1, total: totalPages })}
           </div>
           <div className="flex space-x-2">
             <button
@@ -998,7 +1005,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
               disabled={currentPage === 0}
               className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              Précédent
+              {t("admin.demandes.previous")}
             </button>
             <button
               onClick={() =>
@@ -1007,7 +1014,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
               disabled={currentPage === totalPages - 1}
               className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              Suivant
+              {t("admin.demandes.next")}
             </button>
           </div>
         </div>
@@ -1018,7 +1025,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Détails de la demande</h3>
+              <h3 className="text-lg font-semibold">{t("admin.demandes.detailsTitle")}</h3>
               <button
                 onClick={() => setShowDetails(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -1030,7 +1037,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
             <div className="space-y-4">
               <div>
                 <h4 className="font-medium text-gray-900">
-                  Informations du demandeur
+                  {t("admin.demandes.requesterInfo")}
                 </h4>
                 <p className="text-sm text-gray-600">
                   {selectedDemande.firstName} {selectedDemande.lastName}
@@ -1041,23 +1048,23 @@ const AdminDemandesList = ({ token, onNotification }) => {
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900">Type de document</h4>
+                <h4 className="font-medium text-gray-900">{t("admin.demandes.documentType")}</h4>
                 <p className="text-sm text-gray-600">
                   {selectedDemande.documentTypeDisplay ||
                     selectedDemande.documentType ||
-                    "Non spécifié"}
+                    t("admin.demandes.notSpecified")}
                 </p>
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900">Statut</h4>
+                <h4 className="font-medium text-gray-900">{t("admin.demandes.status")}</h4>
                 <div className="mt-1">
                   {getStatusBadge(selectedDemande.status)}
                 </div>
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900">Documents joints</h4>
+                <h4 className="font-medium text-gray-900">{t("admin.demandes.attachedDocs")}</h4>
                 {selectedDemande.documentFiles &&
                 selectedDemande.documentFiles.length > 0 ? (
                   <ul className="text-sm text-gray-600">
@@ -1066,14 +1073,14 @@ const AdminDemandesList = ({ token, onNotification }) => {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-500">Aucun document joint</p>
+                  <p className="text-sm text-gray-500">{t("admin.demandes.noAttachedDocs")}</p>
                 )}
               </div>
 
               <div>
-                <h4 className="font-medium text-gray-900">Date de création</h4>
+                <h4 className="font-medium text-gray-900">{t("admin.demandes.createdAt")}</h4>
                 <p className="text-sm text-gray-600">
-                  {new Date(selectedDemande.createdAt).toLocaleString("fr-FR")}
+                  {new Date(selectedDemande.createdAt).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -1083,7 +1090,7 @@ const AdminDemandesList = ({ token, onNotification }) => {
                 onClick={() => setShowDetails(false)}
                 className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
-                Fermer
+                {t("common.close")}
               </button>
             </div>
           </div>
@@ -1108,14 +1115,16 @@ const AdminDemandesList = ({ token, onNotification }) => {
         isOpen={showDeleteModal}
         onClose={cancelDeleteDemande}
         onConfirm={confirmDeleteDemande}
-        title="Supprimer la demande"
+        title={t("admin.demandes.deleteConfirmTitle")}
         message={
           demandeToDelete
-            ? `Êtes-vous sûr de vouloir supprimer définitivement la demande de ${demandeToDelete.firstName} ${demandeToDelete.lastName} ? Cette action est irréversible et supprimera également tous les documents générés associés.`
-            : "Êtes-vous sûr de vouloir supprimer cette demande ?"
+            ? t("admin.demandes.deleteConfirmMessage", {
+                name: `${demandeToDelete.firstName} ${demandeToDelete.lastName}`,
+              })
+            : t("admin.demandes.deleteConfirmMessageShort")
         }
-        confirmText="Supprimer"
-        cancelText="Annuler"
+        confirmText={t("admin.demandes.deleteButton")}
+        cancelText={t("common.cancel")}
         type="danger"
         loading={deletingDemande !== null}
       />

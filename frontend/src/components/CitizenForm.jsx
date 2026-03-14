@@ -11,10 +11,10 @@ import {
 } from "react-bootstrap";
 import { toast } from "react-toastify";
 import axios from "axios";
+import API_CONFIG from "../config/api";
 
-// Configuration axios avec le token JWT
 const api = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: API_CONFIG.BASE_URL,
 });
 
 // Intercepteur pour ajouter le token JWT à chaque requête

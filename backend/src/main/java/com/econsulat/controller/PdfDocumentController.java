@@ -5,6 +5,8 @@ import com.econsulat.model.User;
 import com.econsulat.repository.UserRepository;
 import com.econsulat.service.PdfDocumentService;
 import com.econsulat.dto.GeneratedDocumentResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -23,6 +25,8 @@ import java.util.Map;
 @PreAuthorize("hasAnyRole('ADMIN', 'AGENT')")
 @CrossOrigin(origins = "http://localhost:5173")
 public class PdfDocumentController {
+
+    private static final Logger log = LoggerFactory.getLogger(PdfDocumentController.class);
 
     @Autowired
     private PdfDocumentService pdfDocumentService;
@@ -58,15 +62,13 @@ public class PdfDocumentController {
 
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            System.err.println("Erreur lors de la génération PDF: " + e.getMessage());
-            e.printStackTrace();
+            log.warn("Erreur génération PDF: {}", e.getMessage());
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "Erreur lors de la génération", "message", e.getMessage()));
         } catch (Exception e) {
-            System.err.println("Erreur interne lors de la génération PDF: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur interne génération PDF", e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Erreur interne du serveur", "message", e.getMessage()));
+                    .body(Map.of("error", "Erreur interne du serveur", "message", "Une erreur interne s'est produite"));
         }
     }
 
@@ -86,12 +88,10 @@ public class PdfDocumentController {
                     .body(resource);
 
         } catch (IOException e) {
-            System.err.println("Erreur lors du téléchargement PDF: " + e.getMessage());
-            e.printStackTrace();
+            log.warn("Erreur téléchargement PDF: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
-            System.err.println("Erreur inattendue lors du téléchargement PDF: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur inattendue téléchargement PDF", e);
             return ResponseEntity.internalServerError().build();
         }
     }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 import {
   UsersIcon,
   UserPlusIcon,
@@ -36,7 +37,7 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8080/api/users", {
+      const response = await fetch(buildApiUrl(API_CONFIG.USERS.PROFILE), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -119,7 +120,7 @@ const UserManagement = () => {
   const handleViewUserDetails = async (userId) => {
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/users/${userId}`,
+        buildApiUrl(API_CONFIG.ADMIN.USER_UPDATE(userId)),
         {
           headers: {
             Authorization: `Bearer ${token}`,

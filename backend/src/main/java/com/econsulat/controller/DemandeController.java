@@ -30,11 +30,15 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import com.econsulat.repository.DemandeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/demandes")
 @CrossOrigin(origins = "*")
 public class DemandeController {
+
+    private static final Logger log = LoggerFactory.getLogger(DemandeController.class);
 
     @Autowired
     private DemandeService demandeService;
@@ -62,30 +66,16 @@ public class DemandeController {
 
     @PostMapping
     public ResponseEntity<?> createDemande(@RequestBody DemandeRequest request) {
-        System.out.println("🔍 DemandeController - createDemande appelé");
-        System.out.println("🔍 DemandeController - Request reçu: " + request);
-        System.out.println("🔍 DemandeController - DocumentTypeId: " + request.getDocumentTypeId());
+        log.debug("createDemande - documentTypeId: {}", request.getDocumentTypeId());
 
         try {
             String userEmail = getCurrentUserEmail();
-            System.out.println("🔍 DemandeController - Email utilisateur connecté: " + userEmail);
-
-            // Vérifier l'authentification
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            System.out.println("🔍 DemandeController - Authentication: " + auth);
-            if (auth != null) {
-                System.out.println("🔍 DemandeController - Authorities: " + auth.getAuthorities());
-                System.out.println("🔍 DemandeController - Principal: " + auth.getPrincipal());
-                System.out.println("🔍 DemandeController - Is authenticated: " + auth.isAuthenticated());
-            }
-
             DemandeResponse response = demandeService.createDemande(request, userEmail);
-            System.out.println("✅ DemandeController - Demande créée avec succès: " + response);
+            log.debug("Demande créée pour utilisateur: {}", userEmail);
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
-            // ✅ Gestion spécifique des erreurs de validation
-            System.err.println("❌ DemandeController - Erreur de validation: " + e.getMessage());
+            log.warn("Erreur de validation createDemande: {}", e.getMessage());
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Erreur de validation");
             errorResponse.put("message", e.getMessage());
@@ -96,8 +86,7 @@ public class DemandeController {
             return ResponseEntity.badRequest().body(errorResponse); // Retourner la vraie réponse d'erreur
 
         } catch (Exception e) {
-            System.err.println("💥 DemandeController - Erreur inattendue: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur inattendue createDemande", e);
             throw e; // Laisser le GlobalExceptionHandler gérer
         }
     }
@@ -152,8 +141,9 @@ public class DemandeController {
                     "fileName", generatedDocument.getFileName()));
 
         } catch (Exception e) {
+            log.error("Erreur génération document pour demande {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erreur lors de la génération: " + e.getMessage()));
+                    .body(Map.of("error", "Erreur lors de la génération"));
         }
     }
 
@@ -172,61 +162,37 @@ public class DemandeController {
             Demande originalDemande = demandeRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
 
-            // Log pour debug
-            System.out.println("🔍 Recherche document pour demande ID: " + id);
-            System.out.println("🔍 Type de document de la demande: " + originalDemande.getDocumentType().getLibelle());
-            System.out.println("🔍 ID du type: " + originalDemande.getDocumentType().getId());
+            log.debug("Recherche document pour demande ID: {}, type: {}", id, originalDemande.getDocumentType().getLibelle());
 
-            // Récupérer le document généré en utilisant le vrai type de document de la
-            // demande
-            // Utiliser directement l'ID de la relation JPA
             GeneratedDocument generatedDocument = null;
 
-            // Première tentative : avec l'ID du type de document
             try {
                 Long documentTypeId = originalDemande.getDocumentType().getId();
                 generatedDocument = generatedDocumentRepository
                         .findPdfDocumentByDemandeAndType(id, documentTypeId)
                         .orElse(null);
-                System.out.println("🔍 Première tentative avec ID du type: " + documentTypeId);
             } catch (Exception e) {
-                System.out.println("⚠️ Erreur première tentative: " + e.getMessage());
+                log.debug("Recherche document par type: {}", e.getMessage());
             }
 
-            // Si pas trouvé, essayer de trouver n'importe quel document PDF pour cette
-            // demande
             if (generatedDocument == null) {
                 try {
                     List<GeneratedDocument> allDocs = generatedDocumentRepository.findByDemandeId(id);
-                    System.out.println("🔍 Documents trouvés pour la demande: " + allDocs.size());
-                    for (GeneratedDocument doc : allDocs) {
-                        System.out.println("  - ID: " + doc.getId() + ", Nom: " + doc.getFileName() + ", Type: "
-                                + (doc.getDocumentType() != null ? doc.getDocumentType().getId() : "null"));
-                    }
-
-                    // Chercher le premier document PDF
                     generatedDocument = allDocs.stream()
                             .filter(doc -> doc.getFileName() != null
                                     && doc.getFileName().toLowerCase().endsWith(".pdf"))
                             .findFirst()
                             .orElse(null);
-
-                    if (generatedDocument != null) {
-                        System.out.println(
-                                "✅ Document PDF trouvé par recherche alternative: " + generatedDocument.getFileName());
-                    }
                 } catch (Exception e) {
-                    System.out.println("⚠️ Erreur recherche alternative: " + e.getMessage());
+                    log.debug("Recherche alternative documents: {}", e.getMessage());
                 }
             }
 
             if (generatedDocument == null) {
-                System.out.println("❌ Aucun document PDF trouvé pour la demande " + id);
+                log.warn("Aucun document PDF trouvé pour la demande {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("error", "Aucun document PDF trouvé pour cette demande"));
             }
-
-            System.out.println("✅ Document trouvé: " + generatedDocument.getFileName());
 
             // Télécharger le document PDF
             byte[] documentBytes = pdfDocumentService.downloadPdfDocument(generatedDocument.getId());
@@ -240,10 +206,9 @@ public class DemandeController {
                     .body(documentBytes);
 
         } catch (Exception e) {
-            System.err.println("❌ Erreur lors du téléchargement: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur téléchargement document demande {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Erreur lors du téléchargement: " + e.getMessage()));
+                    .body(Map.of("error", "Erreur lors du téléchargement"));
         }
     }
 
@@ -275,9 +240,7 @@ public class DemandeController {
 
             return ResponseEntity.ok(types);
         } catch (Exception e) {
-            // ❌ SUPPRIMER : Plus d'enum comme fallback
-            // Retourner une liste vide en cas d'erreur
-            System.err.println("Erreur lors de la récupération des types de documents: " + e.getMessage());
+            log.warn("Erreur récupération types de documents: {}", e.getMessage());
             return ResponseEntity.ok(new ArrayList<>());
         }
     }
@@ -291,35 +254,27 @@ public class DemandeController {
             @PathVariable Long id,
             @RequestBody Map<String, String> statusUpdate) {
         try {
-            // Log de debug
-            System.out.println("🔍 DemandeController - Mise à jour statut pour demande ID: " + id);
-            System.out.println("🔍 DemandeController - Payload reçu: " + statusUpdate);
-
             String newStatusStr = statusUpdate.get("status");
             if (newStatusStr == null) {
-                System.out.println("❌ DemandeController - Statut manquant dans le payload");
+                log.warn("Mise à jour statut - statut manquant pour demande {}", id);
                 return ResponseEntity.badRequest().body(null);
             }
 
             Demande.Status newStatus;
             try {
                 newStatus = Demande.Status.valueOf(newStatusStr);
-                System.out.println("✅ DemandeController - Nouveau statut valide: " + newStatus);
             } catch (IllegalArgumentException e) {
-                System.out.println("❌ DemandeController - Statut invalide: " + newStatusStr);
+                log.warn("Mise à jour statut - statut invalide: {} pour demande {}", newStatusStr, id);
                 return ResponseEntity.badRequest().body(null);
             }
 
             String adminEmail = getCurrentUserEmail();
-            System.out.println("👤 DemandeController - Email utilisateur connecté: " + adminEmail);
-
             DemandeResponse updatedDemande = demandeService.updateDemandeStatus(id, newStatus, adminEmail);
-            System.out.println("✅ DemandeController - Statut mis à jour avec succès");
+            log.debug("Statut demande {} mis à jour en {}", id, newStatus);
 
             return ResponseEntity.ok(updatedDemande);
         } catch (Exception e) {
-            System.err.println("💥 DemandeController - Erreur lors de la mise à jour: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur mise à jour statut demande {}", id, e);
             return ResponseEntity.badRequest().body(null);
         }
     }

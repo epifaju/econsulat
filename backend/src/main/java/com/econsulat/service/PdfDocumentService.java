@@ -15,6 +15,8 @@ import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Paragraph;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
@@ -32,6 +34,8 @@ import java.util.UUID;
 
 @Service
 public class PdfDocumentService {
+
+    private static final Logger log = LoggerFactory.getLogger(PdfDocumentService.class);
 
     @Autowired
     private DemandeRepository demandeRepository;
@@ -58,53 +62,37 @@ public class PdfDocumentService {
         String filePath = null;
 
         try {
-            System.out.println("=== DÉBUT GÉNÉRATION PDF ===");
-            System.out.println("Demande: " + demandeId + ", Type: " + documentTypeId);
+            log.debug("Génération PDF - demandeId: {}, documentTypeId: {}", demandeId, documentTypeId);
 
             Demande demande = demandeRepository.findById(demandeId)
                     .orElseThrow(() -> new RuntimeException("Demande non trouvée avec l'ID: " + demandeId));
 
-            // ✅ CORRIGÉ : Utiliser directement la relation JPA DocumentType
             DocumentType documentType = demande.getDocumentType();
             if (documentType == null) {
                 throw new RuntimeException("Le type de document n'est pas défini pour cette demande");
             }
 
-            // Plus besoin de conversion : on a déjà l'entité JPA
-            System.out.println("Demande trouvée: " + demande.getFirstName() + " " + demande.getLastName());
-            System.out.println("Type de document de la demande: " + documentType.getLibelle());
-            System.out.println("Type de document demandé: " + documentTypeId);
-
-            // Validation des données de la demande
             validateDemandeData(demande);
 
-            // Vérifier si le document a déjà été généré pour ce type
             GeneratedDocument existingDoc = generatedDocumentRepository
                     .findPdfDocumentByDemandeAndType(demandeId, documentTypeId)
                     .orElse(null);
 
             if (existingDoc != null) {
-                System.out.println("Document déjà généré, retour du document existant");
-                System.out.println("Nom existant: " + existingDoc.getFileName());
-                System.out.println("Chemin existant: " + existingDoc.getFilePath());
+                log.debug("Document PDF déjà généré pour demande {} type {}, retour existant", demandeId, documentTypeId);
                 return existingDoc;
             }
 
-            // Créer le dossier de documents s'il n'existe pas
             Path documentsPath = Paths.get(documentsDir);
             if (!Files.exists(documentsPath)) {
-                System.out.println("Création du dossier documents: " + documentsPath);
+                log.debug("Création dossier documents: {}", documentsPath);
                 Files.createDirectories(documentsPath);
             }
 
-            // Générer le nom du fichier
             String fileName = generatePdfFileName(demande, documentType);
             filePath = documentsPath.resolve(fileName).toString();
 
-            System.out.println("=== GÉNÉRATION PDF ===");
-            System.out.println("Nom de fichier généré: " + fileName);
-            System.out.println("Chemin complet: " + filePath);
-            System.out.println("Extension attendue: .pdf");
+            log.debug("Génération PDF - fichier: {}", fileName);
 
             // Générer le document PDF simple (sans filigrane pour l'instant)
             generateSimplePdf(demande, documentType, filePath);
@@ -115,37 +103,25 @@ public class PdfDocumentService {
             }
 
             long fileSize = Files.size(Paths.get(filePath));
-            System.out.println("=== VÉRIFICATION FICHIER ===");
-            System.out.println("Fichier créé: " + filePath);
-            System.out.println("Taille: " + fileSize + " bytes");
-            System.out.println("Existe: " + Files.exists(Paths.get(filePath)));
+            log.debug("Fichier PDF créé: {}, taille: {} bytes", filePath, fileSize);
 
-            // Vérifier l'extension du fichier créé
             String actualExtension = getFileExtension(filePath);
-            System.out.println("Extension réelle du fichier: " + actualExtension);
             if (!".pdf".equals(actualExtension)) {
-                System.err.println("⚠️ ATTENTION: Le fichier créé n'a pas l'extension .pdf !");
-                System.err.println("Extension attendue: .pdf");
-                System.err.println("Extension réelle: " + actualExtension);
+                log.warn("Fichier créé sans extension .pdf: {}", actualExtension);
             }
 
-            // Vérification d'intégrité : s'assurer que le fichier est bien un PDF
             try (FileInputStream fis = new FileInputStream(filePath)) {
                 byte[] header = new byte[4];
                 fis.read(header);
                 String fileSignature = new String(header);
-                System.out.println("Signature du fichier: " + fileSignature);
 
                 if (!fileSignature.startsWith("%PDF")) {
-                    System.err.println("❌ ERREUR CRITIQUE: Le fichier créé n'est pas un PDF valide !");
-                    System.err.println("Signature attendue: %PDF");
-                    System.err.println("Signature réelle: " + fileSignature);
+                    log.error("Fichier généré n'est pas un PDF valide, signature: {}", fileSignature);
                     throw new RuntimeException(
                             "Le fichier généré n'est pas un PDF valide. Signature: " + fileSignature);
                 }
-                System.out.println("✅ Signature PDF valide confirmée");
             } catch (IOException e) {
-                System.err.println("❌ Erreur lors de la vérification de la signature: " + e.getMessage());
+                log.error("Erreur vérification signature PDF", e);
                 throw new RuntimeException("Impossible de vérifier l'intégrité du PDF", e);
             }
 
@@ -160,39 +136,30 @@ public class PdfDocumentService {
             generatedDocument.setExpiresAt(LocalDateTime.now().plusDays(30));
             generatedDocument.setCreatedAt(LocalDateTime.now());
 
-            // Vérification finale : s'assurer que le nom de fichier est bien .pdf
             if (!fileName.toLowerCase().endsWith(".pdf")) {
-                System.err.println("❌ ERREUR CRITIQUE: Le nom de fichier n'a pas l'extension .pdf !");
-                System.err.println("Nom de fichier: " + fileName);
+                log.error("Nom de fichier sans extension .pdf: {}", fileName);
                 throw new RuntimeException("Le nom de fichier doit avoir l'extension .pdf");
             }
 
             GeneratedDocument savedDoc = generatedDocumentRepository.save(generatedDocument);
-            System.out.println("=== SAUVEGARDE EN BASE ===");
-            System.out.println("Document enregistré avec l'ID: " + savedDoc.getId());
-            System.out.println("Nom en base: " + savedDoc.getFileName());
-            System.out.println("Chemin en base: " + savedDoc.getFilePath());
-            System.out.println("=== FIN GÉNÉRATION PDF ===");
+            log.info("Document PDF enregistré - id: {}, fichier: {}", savedDoc.getId(), savedDoc.getFileName());
 
             return savedDoc;
 
         } catch (Exception e) {
-            System.err.println("❌ ERREUR lors de la génération PDF: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur génération PDF - demandeId: {}", demandeId, e);
 
-            // Nettoyer le fichier temporaire s'il existe
             if (filePath != null) {
                 try {
                     Path tempPath = Paths.get(filePath + "_temp");
                     if (Files.exists(tempPath)) {
                         Files.deleteIfExists(tempPath);
                     }
-                    // Nettoyer aussi le fichier principal s'il est corrompu
                     if (Files.exists(Paths.get(filePath))) {
-                        Files.deleteIfExists(tempPath);
+                        Files.deleteIfExists(Paths.get(filePath));
                     }
                 } catch (Exception cleanupError) {
-                    System.err.println("Erreur lors du nettoyage: " + cleanupError.getMessage());
+                    log.warn("Erreur nettoyage après échec génération PDF: {}", cleanupError.getMessage());
                 }
             }
 
@@ -206,59 +173,41 @@ public class PdfDocumentService {
     private void generateSimplePdf(Demande demande, DocumentType documentType, String outputPath)
             throws IOException {
 
-        System.out.println("Début de la génération PDF simple pour: " + outputPath);
+        log.debug("Génération PDF simple: {}", outputPath);
 
         try {
-            // Créer le PDF directement avec iText
             createPdfWithData(demande, documentType, outputPath);
 
-            System.out.println("PDF créé avec succès: " + outputPath);
-
-            // Vérifier que le fichier PDF a été créé
             if (!Files.exists(Paths.get(outputPath))) {
                 throw new RuntimeException("Le fichier PDF n'a pas été généré correctement: " + outputPath);
             }
 
             long fileSize = Files.size(Paths.get(outputPath));
-            System.out.println("Fichier PDF créé avec succès, taille: " + fileSize + " bytes");
+            log.debug("PDF créé, taille: {} bytes", fileSize);
 
-            // Vérification supplémentaire : essayer de lire le PDF pour s'assurer qu'il est
-            // valide
             try (PdfReader reader = new PdfReader(outputPath);
                     PdfDocument pdfDoc = new PdfDocument(reader)) {
                 int pages = pdfDoc.getNumberOfPages();
-                System.out.println("PDF validé - Nombre de pages: " + pages);
+                log.debug("PDF validé, nombre de pages: {}", pages);
             } catch (Exception e) {
-                System.err.println("Erreur lors de la validation du PDF: " + e.getMessage());
+                log.warn("Validation PDF échouée: {}", e.getMessage());
                 throw new IOException("Le PDF généré n'est pas valide: " + e.getMessage(), e);
             }
 
-            // Ajouter le watermark au PDF
             try {
-                System.out.println("Ajout du watermark au PDF...");
                 byte[] pdfBytes = Files.readAllBytes(Paths.get(outputPath));
-
-                // Générer le texte du watermark personnalisé
                 String watermarkText = watermarkService.generateCustomWatermark(
                         documentType != null ? documentType.getLibelle() : "Document",
                         demande.getFirstName() + " " + demande.getLastName());
-
-                // Ajouter le watermark simple (en bas de page)
                 byte[] watermarkedPdf = watermarkService.addSimpleWatermarkToPdf(pdfBytes, watermarkText);
-
-                // Remplacer le fichier original par la version avec watermark
                 Files.write(Paths.get(outputPath), watermarkedPdf);
-
-                System.out.println("Watermark ajouté avec succès au PDF");
+                log.debug("Watermark ajouté au PDF");
             } catch (Exception watermarkError) {
-                System.err.println("⚠️ Erreur lors de l'ajout du watermark: " + watermarkError.getMessage());
-                System.err.println("Le PDF sera généré sans watermark");
-                // Ne pas faire échouer la génération si le watermark échoue
+                log.warn("Erreur ajout watermark PDF, document généré sans watermark: {}", watermarkError.getMessage());
             }
 
         } catch (Exception e) {
-            System.err.println("Erreur lors de la génération PDF: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Erreur génération PDF simple", e);
             throw e;
         }
     }
@@ -267,7 +216,7 @@ public class PdfDocumentService {
      * Crée un PDF directement avec iText en utilisant les données de la demande
      */
     private void createPdfWithData(Demande demande, DocumentType documentType, String pdfPath) throws IOException {
-        System.out.println("Création du PDF: " + pdfPath);
+        log.debug("Création PDF: {}", pdfPath);
 
         try (PdfWriter writer = new PdfWriter(pdfPath);
                 PdfDocument pdf = new PdfDocument(writer);
@@ -381,7 +330,7 @@ public class PdfDocumentService {
             document.add(footer);
         }
 
-        System.out.println("PDF créé avec succès: " + pdfPath);
+        log.debug("PDF créé: {}", pdfPath);
     }
 
     // Méthode de filigrane supprimée pour éviter la corruption des PDFs
@@ -442,8 +391,7 @@ public class PdfDocumentService {
             throw new RuntimeException("Fichier PDF non trouvé: " + doc.getFilePath());
         }
 
-        System.out.println(
-                "Téléchargement du fichier: " + doc.getFilePath() + " (taille: " + Files.size(filePath) + " bytes)");
+        log.debug("Téléchargement PDF id: {}, taille: {} bytes", documentId, Files.size(filePath));
 
         // Marquer comme téléchargé
         doc.setStatus("DOWNLOADED");

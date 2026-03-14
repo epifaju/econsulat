@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DocumentTextIcon,
   UsersIcon,
@@ -7,8 +8,10 @@ import {
   XCircleIcon,
   DocumentArrowDownIcon,
 } from "@heroicons/react/24/outline";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 
 const AdminStats = ({ token }) => {
+  const { t } = useTranslation();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +23,7 @@ const AdminStats = ({ token }) => {
   const fetchStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8080/api/admin/stats", {
+      const response = await fetch(buildApiUrl(API_CONFIG.ADMIN.STATS), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -30,10 +33,10 @@ const AdminStats = ({ token }) => {
         const data = await response.json();
         setStats(data);
       } else {
-        setError("Erreur lors du chargement des statistiques");
+        setError(t("admin.stats.loadError"));
       }
     } catch (err) {
-      setError("Problème de connexion au serveur");
+      setError(t("dashboard.notifications.connectionError"));
     } finally {
       setLoading(false);
     }
@@ -41,53 +44,53 @@ const AdminStats = ({ token }) => {
 
   const statCards = [
     {
-      title: "Total Demandes",
+      title: t("admin.stats.totalDemandes"),
       value: stats?.totalDemandes || 0,
       icon: DocumentTextIcon,
       color: "bg-blue-500",
-      description: "Toutes les demandes",
+      description: t("admin.stats.totalDemandesDesc"),
     },
     {
-      title: "En Attente",
+      title: t("admin.stats.pending"),
       value: stats?.pendingDemandes || 0,
       icon: ClockIcon,
       color: "bg-yellow-500",
-      description: "Demandes en attente",
+      description: t("admin.stats.pendingDesc"),
     },
     {
-      title: "Approuvées",
+      title: t("admin.stats.approved"),
       value: stats?.approvedDemandes || 0,
       icon: CheckCircleIcon,
       color: "bg-green-500",
-      description: "Demandes approuvées",
+      description: t("admin.stats.approvedDesc"),
     },
     {
-      title: "Rejetées",
+      title: t("admin.stats.rejected"),
       value: stats?.rejectedDemandes || 0,
       icon: XCircleIcon,
       color: "bg-red-500",
-      description: "Demandes rejetées",
+      description: t("admin.stats.rejectedDesc"),
     },
     {
-      title: "Terminées",
+      title: t("admin.stats.completed"),
       value: stats?.completedDemandes || 0,
       icon: CheckCircleIcon,
       color: "bg-purple-500",
-      description: "Demandes terminées",
+      description: t("admin.stats.completedDesc"),
     },
     {
-      title: "Total Utilisateurs",
+      title: t("admin.stats.totalUsers"),
       value: stats?.totalUsers || 0,
       icon: UsersIcon,
       color: "bg-indigo-500",
-      description: "Utilisateurs inscrits",
+      description: t("admin.stats.totalUsersDesc"),
     },
     {
-      title: "Documents Générés",
+      title: t("admin.stats.generatedDocs"),
       value: stats?.totalGeneratedDocuments || 0,
       icon: DocumentArrowDownIcon,
       color: "bg-emerald-500",
-      description: "Documents créés",
+      description: t("admin.stats.generatedDocsDesc"),
     },
   ];
 
@@ -116,9 +119,9 @@ const AdminStats = ({ token }) => {
     <div className="p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
-          Statistiques Générales
+          {t("admin.stats.title")}
         </h2>
-        <p className="text-gray-600">Vue d'ensemble du système eConsulat</p>
+        <p className="text-gray-600">{t("admin.stats.subtitle")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -152,11 +155,11 @@ const AdminStats = ({ token }) => {
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Répartition des Demandes
+            {t("admin.stats.chartTitle")}
           </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">En attente</span>
+              <span className="text-sm text-gray-600">{t("admin.stats.pendingLabel")}</span>
               <div className="flex items-center">
                 <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
                   <div
@@ -181,7 +184,7 @@ const AdminStats = ({ token }) => {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Approuvées</span>
+              <span className="text-sm text-gray-600">{t("admin.stats.approvedLabel")}</span>
               <div className="flex items-center">
                 <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
                   <div
@@ -206,7 +209,7 @@ const AdminStats = ({ token }) => {
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Rejetées</span>
+              <span className="text-sm text-gray-600">{t("admin.stats.rejectedLabel")}</span>
               <div className="flex items-center">
                 <div className="w-32 bg-gray-200 rounded-full h-2 mr-3">
                   <div
@@ -235,14 +238,14 @@ const AdminStats = ({ token }) => {
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Activité Récente
+            {t("admin.stats.activityTitle")}
           </h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
               <div className="flex items-center">
                 <DocumentTextIcon className="h-5 w-5 text-blue-500 mr-3" />
                 <span className="text-sm text-gray-700">
-                  Nouvelles demandes
+                  {t("admin.stats.newRequests")}
                 </span>
               </div>
               <span className="text-sm font-medium text-gray-900">
@@ -262,7 +265,7 @@ const AdminStats = ({ token }) => {
               <div className="flex items-center">
                 <UsersIcon className="h-5 w-5 text-purple-500 mr-3" />
                 <span className="text-sm text-gray-700">
-                  Utilisateurs actifs
+                  {t("admin.stats.activeUsers")}
                 </span>
               </div>
               <span className="text-sm font-medium text-gray-900">

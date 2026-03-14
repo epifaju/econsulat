@@ -1,0 +1,12 @@
+# Copier ce fichier en application-local.properties (sans .example)
+# et remplir avec vos vraies valeurs. application-local.properties n'est pas versionné.
+#
+# Obligatoire pour le démarrage (sans valeur par défaut dans application.properties) :
+# DATABASE_PASSWORD= votre_mot_de_passe_postgres
+# MAIL_USERNAME= votre_email@gmail.com
+# MAIL_PASSWORD= mot de passe d'application Gmail (16 caractères, SANS espaces)
+# JWT_SECRET= une_cle_longue_et_aleatoire_min_32_caracteres
+#
+# Stripe (optionnel en dev si vous n'utilisez pas les paiements) :
+# stripe.secret-key=sk_test_xxxxx
+# stripe.webhook-secret=whsec_xxxxx

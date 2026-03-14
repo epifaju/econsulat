@@ -5,6 +5,8 @@ import com.econsulat.dto.DemandeResponse;
 import com.econsulat.model.*;
 import com.econsulat.repository.*;
 import com.econsulat.service.EmailNotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class DemandeService {
+
+        private static final Logger log = LoggerFactory.getLogger(DemandeService.class);
 
         @Autowired
         private DemandeRepository demandeRepository;
@@ -114,9 +118,7 @@ public class DemandeService {
                         return convertToResponse(savedDemande);
 
                 } catch (Exception e) {
-                        // Log de l'erreur pour debugging
-                        System.err.println("Erreur lors de la création de la demande: " + e.getMessage());
-                        e.printStackTrace();
+                        log.error("Erreur création demande", e);
                         throw e;
                 }
         }
@@ -158,43 +160,29 @@ public class DemandeService {
          */
         @Transactional
         public DemandeResponse updateDemandeStatus(Long demandeId, Demande.Status newStatus, String adminEmail) {
-                System.out.println("🔍 DemandeService - Début updateDemandeStatus");
-                System.out.println("🔍 DemandeService - Demande ID: " + demandeId);
-                System.out.println("🔍 DemandeService - Nouveau statut: " + newStatus);
-                System.out.println("🔍 DemandeService - Email admin: " + adminEmail);
+                log.debug("updateDemandeStatus - demandeId: {}, newStatus: {}", demandeId, newStatus);
 
-                // Vérifier que l'utilisateur est admin ou agent
                 User admin = userRepository.findByEmail(adminEmail)
                                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé: " + adminEmail));
 
-                System.out.println("👤 DemandeService - Utilisateur trouvé: " + admin.getEmail());
-                System.out.println("👤 DemandeService - Rôle: " + admin.getRole());
-                System.out.println("👤 DemandeService - Email vérifié: " + admin.getEmailVerified());
-
                 if (!admin.getRole().equals(User.Role.ADMIN) && !admin.getRole().equals(User.Role.AGENT)) {
-                        System.err.println("❌ DemandeService - Rôle insuffisant: " + admin.getRole());
+                        log.warn("Rôle insuffisant pour mise à jour statut: {}", admin.getRole());
                         throw new RuntimeException(
                                         "Seuls les administrateurs et agents peuvent modifier le statut des demandes");
                 }
 
                 if (!admin.getEmailVerified()) {
-                        System.err.println("❌ DemandeService - Email non vérifié pour: " + admin.getEmail());
+                        log.warn("Email non vérifié pour mise à jour statut");
                         throw new RuntimeException("L'email de l'utilisateur doit être vérifié");
                 }
 
-                System.out.println("✅ DemandeService - Vérifications de rôle et email OK");
-
-                // Récupérer la demande avec toutes ses relations initialisées
                 Demande demande = demandeRepository.findByIdWithAllRelations(demandeId);
                 if (demande == null) {
                         throw new RuntimeException("Demande non trouvée: " + demandeId);
                 }
 
-                System.out.println("📋 DemandeService - Demande trouvée, statut actuel: " + demande.getStatus());
-
-                // Vérifier si le statut a réellement changé
                 if (demande.getStatus().equals(newStatus)) {
-                        System.out.println("ℹ️ DemandeService - Statut identique, pas de changement nécessaire");
+                        log.debug("Statut identique pour demande {}, pas de changement", demandeId);
                         return convertToResponse(demande);
                 }
 
@@ -206,31 +194,16 @@ public class DemandeService {
                 demande.setUpdatedAt(java.time.LocalDateTime.now());
 
                 Demande updatedDemande = demandeRepository.save(demande);
-                System.out.println("✅ DemandeService - Statut mis à jour en base: " + oldStatus + " → " + newStatus);
+                log.info("Statut demande {} mis à jour: {} → {}", demandeId, oldStatus, newStatus);
 
-                // Envoyer la notification par email de manière asynchrone pour éviter les
-                // conflits de transaction
-                // La notification sera envoyée après la validation de la transaction principale
+                // Charger l'utilisateur dans la même transaction (évite LazyInitializationException)
+                User demandUser = updatedDemande.getUser();
                 try {
-                        // Utiliser une transaction séparée pour la notification
-                        transactionTemplate.executeWithoutResult(status -> {
-                                try {
-                                        // Utiliser la demande déjà chargée avec toutes ses relations
-                                        emailNotificationService.sendStatusChangeNotification(updatedDemande,
-                                                        demande.getUser(), newStatus);
-                                        System.out.println("📧 DemandeService - Notification email envoyée");
-                                } catch (Exception e) {
-                                        System.err.println(
-                                                        "⚠️ DemandeService - Erreur lors de l'envoi de la notification : "
-                                                                        + e.getMessage());
-                                        // Ne pas faire échouer la transaction de notification
-                                }
-                        });
+                        emailNotificationService.sendStatusChangeNotification(updatedDemande, demandUser, newStatus);
+                        log.debug("Notification email envoyée pour demande {}", demandeId);
                 } catch (Exception e) {
-                        System.err.println(
-                                        "⚠️ DemandeService - Erreur lors de l'exécution de la transaction de notification : "
-                                                        + e.getMessage());
-                        // Ne pas faire échouer la transaction principale
+                        log.warn("Erreur envoi notification email demande {}: {}", demandeId, e.getMessage());
+                        log.debug("Détail échec envoi notification (consulter les logs pour la stack trace)", e);
                 }
 
                 return convertToResponse(updatedDemande);

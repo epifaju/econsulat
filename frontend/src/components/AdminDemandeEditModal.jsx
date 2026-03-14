@@ -6,6 +6,7 @@ import {
   DocumentTextIcon,
   PaperClipIcon,
 } from "@heroicons/react/24/outline";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 
 const AdminDemandeEditModal = ({
   demande,
@@ -73,13 +74,13 @@ const AdminDemandeEditModal = ({
   const loadReferenceData = async () => {
     try {
       const [civilitesRes, paysRes, typesRes] = await Promise.all([
-        fetch("http://localhost:8080/api/demandes/civilites", {
+        fetch(buildApiUrl(API_CONFIG.DEMANDES.CIVILITES), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:8080/api/demandes/pays", {
+        fetch(buildApiUrl(API_CONFIG.DEMANDES.PAYS), {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch("http://localhost:8080/api/demandes/document-types", {
+        fetch(buildApiUrl(API_CONFIG.DEMANDES.DOCUMENT_TYPES), {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -123,7 +124,7 @@ const AdminDemandeEditModal = ({
       const body = { ...payload, documentTypeId: payload.documentTypeId != null ? Number(payload.documentTypeId) : null };
 
       const response = await fetch(
-        `http://localhost:8080/api/admin/demandes/${demande.id}`,
+        buildApiUrl(API_CONFIG.ADMIN.DEMANDE_UPDATE(demande.id)),
         {
           method: "PUT",
           headers: {

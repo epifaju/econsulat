@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import i18n from "../i18n";
+import API_CONFIG from "../config/api";
 
-// Configuration de l'URL de base pour axios
-axios.defaults.baseURL = "http://127.0.0.1:8080";
+axios.defaults.baseURL = API_CONFIG.BASE_URL;
 
 const syncUILocale = (preferredLocale) => {
   if (preferredLocale && ["fr", "pt"].includes(preferredLocale)) {
@@ -11,15 +11,22 @@ const syncUILocale = (preferredLocale) => {
   }
 };
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+// Valeur par défaut pour éviter l'erreur "useAuth must be used within AuthProvider"
+// lors du hot-reload Vite (React Refresh) ; en prod le provider enveloppe toujours l'app.
+const defaultAuthValue = {
+  user: null,
+  isAuthenticated: false,
+  token: null,
+  login: async () => ({ success: false, error: "Non initialisé" }),
+  register: async () => ({ success: false, error: "Non initialisé" }),
+  logout: () => {},
+  updateUser: () => {},
+  loading: true,
 };
+
+const AuthContext = createContext(defaultAuthValue);
+
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -40,10 +47,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post("/api/auth/login", {
-        email,
-        password,
-      });
+      const response = await axios.post(
+        "/api/auth/login",
+        { email, password },
+        { headers: { "Content-Type": "application/json" } }
+      );
       const { token, id, firstName, lastName, email: userEmail, role } = response.data;
 
       const userData = { id, firstName, lastName, email: userEmail, role };
@@ -56,10 +64,13 @@ export const AuthProvider = ({ children }) => {
       axios.get("/api/users/me").then((r) => syncUILocale(r.data?.preferredLocale)).catch(() => {});
       return { success: true };
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.error || error.response?.data?.message || "Erreur de connexion",
-      };
+      const data = error.response?.data;
+      let message = data?.message || data?.error || "Erreur de connexion";
+      if (data?.fields && typeof data.fields === "object") {
+        const fieldErrors = Object.entries(data.fields).map(([k, v]) => `${k}: ${v}`);
+        message = fieldErrors.length ? fieldErrors.join(" ; ") : message;
+      }
+      return { success: false, error: message };
     }
   };
 

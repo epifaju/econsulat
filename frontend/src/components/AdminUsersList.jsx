@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   EyeIcon,
   PencilIcon,
@@ -11,8 +12,10 @@ import {
   XCircleIcon,
 } from "@heroicons/react/24/outline";
 import ConfirmationModal from "./ConfirmationModal";
+import API_CONFIG, { buildApiUrl } from "../config/api";
 
 const AdminUsersList = ({ token, onNotification }) => {
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
@@ -42,12 +45,14 @@ const AdminUsersList = ({ token, onNotification }) => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      let url = `http://localhost:8080/api/admin/users?page=${currentPage}&size=10&sortBy=${sortBy}&sortDir=${sortDir}`;
+      let url = buildApiUrl(
+        `${API_CONFIG.ADMIN.USERS}?page=${currentPage}&size=10&sortBy=${sortBy}&sortDir=${sortDir}`
+      );
 
       if (searchTerm) {
-        url = `http://localhost:8080/api/admin/users/search?q=${encodeURIComponent(
-          searchTerm
-        )}&page=${currentPage}&size=10`;
+        url = buildApiUrl(
+          `/api/admin/users/search?q=${encodeURIComponent(searchTerm)}&page=${currentPage}&size=10`
+        );
       }
 
       const response = await fetch(url, {
@@ -63,12 +68,12 @@ const AdminUsersList = ({ token, onNotification }) => {
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible de charger les utilisateurs"
+          t("common.error"),
+          t("adminUsers.loadError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème de connexion au serveur");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     } finally {
       setLoading(false);
     }
@@ -77,7 +82,7 @@ const AdminUsersList = ({ token, onNotification }) => {
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:8080/api/admin/users", {
+      const response = await fetch(buildApiUrl(API_CONFIG.ADMIN.USERS), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +92,7 @@ const AdminUsersList = ({ token, onNotification }) => {
       });
 
       if (response.ok) {
-        onNotification("success", "Succès", "Utilisateur créé avec succès");
+        onNotification("success", t("common.success"), t("adminUsers.createSuccess"));
         setShowCreateModal(false);
         setFormData({
           firstName: "",
@@ -99,10 +104,10 @@ const AdminUsersList = ({ token, onNotification }) => {
         });
         fetchUsers();
       } else {
-        onNotification("error", "Erreur", "Impossible de créer l'utilisateur");
+        onNotification("error", t("common.error"), t("adminUsers.createError"));
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la création");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -110,7 +115,7 @@ const AdminUsersList = ({ token, onNotification }) => {
     e.preventDefault();
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/users/${selectedUser.id}`,
+        buildApiUrl(API_CONFIG.ADMIN.USER_UPDATE(selectedUser.id)),
         {
           method: "PUT",
           headers: {
@@ -124,8 +129,8 @@ const AdminUsersList = ({ token, onNotification }) => {
       if (response.ok) {
         onNotification(
           "success",
-          "Succès",
-          "Utilisateur mis à jour avec succès"
+          t("common.success"),
+          t("adminUsers.updateSuccess")
         );
         setShowEditModal(false);
         setSelectedUser(null);
@@ -133,12 +138,12 @@ const AdminUsersList = ({ token, onNotification }) => {
       } else {
         onNotification(
           "error",
-          "Erreur",
-          "Impossible de mettre à jour l'utilisateur"
+          t("common.error"),
+          t("adminUsers.updateError")
         );
       }
     } catch (err) {
-      onNotification("error", "Erreur", "Problème lors de la mise à jour");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     }
   };
 
@@ -155,7 +160,7 @@ const AdminUsersList = ({ token, onNotification }) => {
       console.log(`Suppression de l'utilisateur ${userToDelete.id}`);
 
       const response = await fetch(
-        `http://localhost:8080/api/admin/users/${userToDelete.id}`,
+        buildApiUrl(API_CONFIG.ADMIN.USER_DELETE(userToDelete.id)),
         {
           method: "DELETE",
           headers: {
@@ -169,18 +174,18 @@ const AdminUsersList = ({ token, onNotification }) => {
       );
 
       if (response.ok) {
-        onNotification("success", "Succès", "Utilisateur supprimé avec succès");
+        onNotification("success", t("common.success"), t("adminUsers.deleteSuccess"));
         fetchUsers();
       } else {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage =
-          errorData?.message || "Impossible de supprimer l'utilisateur";
+          errorData?.message || t("adminUsers.deleteError");
         console.error("Erreur suppression:", errorData);
-        onNotification("error", "Erreur", errorMessage);
+        onNotification("error", t("common.error"), errorMessage);
       }
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
-      onNotification("error", "Erreur", "Problème lors de la suppression");
+      onNotification("error", t("common.error"), t("dashboard.notifications.connectionError"));
     } finally {
       setDeletingUser(null);
       setShowDeleteModal(false);
@@ -195,10 +200,10 @@ const AdminUsersList = ({ token, onNotification }) => {
 
   const getRoleBadge = (role) => {
     const roleConfig = {
-      ADMIN: { color: "bg-red-100 text-red-800", label: "Administrateur" },
-      AGENT: { color: "bg-blue-100 text-blue-800", label: "Agent" },
-      USER: { color: "bg-green-100 text-green-800", label: "Utilisateur" },
-      CITIZEN: { color: "bg-purple-100 text-purple-800", label: "Citoyen" },
+      ADMIN: { color: "bg-red-100 text-red-800", label: t("nav.roles.ADMIN") },
+      AGENT: { color: "bg-blue-100 text-blue-800", label: t("nav.roles.AGENT") },
+      USER: { color: "bg-green-100 text-green-800", label: t("nav.roles.USER") },
+      CITIZEN: { color: "bg-purple-100 text-purple-800", label: t("nav.roles.CITIZEN") },
     };
 
     const config = roleConfig[role] || roleConfig.USER;
@@ -257,10 +262,10 @@ const AdminUsersList = ({ token, onNotification }) => {
       <div className="mb-6 flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            Gestion des Utilisateurs
+            {t("adminUsers.title")}
           </h2>
           <p className="text-gray-600">
-            Gérez les comptes utilisateurs du système
+            {t("adminUsers.subtitle")}
           </p>
         </div>
         <button
@@ -268,7 +273,7 @@ const AdminUsersList = ({ token, onNotification }) => {
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2"
         >
           <PlusIcon className="h-4 w-4" />
-          <span>Nouvel utilisateur</span>
+          <span>{t("adminUsers.newUser")}</span>
         </button>
       </div>
 
@@ -278,7 +283,7 @@ const AdminUsersList = ({ token, onNotification }) => {
           <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Rechercher par nom ou email..."
+            placeholder={t("adminUsers.searchPlaceholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
@@ -296,7 +301,7 @@ const AdminUsersList = ({ token, onNotification }) => {
                 onClick={() => handleSort("firstName")}
               >
                 <div className="flex items-center">
-                  Nom complet
+                  {t("adminUsers.fullName")}
                   <SortIcon field="firstName" />
                 </div>
               </th>
@@ -305,7 +310,7 @@ const AdminUsersList = ({ token, onNotification }) => {
                 onClick={() => handleSort("email")}
               >
                 <div className="flex items-center">
-                  Email
+                  {t("adminUsers.email")}
                   <SortIcon field="email" />
                 </div>
               </th>
@@ -314,24 +319,24 @@ const AdminUsersList = ({ token, onNotification }) => {
                 onClick={() => handleSort("role")}
               >
                 <div className="flex items-center">
-                  Rôle
+                  {t("adminUsers.role")}
                   <SortIcon field="role" />
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Statut
+                {t("adminUsers.status")}
               </th>
               <th
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort("createdAt")}
               >
                 <div className="flex items-center">
-                  Date d'inscription
+                  {t("adminUsers.createdAt")}
                   <SortIcon field="createdAt" />
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                {t("adminUsers.actions")}
               </th>
             </tr>
           </thead>
@@ -344,7 +349,7 @@ const AdminUsersList = ({ token, onNotification }) => {
                       {user.firstName} {user.lastName}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {user.demandesCount} demandes
+                      {t("adminUsers.requestsCount", { count: user.demandesCount ?? 0 })}
                     </div>
                   </div>
                 </td>
@@ -362,14 +367,14 @@ const AdminUsersList = ({ token, onNotification }) => {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(user.createdAt).toLocaleDateString("fr-FR")}
+                  {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => openEditModal(user)}
                       className="text-blue-600 hover:text-blue-900"
-                      title="Modifier"
+                      title={t("adminUsers.edit")}
                     >
                       <PencilIcon className="h-4 w-4" />
                     </button>
@@ -383,8 +388,8 @@ const AdminUsersList = ({ token, onNotification }) => {
                       }`}
                       title={
                         deletingUser === user.id
-                          ? "Suppression en cours..."
-                          : "Supprimer l'utilisateur"
+                          ? t("adminUsers.deleting")
+                          : t("adminUsers.deleteUser")
                       }
                     >
                       {deletingUser === user.id ? (
@@ -405,7 +410,7 @@ const AdminUsersList = ({ token, onNotification }) => {
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Page {currentPage + 1} sur {totalPages}
+            {t("adminUsers.pageOf", { current: currentPage + 1, total: totalPages })}
           </div>
           <div className="flex space-x-2">
             <button
@@ -413,7 +418,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               disabled={currentPage === 0}
               className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              Précédent
+              {t("adminUsers.previous")}
             </button>
             <button
               onClick={() =>
@@ -422,7 +427,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               disabled={currentPage === totalPages - 1}
               className="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
             >
-              Suivant
+              {t("adminUsers.next")}
             </button>
           </div>
         </div>
@@ -433,12 +438,12 @@ const AdminUsersList = ({ token, onNotification }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">
-              Créer un nouvel utilisateur
+              {t("adminUsers.createTitle")}
             </h3>
             <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Prénom
+                  {t("adminUsers.firstName")}
                 </label>
                 <input
                   type="text"
@@ -452,7 +457,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Nom
+                  {t("adminUsers.lastName")}
                 </label>
                 <input
                   type="text"
@@ -466,7 +471,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Email
+                  {t("adminUsers.email")}
                 </label>
                 <input
                   type="email"
@@ -480,7 +485,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Mot de passe
+                  {t("adminUsers.password")}
                 </label>
                 <input
                   type="password"
@@ -494,7 +499,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Rôle
+                  {t("adminUsers.role")}
                 </label>
                 <select
                   value={formData.role}
@@ -503,10 +508,10 @@ const AdminUsersList = ({ token, onNotification }) => {
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="USER">Utilisateur</option>
-                  <option value="AGENT">Agent</option>
-                  <option value="ADMIN">Administrateur</option>
-                  <option value="CITIZEN">Citoyen</option>
+                  <option value="USER">{t("nav.roles.USER")}</option>
+                  <option value="AGENT">{t("nav.roles.AGENT")}</option>
+                  <option value="ADMIN">{t("nav.roles.ADMIN")}</option>
+                  <option value="CITIZEN">{t("nav.roles.CITIZEN")}</option>
                 </select>
               </div>
               <div className="flex items-center">
@@ -526,7 +531,7 @@ const AdminUsersList = ({ token, onNotification }) => {
                   htmlFor="emailVerified"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  Email vérifié
+                  {t("adminUsers.emailVerified")}
                 </label>
               </div>
               <div className="flex justify-end space-x-3">
@@ -535,13 +540,13 @@ const AdminUsersList = ({ token, onNotification }) => {
                   onClick={() => setShowCreateModal(false)}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Annuler
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  Créer
+                  {t("adminUsers.create")}
                 </button>
               </div>
             </form>
@@ -554,12 +559,12 @@ const AdminUsersList = ({ token, onNotification }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-4">
-              Modifier l'utilisateur
+              {t("adminUsers.editTitle")}
             </h3>
             <form onSubmit={handleUpdateUser} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Prénom
+                  {t("adminUsers.firstName")}
                 </label>
                 <input
                   type="text"
@@ -573,7 +578,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Nom
+                  {t("adminUsers.lastName")}
                 </label>
                 <input
                   type="text"
@@ -587,7 +592,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Email
+                  {t("adminUsers.email")}
                 </label>
                 <input
                   type="email"
@@ -601,7 +606,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Nouveau mot de passe (laisser vide pour ne pas changer)
+                  {t("adminUsers.newPasswordHint")}
                 </label>
                 <input
                   type="password"
@@ -614,7 +619,7 @@ const AdminUsersList = ({ token, onNotification }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Rôle
+                  {t("adminUsers.role")}
                 </label>
                 <select
                   value={formData.role}
@@ -623,10 +628,10 @@ const AdminUsersList = ({ token, onNotification }) => {
                   }
                   className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="USER">Utilisateur</option>
-                  <option value="AGENT">Agent</option>
-                  <option value="ADMIN">Administrateur</option>
-                  <option value="CITIZEN">Citoyen</option>
+                  <option value="USER">{t("nav.roles.USER")}</option>
+                  <option value="AGENT">{t("nav.roles.AGENT")}</option>
+                  <option value="ADMIN">{t("nav.roles.ADMIN")}</option>
+                  <option value="CITIZEN">{t("nav.roles.CITIZEN")}</option>
                 </select>
               </div>
               <div className="flex items-center">
@@ -646,7 +651,7 @@ const AdminUsersList = ({ token, onNotification }) => {
                   htmlFor="editEmailVerified"
                   className="ml-2 block text-sm text-gray-900"
                 >
-                  Email vérifié
+                  {t("adminUsers.emailVerified")}
                 </label>
               </div>
               <div className="flex justify-end space-x-3">
@@ -655,13 +660,13 @@ const AdminUsersList = ({ token, onNotification }) => {
                   onClick={() => setShowEditModal(false)}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                  Annuler
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
-                  Mettre à jour
+                  {t("adminUsers.update")}
                 </button>
               </div>
             </form>
@@ -674,14 +679,17 @@ const AdminUsersList = ({ token, onNotification }) => {
         isOpen={showDeleteModal}
         onClose={cancelDeleteUser}
         onConfirm={confirmDeleteUser}
-        title="Supprimer l'utilisateur"
+        title={t("adminUsers.deleteConfirmTitle")}
         message={
           userToDelete
-            ? `Êtes-vous sûr de vouloir supprimer définitivement l'utilisateur ${userToDelete.firstName} ${userToDelete.lastName} (${userToDelete.email}) ? Cette action est irréversible et supprimera également toutes les demandes associées à cet utilisateur.`
-            : "Êtes-vous sûr de vouloir supprimer cet utilisateur ?"
+            ? t("adminUsers.deleteConfirmMessage", {
+                name: `${userToDelete.firstName} ${userToDelete.lastName}`,
+                email: userToDelete.email,
+              })
+            : t("adminUsers.deleteConfirmMessageShort")
         }
-        confirmText="Supprimer"
-        cancelText="Annuler"
+        confirmText={t("adminUsers.deleteButton")}
+        cancelText={t("common.cancel")}
         type="danger"
         loading={deletingUser !== null}
       />

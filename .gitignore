@@ -57,6 +57,7 @@ backend/.mvn/
 backend/mvnw
 backend/mvnw.cmd
 
-# Spring Boot
+# Spring Boot - fichiers locaux avec secrets (ne jamais committer)
+application-local.properties
 backend/application-*.properties
 backend/application-*.yml 

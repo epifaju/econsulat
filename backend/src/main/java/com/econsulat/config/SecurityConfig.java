@@ -1,7 +1,8 @@
 package com.econsulat.config;
 
-import com.econsulat.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -9,7 +10,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -24,7 +24,10 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+        private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
         private final JwtAuthenticationFilter jwtAuthFilter;
+        private final RateLimitingFilter rateLimitingFilter;
         private final AuthenticationProvider authenticationProvider;
 
         @Bean
@@ -33,6 +36,8 @@ public class SecurityConfig {
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .authorizeHttpRequests(auth -> auth
+                                                // Actuator (health / info pour load balancer)
+                                                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                                                 // Endpoints publics (pas d'authentification)
                                                 .requestMatchers("/api/auth/**").permitAll()
                                                 .requestMatchers("/auth/**").permitAll()
@@ -63,16 +68,10 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authenticationProvider(authenticationProvider)
-                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
 
-                // Ajouter des logs de débogage détaillés
-                System.out.println("🔧 SecurityConfig - Configuration de sécurité créée");
-                System.out.println("🔧 SecurityConfig - Endpoints publics configurés");
-                System.out.println("🔧 SecurityConfig - Endpoints demandes configurés avec .authenticated()");
-                System.out.println("🔧 SecurityConfig - Endpoints admin configurés avec hasAnyRole('ADMIN', 'AGENT')");
-                System.out.println("🔧 SecurityConfig - JWT Filter configuré");
-                System.out.println("🔧 SecurityConfig - CORS configuré");
-                System.out.println("🔧 SecurityConfig - CSRF désactivé");
+                log.debug("Configuration de sécurité initialisée (endpoints publics, demandes, admin, JWT, CORS)");
 
                 return http.build();
         }
@@ -93,9 +92,9 @@ public class SecurityConfig {
 
                 UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
                 source.registerCorsConfiguration("/**", configuration);
-                
-                System.out.println("🔧 SecurityConfig - CORS configuré pour les origines: " + configuration.getAllowedOrigins());
-                
+
+                log.debug("CORS configuré pour les origines: {}", configuration.getAllowedOrigins());
+
                 return source;
         }
 }

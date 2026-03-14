@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { buildApiUrl } from "../config/api";
 
 const EmailVerification = () => {
   const [searchParams] = useSearchParams();
@@ -22,7 +23,7 @@ const EmailVerification = () => {
   const verifyEmail = async (token) => {
     try {
       const response = await axios.get(
-        `http://localhost:8080/api/auth/confirm?token=${token}`
+        buildApiUrl(`/api/auth/confirm?token=${token}`)
       );
       setStatus("success");
       setMessage(response.data);

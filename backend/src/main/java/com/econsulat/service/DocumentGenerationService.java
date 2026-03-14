@@ -11,6 +11,8 @@ import com.econsulat.service.WatermarkService;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -27,6 +29,8 @@ import java.util.UUID;
 
 @Service
 public class DocumentGenerationService {
+
+    private static final Logger log = LoggerFactory.getLogger(DocumentGenerationService.class);
 
     @Autowired
     private DemandeRepository demandeRepository;
@@ -157,27 +161,15 @@ public class DocumentGenerationService {
                 document.write(out);
             }
 
-            // Ajouter le watermark au document Word
             try {
-                System.out.println("Ajout du watermark au document Word...");
                 byte[] docxBytes = Files.readAllBytes(Paths.get(outputPath));
-
-                // Générer le texte du watermark personnalisé
                 String watermarkText = watermarkService.generateCustomWatermark(
                         "Document Word",
                         demande.getFirstName() + " " + demande.getLastName());
-
-                // Ajouter le watermark en en-tête
                 byte[] watermarkedDocx = watermarkService.addWatermarkToWord(docxBytes, watermarkText);
-
-                // Remplacer le fichier original par la version avec watermark
                 Files.write(Paths.get(outputPath), watermarkedDocx);
-
-                System.out.println("Watermark ajouté avec succès au document Word");
             } catch (Exception watermarkError) {
-                System.err.println("⚠️ Erreur lors de l'ajout du watermark: " + watermarkError.getMessage());
-                System.err.println("Le document Word sera généré sans watermark");
-                // Ne pas faire échouer la génération si le watermark échoue
+                log.warn("Erreur ajout watermark Word, document généré sans watermark: {}", watermarkError.getMessage());
             }
 
         } catch (FileNotFoundException e) {

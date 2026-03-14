@@ -1,7 +1,9 @@
 // Configuration des URLs de l'API
+// En dev : VITE_API_BASE_URL dans .env ou défaut http://localhost:8080
+// En Docker/prod : définir VITE_API_BASE_URL (ex. http://localhost:8081 ou https://api.example.com)
 const API_CONFIG = {
-  // URL de base du backend
-  BASE_URL: "http://127.0.0.1:8080",
+  BASE_URL:
+    import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080",
 
   // Endpoints d'authentification
   AUTH: {
