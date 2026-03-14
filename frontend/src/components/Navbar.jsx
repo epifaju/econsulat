@@ -36,9 +36,7 @@ const Navbar = () => {
           {/* Logo et titre */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">EC</span>
-              </div>
+              <img src="/images/logo.svg" alt="" className="h-8 w-8 rounded-lg" width="32" height="32" />
               <span className="ml-3 text-xl font-semibold text-gray-900">
                 {t("common.appName")}
               </span>

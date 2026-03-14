@@ -1,6 +1,10 @@
 {
   "common": {
     "appName": "eConsulat",
+    "seo": {
+      "title": "eConsulat - Sistema de gestão administrativa consular",
+      "description": "Pedidos de documentos consulares em linha, pagamento seguro e acompanhamento em tempo real. Certidões de nascimento, de casamento e outros atos de estado civil."
+    },
     "login": "Iniciar sessão",
     "logout": "Terminar sessão",
     "createAccount": "Criar conta",
@@ -14,16 +18,28 @@
     "success": "Sucesso"
   },
   "landing": {
+    "a11y": {
+      "skipToContent": "Ir para o conteúdo"
+    },
     "nav": {
       "features": "Funcionalidades",
       "howItWorks": "Como funciona",
-      "contact": "Contacto"
+      "faq": "FAQ",
+      "contact": "Contacto",
+      "getStarted": "Começar"
+    },
+    "menu": {
+      "open": "Abrir menu",
+      "close": "Fechar menu",
+      "title": "Menu de navegação"
     },
     "hero": {
       "title": "Os seus procedimentos consulares em linha, simplificados",
       "subtitle": "Peça os seus documentos oficiais (passaporte, certidões de estado civil…), pague em linha de forma segura e acompanhe o andamento dos seus pedidos em tempo real.",
       "ctaLogin": "Iniciar sessão",
-      "ctaHowItWorks": "Como funciona"
+      "ctaHowItWorks": "Como funciona",
+      "imageAlt": "Ilustração dos procedimentos consulares em linha: formulário e documentos",
+      "trustLine": "Resposta em 48h • Pedidos tratados em segurança"
     },
     "features": {
       "title": "Um serviço completo e seguro",
@@ -60,7 +76,10 @@
       "createAccount": "Criar conta"
     },
     "footer": {
-      "login": "Iniciar sessão"
+      "login": "Iniciar sessão",
+      "contact": "Contacto",
+      "legal": "Avisos legais",
+      "privacy": "Confidencialidade"
     },
     "contact": {
       "title": "Contacte-nos",
@@ -72,7 +91,42 @@
       "emailLabel": "E-mail",
       "email": "contact@econsulat.com",
       "hoursLabel": "Dias e horário de atendimento",
-      "hours": "De segunda a sexta-feira: das 09h30 às 18h00"
+      "hours": "De segunda a sexta-feira: das 09h30 às 18h00",
+      "formTitle": "Enviar mensagem",
+      "formName": "Nome",
+      "formNamePlaceholder": "O seu nome",
+      "formEmail": "E-mail",
+      "formEmailPlaceholder": "seu@email.com",
+      "formSubject": "Assunto",
+      "formSubjectPlaceholder": "Objeto da sua mensagem",
+      "formMessage": "Mensagem",
+      "formMessagePlaceholder": "A sua mensagem...",
+      "formSubmit": "Enviar",
+      "formSending": "A enviar...",
+      "formSuccess": "Mensagem enviada. Responderemos assim que possível.",
+      "formError": "Ocorreu um erro. Pode contactar-nos em contact@econsulat.com.",
+      "formRequired": "Preencha os campos obrigatórios (nome, e-mail, mensagem)."
+    },
+    "faq": {
+      "title": "Perguntas frequentes",
+      "subtitle": "Respostas às perguntas mais comuns sobre os nossos serviços.",
+      "q1": "Que documentos posso solicitar através do eConsulat ?",
+      "a1": "Pode solicitar certidões de nascimento, de casamento e outros atos de estado civil disponibilizados pelo consulado. Os tipos de documentos disponíveis são indicados no seu espaço após início de sessão.",
+      "q2": "Como pagar o meu pedido ?",
+      "a2": "O pagamento é efetuado em linha por cartão bancário, de forma segura. As taxas são indicadas antes da validação. Receberá uma confirmação por email após o pagamento.",
+      "q3": "Quanto tempo demora o tratamento do meu pedido ?",
+      "a3": "Os prazos variam consoante o tipo de documento. O objetivo é uma primeira resposta em 48h. Pode acompanhar o andamento do seu pedido no seu espaço pessoal.",
+      "q4": "Posso alterar ou cancelar um pedido ?",
+      "a4": "Após submissão, o pedido é tratado pelo consulado. Para alterações ou cancelamento, contacte-nos o mais cedo possível através dos contactos indicados na secção Contacto."
+    }
+  },
+  "cookies": {
+    "banner": {
+      "a11y": "Informação sobre cookies",
+      "message": "Utilizamos cookies para o bom funcionamento do site e a segurança da sua sessão.",
+      "privacy": "Política de confidencialidade",
+      "accept": "Aceitar",
+      "refuse": "Recusar"
     }
   },
   "auth": {
@@ -587,5 +641,21 @@
     "deleteError": "Impossível eliminar o tipo de documento",
     "activateSuccess": "Tipo de documento ativado com sucesso",
     "activateError": "Impossível ativar o tipo de documento"
+  },
+  "legal": {
+    "mentions": {
+      "title": "Avisos legais",
+      "p1": "O site eConsulat é editado por eConsulat MultiServices, com sede em 59 rue du Val au Roi, 78200 Buchelay, França.",
+      "p2": "Diretor da publicação: eConsulat MultiServices.",
+      "p3": "O site está alojado em conformidade com a legislação em vigor. Para qualquer questão relativa aos avisos legais, pode contactar-nos em contact@econsulat.com.",
+      "p4": "A utilização do site eConsulat implica a aceitação dos presentes avisos e da política de confidencialidade."
+    },
+    "privacy": {
+      "title": "Política de confidencialidade",
+      "p1": "A eConsulat MultiServices compromete-se a proteger a privacidade dos utilizadores. Os dados pessoais recolhidos (identidade, morada, anexos) são utilizados apenas para o tratamento dos pedidos de documentos consulares.",
+      "p2": "Os dados são conservados pelo tempo necessário ao tratamento e às obrigações legais, sendo depois eliminados ou anonimizados. Não são cedidos a terceiros para fins comerciais.",
+      "p3": "Em conformidade com o RGPD, tem direito de acesso, retificação, supressão e portabilidade dos seus dados. Para exercer estes direitos ou para qualquer questão: contact@econsulat.com.",
+      "p4": "Os pagamentos são seguros e processados pelo nosso prestador de serviços em conformidade com as normas em vigor. Não armazenamos dados de cartão bancário."
+    }
   }
 }

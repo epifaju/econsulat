@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#eff6ff"/>
+      <stop offset="100%" style="stop-color:#dbeafe"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#bg)" stroke="#93c5fd" stroke-width="2"/>
+  <rect x="476" y="234" width="248" height="162" rx="12" fill="white" stroke="#2563eb" stroke-width="3"/>
+  <text x="600" y="305" font-family="system-ui, sans-serif" font-size="32" font-weight="700" fill="#2563eb" text-anchor="middle">eConsulat</text>
+  <text x="600" y="350" font-family="system-ui, sans-serif" font-size="18" fill="#4b5563" text-anchor="middle">D&#233;marches consulaires en ligne</text>
+</svg>
