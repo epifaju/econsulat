@@ -222,7 +222,7 @@ public class DemandeController {
 
     @GetMapping("/pays")
     public ResponseEntity<List<Pays>> getPays() {
-        List<Pays> pays = paysRepository.findAll();
+        List<Pays> pays = paysRepository.findAllOrdered();
         return ResponseEntity.ok(pays);
     }
 

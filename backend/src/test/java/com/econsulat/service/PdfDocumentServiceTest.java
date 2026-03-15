@@ -212,6 +212,8 @@ class PdfDocumentServiceTest {
             when(generatedDocumentRepository.findPdfDocumentByDemandeAndType(10L, 2L))
                     .thenReturn(Optional.empty());
             when(watermarkService.generateCustomWatermark(anyString(), anyString())).thenReturn("Filigrane");
+            when(watermarkService.addSimpleWatermarkToPdf(any(byte[].class), anyString(), any(java.util.Locale.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
             when(storageService.getStoredDocumentPath(anyString())).thenReturn("/storage/doc.pdf");
             when(generatedDocumentRepository.save(any(GeneratedDocument.class))).thenAnswer(inv -> {
                 GeneratedDocument d = inv.getArgument(0);
@@ -236,6 +238,8 @@ class PdfDocumentServiceTest {
             when(generatedDocumentRepository.findPdfDocumentByDemandeAndType(10L, 2L))
                     .thenReturn(Optional.empty());
             when(watermarkService.generateCustomWatermark(anyString(), anyString())).thenReturn("Filigrane");
+            when(watermarkService.addSimpleWatermarkToPdf(any(byte[].class), anyString(), any(java.util.Locale.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
             doThrow(new RuntimeException("Storage indisponible")).when(storageService).writeDocument(anyString(), any(byte[].class));
 
             assertThatThrownBy(() -> pdfDocumentService.generatePdfDocument(10L, 2L, user))

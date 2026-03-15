@@ -210,7 +210,7 @@ class DemandeControllerTest {
             Pays fr = new Pays();
             fr.setId(1L);
             fr.setLibelle("France");
-            when(paysRepository.findAll()).thenReturn(List.of(fr));
+            when(paysRepository.findAllOrdered()).thenReturn(List.of(fr));
 
             mvc.perform(get("/api/demandes/pays"))
                     .andExpect(status().isOk())

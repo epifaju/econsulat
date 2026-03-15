@@ -202,6 +202,18 @@ public class PdfDocumentService {
                 throw new IOException("Le PDF généré n'est pas valide: " + e.getMessage(), e);
             }
 
+            try {
+                byte[] pdfBytes = Files.readAllBytes(Paths.get(outputPath));
+                String watermarkText = watermarkService.generateCustomWatermark(
+                        documentType != null ? documentType.getLibelle() : "Document",
+                        (demande.getFirstName() != null ? demande.getFirstName() : "") + " " + (demande.getLastName() != null ? demande.getLastName() : ""));
+                byte[] watermarkedPdf = watermarkService.addSimpleWatermarkToPdf(pdfBytes, watermarkText, locale);
+                Files.write(Paths.get(outputPath), watermarkedPdf);
+                log.debug("Filigrane ajouté sur toutes les pages du PDF");
+            } catch (Exception watermarkError) {
+                log.warn("Erreur ajout filigrane PDF, document généré sans filigrane: {}", watermarkError.getMessage());
+            }
+
         } catch (Exception e) {
             log.error("Erreur génération PDF simple", e);
             throw e;
@@ -224,10 +236,6 @@ public class PdfDocumentService {
             setPdfMetadata(pdf, typeLabel, locale);
 
             pdf.addEventHandler(PdfDocumentEvent.START_PAGE, new PdfHeaderFooterHandler(documentType, pdf, messageSource, locale));
-            String watermarkText = watermarkService.generateCustomWatermark(
-                    documentType != null ? documentType.getLibelle() : "Document",
-                    (demande.getFirstName() != null ? demande.getFirstName() : "") + " " + (demande.getLastName() != null ? demande.getLastName() : ""));
-            pdf.addEventHandler(PdfDocumentEvent.START_PAGE, new PdfWatermarkHandler(watermarkText, pdf));
 
             document.setMargins(
                     PdfStyleConfig.MARGIN_TOP_BOTTOM,

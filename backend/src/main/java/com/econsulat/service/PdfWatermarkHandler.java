@@ -15,25 +15,20 @@ import java.io.IOException;
 
 /**
  * Dessine le filigrane diagonal sur chaque page du PDF lors de la génération (sous le contenu, -45°).
- * Garantit que le filigrane figure sur toutes les pages sans post-traitement.
+ * La police est créée à chaque page pour garantir l'affichage sur toutes les pages.
  */
 public class PdfWatermarkHandler implements IEventHandler {
 
     private static final double WATERMARK_ANGLE_RAD = -Math.PI / 4;
-    private static final float WATERMARK_FONT_SIZE = 12f;
+    /** Taille du filigrane (points) pour une bonne visibilité. */
+    private static final float WATERMARK_FONT_SIZE = 22f;
 
     private final String fullWatermarkText;
     private final PdfDocument pdfDocument;
-    private final PdfFont font;
 
     public PdfWatermarkHandler(String fullWatermarkText, PdfDocument pdfDocument) {
         this.fullWatermarkText = fullWatermarkText != null ? fullWatermarkText : "eConsulat";
         this.pdfDocument = pdfDocument;
-        try {
-            this.font = PdfFontFactory.createFont();
-        } catch (IOException e) {
-            throw new RuntimeException("Impossible de créer la police pour le filigrane", e);
-        }
     }
 
     @Override
@@ -43,6 +38,13 @@ public class PdfWatermarkHandler implements IEventHandler {
         Rectangle pageSize = page.getPageSize();
         float w = pageSize.getWidth();
         float h = pageSize.getHeight();
+
+        PdfFont font;
+        try {
+            font = PdfFontFactory.createFont();
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible de créer la police pour le filigrane", e);
+        }
 
         PdfCanvas canvas = new PdfCanvas(page.newContentStreamBefore(), page.getResources(), pdfDocument);
         canvas.saveState();
