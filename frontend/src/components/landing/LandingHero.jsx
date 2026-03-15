@@ -42,7 +42,7 @@ const LandingHero = ({ scrollToSection, focusRing }) => {
               className="w-full max-w-md lg:max-w-xl h-auto object-contain max-h-[180px] sm:max-h-none"
               width="400"
               height="320"
-              fetchPriority="high"
+              fetchpriority="high"
             />
           </div>
         </div>
