@@ -5,12 +5,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.MessageSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -22,11 +30,16 @@ import org.apache.poi.xwpf.usermodel.XWPFRun;
 @DisplayName("WatermarkService")
 class WatermarkServiceTest {
 
+    @Mock
+    private MessageSource messageSource;
+
     private WatermarkService watermarkService;
 
     @BeforeEach
     void setUp() {
-        watermarkService = new WatermarkService();
+        lenient().when(messageSource.getMessage(eq("pdf.watermark.default"), isNull(), any(Locale.class)))
+                .thenReturn("eConsulat - Document officiel");
+        watermarkService = new WatermarkService(messageSource);
     }
 
     @Nested

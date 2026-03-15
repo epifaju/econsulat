@@ -16,8 +16,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 
 @RestController
@@ -44,8 +46,9 @@ public class PdfDocumentController {
 
         try {
             User currentUser = getCurrentUser();
+            Locale locale = LocaleContextHolder.getLocale();
             GeneratedDocument document = pdfDocumentService.generatePdfDocument(
-                    demandeId, documentTypeId, currentUser);
+                    demandeId, documentTypeId, currentUser, locale);
 
             // Convertir en DTO pour éviter les problèmes de sérialisation
             GeneratedDocumentResponse response = new GeneratedDocumentResponse(

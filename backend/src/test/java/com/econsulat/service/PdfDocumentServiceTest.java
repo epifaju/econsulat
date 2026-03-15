@@ -15,6 +15,7 @@ import com.econsulat.repository.DocumentTypeRepository;
 import com.econsulat.repository.GeneratedDocumentRepository;
 import com.econsulat.storage.StorageService;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.context.MessageSource;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,6 +34,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import java.util.Locale;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("PdfDocumentService")
@@ -52,6 +55,9 @@ class PdfDocumentServiceTest {
 
     @Mock
     private StorageService storageService;
+
+    @Mock
+    private MessageSource messageSource;
 
     @InjectMocks
     private PdfDocumentService pdfDocumentService;
@@ -87,6 +93,17 @@ class PdfDocumentServiceTest {
         adresse.setCountry(pays);
         demande.setAdresse(adresse);
         demande.setDocumentType(documentType);
+
+        lenient().when(messageSource.getMessage(anyString(), any(), anyString(), any(Locale.class)))
+                .thenAnswer(inv -> inv.getArgument(2));
+        lenient().when(messageSource.getMessage(anyString(), any(Object[].class), any(Locale.class)))
+                .thenAnswer(inv -> {
+                    Object[] args = inv.getArgument(1);
+                    String code = inv.getArgument(0);
+                    if ("pdf.header".equals(code) && args != null && args.length > 0) return "eConsulat — Type: " + args[0];
+                    if ("pdf.footer".equals(code) && args != null && args.length > 0) return "Page " + args[0];
+                    return code;
+                });
     }
 
     @Nested
@@ -195,8 +212,6 @@ class PdfDocumentServiceTest {
             when(generatedDocumentRepository.findPdfDocumentByDemandeAndType(10L, 2L))
                     .thenReturn(Optional.empty());
             when(watermarkService.generateCustomWatermark(anyString(), anyString())).thenReturn("Filigrane");
-            when(watermarkService.addSimpleWatermarkToPdf(any(byte[].class), anyString()))
-                    .thenAnswer(inv -> inv.getArgument(0));
             when(storageService.getStoredDocumentPath(anyString())).thenReturn("/storage/doc.pdf");
             when(generatedDocumentRepository.save(any(GeneratedDocument.class))).thenAnswer(inv -> {
                 GeneratedDocument d = inv.getArgument(0);
@@ -220,8 +235,7 @@ class PdfDocumentServiceTest {
             when(demandeRepository.findById(10L)).thenReturn(Optional.of(demande));
             when(generatedDocumentRepository.findPdfDocumentByDemandeAndType(10L, 2L))
                     .thenReturn(Optional.empty());
-            when(watermarkService.addSimpleWatermarkToPdf(any(byte[].class), anyString()))
-                    .thenAnswer(inv -> inv.getArgument(0));
+            when(watermarkService.generateCustomWatermark(anyString(), anyString())).thenReturn("Filigrane");
             doThrow(new RuntimeException("Storage indisponible")).when(storageService).writeDocument(anyString(), any(byte[].class));
 
             assertThatThrownBy(() -> pdfDocumentService.generatePdfDocument(10L, 2L, user))
