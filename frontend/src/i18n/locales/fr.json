@@ -504,6 +504,7 @@
     "tabDemandes": "Gestion des Demandes",
     "tabUsers": "Gestion des Utilisateurs",
     "tabDocumentTypes": "Types de Documents",
+    "tabBilan": "Bilan comptable",
     "accessDeniedTitle": "Accès non autorisé",
     "accessDeniedMessage": "Vous devez être administrateur pour accéder à cette page.",
     "stats": {
@@ -582,6 +583,27 @@
       "APPROVED": "Approuvé",
       "REJECTED": "Rejeté",
       "COMPLETED": "Terminé"
+    },
+    "bilan": {
+      "title": "Bilan comptable",
+      "subtitle": "Revenus des demandes approuvées par type de document et par période",
+      "groupBy": "Regrouper par",
+      "groupByDay": "Jour",
+      "groupByMonth": "Mois",
+      "groupByYear": "Année",
+      "dateFrom": "Du",
+      "dateTo": "Au",
+      "refresh": "Actualiser",
+      "downloadPdf": "Télécharger PDF",
+      "downloadExcel": "Télécharger Excel",
+      "colPeriod": "Période",
+      "colDocumentType": "Type de document",
+      "colCount": "Nombre",
+      "colAmount": "Montant (EUR)",
+      "total": "Total",
+      "loadError": "Erreur lors du chargement du rapport",
+      "noData": "Aucune donnée pour la période sélectionnée",
+      "generatedOn": "Généré le"
     }
   },
   "adminUsers": {

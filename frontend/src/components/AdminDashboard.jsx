@@ -6,6 +6,7 @@ import {
   UsersIcon,
   CogIcon,
   ChartBarIcon,
+  CurrencyEuroIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
@@ -20,6 +21,7 @@ import AdminDemandesList from "./AdminDemandesList";
 import AdminUsersList from "./AdminUsersList";
 import AdminDocumentTypes from "./AdminDocumentTypes";
 import AdminStats from "./AdminStats";
+import AdminBilanReport from "./AdminBilanReport";
 
 const AdminDashboard = () => {
   const { t } = useTranslation();
@@ -37,6 +39,7 @@ const AdminDashboard = () => {
     { id: "demandes", name: t("admin.tabDemandes"), icon: DocumentTextIcon },
     { id: "users", name: t("admin.tabUsers"), icon: UsersIcon },
     { id: "document-types", name: t("admin.tabDocumentTypes"), icon: CogIcon },
+    { id: "bilan", name: t("admin.tabBilan"), icon: CurrencyEuroIcon },
   ];
 
   const renderTabContent = () => {
@@ -55,6 +58,8 @@ const AdminDashboard = () => {
         return (
           <AdminDocumentTypes token={token} onNotification={showNotification} />
         );
+      case "bilan":
+        return <AdminBilanReport token={token} />;
       default:
         return <AdminStats token={token} />;
     }

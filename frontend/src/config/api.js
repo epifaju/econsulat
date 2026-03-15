@@ -41,6 +41,11 @@ const API_CONFIG = {
 
     // Statistiques
     STATS: "/api/admin/stats",
+
+    // Rapport bilan comptable
+    BILAN: "/api/admin/reports/bilan",
+    BILAN_EXPORT_PDF: "/api/admin/reports/bilan/export/pdf",
+    BILAN_EXPORT_EXCEL: "/api/admin/reports/bilan/export/excel",
   },
 
   // Paiement Stripe (option B : demande puis paiement)

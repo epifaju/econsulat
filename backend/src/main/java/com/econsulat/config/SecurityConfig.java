@@ -78,6 +78,7 @@ public class SecurityConfig {
                                                 // Endpoints admin (rôles spécifiques)
                                                 .requestMatchers("/api/demandes/*/status").hasAnyRole("ADMIN", "AGENT")
                                                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/admin/reports/**").hasRole("ADMIN")
                                                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "AGENT")
                                                 .requestMatchers("/api/passport/**").hasRole("ADMIN")
                                                 .requestMatchers("/api/citizens/my-requests").hasAnyRole("CITIZEN", "USER")

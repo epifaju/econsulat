@@ -504,6 +504,7 @@
     "tabDemandes": "Gestão de Pedidos",
     "tabUsers": "Gestão de Utilizadores",
     "tabDocumentTypes": "Tipos de Documentos",
+    "tabBilan": "Balanço contabilístico",
     "accessDeniedTitle": "Acesso não autorizado",
     "accessDeniedMessage": "Tem de ser administrador para aceder a esta página.",
     "stats": {
@@ -582,6 +583,27 @@
       "APPROVED": "Aprovado",
       "REJECTED": "Rejeitado",
       "COMPLETED": "Concluído"
+    },
+    "bilan": {
+      "title": "Balanço contabilístico",
+      "subtitle": "Receitas dos pedidos aprovados por tipo de documento e por período",
+      "groupBy": "Agrupar por",
+      "groupByDay": "Dia",
+      "groupByMonth": "Mês",
+      "groupByYear": "Ano",
+      "dateFrom": "De",
+      "dateTo": "Até",
+      "refresh": "Atualizar",
+      "downloadPdf": "Descarregar PDF",
+      "downloadExcel": "Descarregar Excel",
+      "colPeriod": "Período",
+      "colDocumentType": "Tipo de documento",
+      "colCount": "Número",
+      "colAmount": "Montante (EUR)",
+      "total": "Total",
+      "loadError": "Erro ao carregar o relatório",
+      "noData": "Sem dados para o período selecionado",
+      "generatedOn": "Gerado em"
     }
   },
   "adminUsers": {
