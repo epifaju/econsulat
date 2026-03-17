@@ -1,7 +1,9 @@
 package com.econsulat.service;
 
 import com.econsulat.model.Demande;
+import com.econsulat.model.DocumentType;
 import com.econsulat.model.Notification;
+import com.econsulat.model.Payment;
 import com.econsulat.model.User;
 import com.econsulat.repository.NotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +62,13 @@ class EmailNotificationServiceTest {
         user.setEmail("jean@test.com");
         user.setPreferredLocale("fr");
 
+        DocumentType docType = new DocumentType();
+        docType.setLibelle("Acte de naissance");
         demande = new Demande();
         demande.setId(10L);
         demande.setUser(user);
+        demande.setDocumentType(docType);
+        demande.setStatus(Demande.Status.PENDING_PAYMENT);
 
         when(messageSource.getMessage(anyString(), any(), anyString(), any(Locale.class))).thenReturn("Message");
         when(messageSource.getMessage(anyString(), any(), any(Locale.class))).thenReturn("Message");
@@ -149,6 +155,105 @@ class EmailNotificationServiceTest {
             assertThat(messageCaptor.getValue().getTo()).containsExactly("jean@test.com");
 
             verify(notificationRepository).save(argThat(n -> n.getStatut() == Notification.Statut.ENVOYE));
+        }
+    }
+
+    @Nested
+    @DisplayName("sendDemandCreatedNotification")
+    class SendDemandCreatedNotification {
+
+        @Test
+        void envoie_email_et_sauvegarde_notification() {
+            when(messageSource.getMessage(eq("email.demand.created.subject"), isNull(), any(Locale.class)))
+                    .thenReturn("Votre demande enregistrée");
+            when(messageSource.getMessage(eq("email.demand.created.greeting"), any(), any(Locale.class)))
+                    .thenReturn("Bonjour Jean Dupont");
+            when(messageSource.getMessage(anyString(), any(), any(Locale.class))).thenReturn("Texte");
+
+            emailNotificationService.sendDemandCreatedNotification(demande, user);
+
+            ArgumentCaptor<SimpleMailMessage> messageCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            verify(mailSender).send(messageCaptor.capture());
+            assertThat(messageCaptor.getValue().getTo()).containsExactly("jean@test.com");
+            verify(notificationRepository).save(argThat(n ->
+                    n.getEmailDestinataire().equals("jean@test.com")
+                            && n.getNewStatus().equals("PENDING_PAYMENT")
+                            && n.getStatut() == Notification.Statut.ENVOYE
+            ));
+        }
+
+        @Test
+        void ne_plante_pas_et_sauvegarde_echec_quand_mail_send_echoue() {
+            when(messageSource.getMessage(anyString(), any(), any(Locale.class))).thenReturn("Sujet");
+            when(messageSource.getMessage(anyString(), any(), any())).thenReturn("Contenu");
+            doThrow(new RuntimeException("SMTP error")).when(mailSender).send(any(SimpleMailMessage.class));
+
+            emailNotificationService.sendDemandCreatedNotification(demande, user);
+
+            verify(notificationRepository).save(argThat(n -> n.getStatut() == Notification.Statut.ECHEC));
+        }
+    }
+
+    @Nested
+    @DisplayName("sendPaymentSuccessNotification")
+    class SendPaymentSuccessNotification {
+
+        @Test
+        void envoie_email_et_sauvegarde_notification() {
+            Payment payment = new Payment();
+            payment.setId(100L);
+            payment.setAmountCents(2500);
+            payment.setDemande(demande);
+            demande.setStatus(Demande.Status.PENDING);
+
+            when(messageSource.getMessage(eq("email.payment.success.subject"), isNull(), any(Locale.class)))
+                    .thenReturn("Paiement confirmé");
+            when(messageSource.getMessage(anyString(), any(), any(Locale.class))).thenReturn("Texte");
+
+            emailNotificationService.sendPaymentSuccessNotification(payment);
+
+            ArgumentCaptor<SimpleMailMessage> messageCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            verify(mailSender).send(messageCaptor.capture());
+            assertThat(messageCaptor.getValue().getTo()).containsExactly("jean@test.com");
+            verify(notificationRepository).save(argThat(n ->
+                    n.getEmailDestinataire().equals("jean@test.com") && n.getStatut() == Notification.Statut.ENVOYE
+            ));
+        }
+
+        @Test
+        void ne_fait_rien_quand_demande_sans_utilisateur() {
+            Demande demandeSansUser = new Demande();
+            demandeSansUser.setId(20L);
+            demandeSansUser.setUser(null);
+            Payment payment = new Payment();
+            payment.setDemande(demandeSansUser);
+
+            emailNotificationService.sendPaymentSuccessNotification(payment);
+
+            verify(mailSender, never()).send(any(SimpleMailMessage.class));
+            verify(notificationRepository, never()).save(any(Notification.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("sendDocumentReadyNotification")
+    class SendDocumentReadyNotification {
+
+        @Test
+        void envoie_email_et_sauvegarde_notification() {
+            demande.setStatus(Demande.Status.APPROVED);
+            when(messageSource.getMessage(eq("email.document.ready.subject"), isNull(), any(Locale.class)))
+                    .thenReturn("Votre document est disponible");
+            when(messageSource.getMessage(anyString(), any(), any(Locale.class))).thenReturn("Texte");
+
+            emailNotificationService.sendDocumentReadyNotification(demande, user);
+
+            ArgumentCaptor<SimpleMailMessage> messageCaptor = ArgumentCaptor.forClass(SimpleMailMessage.class);
+            verify(mailSender).send(messageCaptor.capture());
+            assertThat(messageCaptor.getValue().getTo()).containsExactly("jean@test.com");
+            verify(notificationRepository).save(argThat(n ->
+                    n.getEmailDestinataire().equals("jean@test.com") && n.getStatut() == Notification.Statut.ENVOYE
+            ));
         }
     }
 }

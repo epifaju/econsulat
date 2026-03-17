@@ -1,11 +1,13 @@
 package com.econsulat.controller;
 
+import com.econsulat.dto.CitizenHistoryDTO;
 import com.econsulat.dto.DemandeAdminResponse;
 import com.econsulat.dto.DemandeStatusResponse;
 import com.econsulat.dto.UserAdminResponse;
 import com.econsulat.model.Demande;
 import com.econsulat.model.User;
 import com.econsulat.service.AdminService;
+import com.econsulat.service.CitizenHistoryService;
 import com.econsulat.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,6 +32,9 @@ public class AdminController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CitizenHistoryService citizenHistoryService;
 
     // Gestion des demandes
     @GetMapping("/demandes")
@@ -140,6 +145,15 @@ public class AdminController {
     public ResponseEntity<UserAdminResponse> getUserById(@PathVariable Long id) {
         UserAdminResponse user = adminService.getUserById(id);
         return ResponseEntity.ok(user);
+    }
+
+    /**
+     * Dossier citoyen / historique complet des demandes d'un utilisateur (admin).
+     */
+    @GetMapping("/users/{id}/history")
+    public ResponseEntity<CitizenHistoryDTO> getUserHistory(@PathVariable Long id) {
+        CitizenHistoryDTO history = citizenHistoryService.getHistoryByUserId(id);
+        return ResponseEntity.ok(history);
     }
 
     @PostMapping("/users")

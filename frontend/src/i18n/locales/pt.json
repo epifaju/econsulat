@@ -184,6 +184,7 @@
     "resetPasswordNoToken": "Link de redefinição inválido ou em falta."
   },
   "nav": {
+    "aide": "Ajuda",
     "connectedAs": "Ligado como",
     "myProfile": "O meu perfil",
     "logout": "Terminar sessão",
@@ -242,7 +243,8 @@
       "downloadDoc": "Transferir documento",
       "viewDetails": "Ver detalhes",
       "noRequests": "Nenhum pedido encontrado",
-      "createFirstRequest": "Criar o seu primeiro pedido"
+      "createFirstRequest": "Criar o seu primeiro pedido",
+      "backToDashboard": "Voltar ao painel"
     },
     "status": {
       "PENDING_PAYMENT": "Aguardando pagamento",
@@ -264,6 +266,9 @@
     },
     "notifications": {
       "requestSubmitted": "O seu pedido foi submetido com sucesso",
+      "emailConfirmationSent": "Foi-lhe enviado um email de confirmação.",
+      "paymentSuccessTitle": "Pagamento efetuado",
+      "paymentSuccessMessage": "O seu pedido foi registado e pago. Será tratado pela nossa equipa.",
       "dataRefreshed": "Dados atualizados",
       "info": "Informação",
       "cannotLoadDetails": "Impossível carregar os detalhes do pedido",
@@ -348,6 +353,54 @@
         }
       }
     }
+  },
+  "history": {
+    "title": "O meu dossier",
+    "subtitle": "Histórico completo dos seus pedidos, pagamentos e documentos.",
+    "backToDashboard": "Voltar ao painel",
+    "summary": {
+      "user": "Utilizador",
+      "totalDemandes": "Número de pedidos",
+      "totalPaid": "Total pago"
+    },
+    "filters": {
+      "status": "Estado",
+      "documentType": "Tipo de documento",
+      "allStatuses": "Todos os estados",
+      "allTypes": "Todos os tipos"
+    },
+    "table": {
+      "id": "N.º",
+      "documentType": "Tipo de documento",
+      "createdAt": "Data de criação",
+      "status": "Estado",
+      "amountPaid": "Valor pago",
+      "actions": "Ações",
+      "details": "Detalhes",
+      "downloadDocument": "Transferir documento"
+    },
+    "detail": {
+      "title": "Detalhes do pedido",
+      "summary": "Resumo",
+      "payments": "Pagamentos",
+      "documents": "Documentos",
+      "paidAt": "Pago em",
+      "amount": "Valor",
+      "fileName": "Ficheiro",
+      "noPayments": "Nenhum pagamento",
+      "noDocuments": "Nenhum documento gerado"
+    },
+    "empty": "Ainda não tem nenhum pedido.",
+    "createFirst": "Criar um pedido",
+    "refresh": "Atualizar",
+    "loading": "A carregar o dossier...",
+    "error": "Não foi possível carregar o dossier.",
+    "back": "Voltar"
+  },
+  "adminHistory": {
+    "title": "Dossier do cidadão",
+    "subtitle": "Histórico dos pedidos deste utilizador.",
+    "backToUsers": "Voltar à lista de utilizadores"
   },
   "newDemande": {
     "title": "Novo pedido",
@@ -682,6 +735,84 @@
     "deleteError": "Impossível eliminar o tipo de documento",
     "activateSuccess": "Tipo de documento ativado com sucesso",
     "activateError": "Impossível ativar o tipo de documento"
+  },
+  "aide": {
+    "title": "Ajuda e FAQ",
+    "subtitle": "Encontre o documento certo para o seu procedimento.",
+    "tabFaq": "Consultar a FAQ",
+    "tabAssistant": "Encontrar o meu documento (assistente)",
+    "faq": {
+      "title": "Perguntas frequentes",
+      "searchPlaceholder": "Pesquisar na FAQ...",
+      "noResults": "Nenhum resultado para esta pesquisa.",
+      "backToList": "Voltar à lista",
+      "createDemande": "Criar um pedido",
+      "category": {
+        "doc_type": "Por tipo de documento",
+        "demarches": "Procedimentos comuns",
+        "paiement_delais": "Pagamento e prazos"
+      },
+      "q1": "Que documento para um casamento em Portugal?",
+      "a1": "Para um casamento em Portugal, geralmente precisa de uma certidão de nascimento (integral ou extrato) ou de um certificado de casamento se já for casado. O certificado de casamento é pedido para comprovar a sua situação matrimonial. A certidão de nascimento pode ser pedida para constituir o processo de casamento. Escolha « Encontrar o meu documento » no assistente para ser guiado consoante o seu caso.",
+      "q2": "Certidão de nascimento integral ou extrato?",
+      "a2": "A certidão integral reproduz a totalidade das menções constantes do assento (pais, filiação, etc.). O extrato contém apenas algumas menções (ex.: identidade da pessoa). Para casamento ou procedimento administrativo que exija a filiação, a certidão integral é frequentemente pedida. Em caso de dúvida, prefira a certidão integral ou consulte o organismo que lhe pede o documento.",
+      "q3": "Qual a diferença entre certidão de nascimento e certificado de casamento?",
+      "a3": "A certidão de nascimento atesta o nascimento e a identidade de uma pessoa (local, data, pais). O certificado de casamento atesta que um casamento foi celebrado (cônjuges, data, local). Consoante a sua necessidade (casamento, sucessão, procedimento administrativo), um ou outro será pedido. Use o assistente « Encontrar o meu documento » para ser orientado.",
+      "q4": "Qual é o prazo de entrega?",
+      "a4": "Os prazos variam consoante o tipo de documento e o volume de pedidos. Em regra, o tratamento é efetuado em poucos dias úteis após receção do pagamento e dos documentos completos. Receberá um email quando o seu documento estiver disponível em « O meu dossier ».",
+      "q5": "O que fazer se o meu pedido for rejeitado?",
+      "a5": "Se o seu pedido for rejeitado, recebe uma notificação por email. Os motivos possíveis são indicados (documentos em falta, informações incorretas, etc.). Pode submeter um novo pedido corrigindo os elementos indicados. Para qualquer questão, contacte o consulado.",
+      "q6": "Pagamento por cartão: quais são as opções?",
+      "a6": "O pagamento é efetuado em linha por cartão bancário de forma segura. As taxas são indicadas antes da validação. Após a criação do seu pedido, é redirecionado para a página de pagamento; após confirmação do pagamento, o seu pedido é registado e tratado.",
+      "q7": "Quais são as taxas por tipo de documento?",
+      "a7": "As taxas são indicadas para cada tipo de documento no momento da escolha no formulário de pedido. O montante pode variar consoante o documento (certidão de nascimento, certificado de casamento, passaporte, etc.). Nenhuma taxa é cobrada antes da validação do pagamento."
+    },
+    "assistant": {
+      "title": "Que documento para que necessidade?",
+      "step": "Passo",
+      "back": "Voltar",
+      "restart": "Recomeçar",
+      "need": {
+        "question": "Qual é a sua necessidade principal?",
+        "marriage": "Casar-me / União de facto",
+        "child": "Procedimento para o meu filho",
+        "identity": "Comprovar identidade ou residência",
+        "other": "Outro procedimento administrativo"
+      },
+      "doc_marriage": {
+        "question": "Que documento deseja?",
+        "certificat": "Certificado de casamento",
+        "acte": "Certidão de nascimento"
+      },
+      "doc_child": {
+        "question": "Que documento precisa?",
+        "acte": "Certidão de nascimento"
+      },
+      "doc_identity": {
+        "question": "Que documento precisa?",
+        "passeport": "Passaporte",
+        "cni": "Cartão de cidadão / Bilhete de identidade",
+        "residence": "Certificado de residência"
+      },
+      "doc_other": {
+        "question": "Que documento precisa?",
+        "hebergement": "Certificado de alojamento",
+        "celibat": "Certificado de celibato",
+        "residence": "Certificado de residência"
+      },
+      "result": {
+        "title": "Documento adequado à sua situação",
+        "createDemande": "Criar pedido – {{docType}}",
+        "seeFaq": "Ver a FAQ sobre este documento",
+        "certificat_mariage": "O certificado de casamento atesta o seu casamento. É frequentemente pedido para procedimentos no estrangeiro ou para um novo casamento.",
+        "acte_naissance": "A certidão de nascimento é o documento adequado para um procedimento ligado ao nascimento ou à filiação (casamento, filho, etc.).",
+        "passeport": "O passaporte é o documento de viagem oficial para se deslocar ao estrangeiro.",
+        "cni": "O bilhete de identidade / cartão de cidadão permite comprovar a sua identidade no âmbito de inúmeros procedimentos.",
+        "residence": "O certificado de residência atesta o seu local de residência.",
+        "hebergement": "O certificado de alojamento atesta que uma pessoa aloja outra no seu domicílio.",
+        "celibat": "O certificado de celibato atesta que não é casado."
+      }
+    }
   },
   "legal": {
     "mentions": {

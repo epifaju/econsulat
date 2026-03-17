@@ -1,0 +1,16 @@
+{
+  "categories": [
+    { "id": "doc_type", "order": 1 },
+    { "id": "demarches", "order": 2 },
+    { "id": "paiement_delais", "order": 3 }
+  ],
+  "entries": [
+    { "id": "faq_1", "categoryId": "doc_type", "questionKey": "aide.faq.q1", "answerKey": "aide.faq.a1", "order": 1, "keywords": "mariage portugal document" },
+    { "id": "faq_2", "categoryId": "doc_type", "questionKey": "aide.faq.q2", "answerKey": "aide.faq.a2", "order": 2, "keywords": "acte naissance intégral extrait" },
+    { "id": "faq_3", "categoryId": "doc_type", "questionKey": "aide.faq.q3", "answerKey": "aide.faq.a3", "order": 3, "keywords": "certificat mariage document" },
+    { "id": "faq_4", "categoryId": "demarches", "questionKey": "aide.faq.q4", "answerKey": "aide.faq.a4", "order": 1, "keywords": "délai délivrance délais" },
+    { "id": "faq_5", "categoryId": "demarches", "questionKey": "aide.faq.q5", "answerKey": "aide.faq.a5", "order": 2, "keywords": "demande rejetée refus" },
+    { "id": "faq_6", "categoryId": "paiement_delais", "questionKey": "aide.faq.q6", "answerKey": "aide.faq.a6", "order": 1, "keywords": "paiement carte options" },
+    { "id": "faq_7", "categoryId": "paiement_delais", "questionKey": "aide.faq.q7", "answerKey": "aide.faq.a7", "order": 2, "keywords": "frais coût montant" }
+  ]
+}

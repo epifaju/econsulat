@@ -1,0 +1,47 @@
+{
+  "steps": [
+    {
+      "id": "need",
+      "questionKey": "aide.assistant.need.question",
+      "choices": [
+        { "choiceKey": "aide.assistant.need.marriage", "nextStepId": "doc_marriage" },
+        { "choiceKey": "aide.assistant.need.child", "nextStepId": "doc_child" },
+        { "choiceKey": "aide.assistant.need.identity", "nextStepId": "doc_identity" },
+        { "choiceKey": "aide.assistant.need.other", "nextStepId": "doc_other" }
+      ]
+    },
+    {
+      "id": "doc_marriage",
+      "questionKey": "aide.assistant.doc_marriage.question",
+      "choices": [
+        { "choiceKey": "aide.assistant.doc_marriage.certificat", "result": { "documentTypeId": 2, "summaryKey": "aide.assistant.result.certificat_mariage" } },
+        { "choiceKey": "aide.assistant.doc_marriage.acte", "result": { "documentTypeId": 1, "summaryKey": "aide.assistant.result.acte_naissance" } }
+      ]
+    },
+    {
+      "id": "doc_child",
+      "questionKey": "aide.assistant.doc_child.question",
+      "choices": [
+        { "choiceKey": "aide.assistant.doc_child.acte", "result": { "documentTypeId": 1, "summaryKey": "aide.assistant.result.acte_naissance" } }
+      ]
+    },
+    {
+      "id": "doc_identity",
+      "questionKey": "aide.assistant.doc_identity.question",
+      "choices": [
+        { "choiceKey": "aide.assistant.doc_identity.passeport", "result": { "documentTypeId": 3, "summaryKey": "aide.assistant.result.passeport" } },
+        { "choiceKey": "aide.assistant.doc_identity.cni", "result": { "documentTypeId": 4, "summaryKey": "aide.assistant.result.cni" } },
+        { "choiceKey": "aide.assistant.doc_identity.residence", "result": { "documentTypeId": 7, "summaryKey": "aide.assistant.result.residence" } }
+      ]
+    },
+    {
+      "id": "doc_other",
+      "questionKey": "aide.assistant.doc_other.question",
+      "choices": [
+        { "choiceKey": "aide.assistant.doc_other.hebergement", "result": { "documentTypeId": 5, "summaryKey": "aide.assistant.result.hebergement" } },
+        { "choiceKey": "aide.assistant.doc_other.celibat", "result": { "documentTypeId": 6, "summaryKey": "aide.assistant.result.celibat" } },
+        { "choiceKey": "aide.assistant.doc_other.residence", "result": { "documentTypeId": 7, "summaryKey": "aide.assistant.result.residence" } }
+      ]
+    }
+  ]
+}

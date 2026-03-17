@@ -115,6 +115,11 @@ public class DemandeService {
                         demande.setStatus(Demande.Status.PENDING_PAYMENT);
 
                         Demande savedDemande = demandeRepository.save(demande);
+                        try {
+                                emailNotificationService.sendDemandCreatedNotification(savedDemande, user);
+                        } catch (Exception notifEx) {
+                                log.warn("Notification demande créée non envoyée pour demande {} : {}", savedDemande.getId(), notifEx.getMessage());
+                        }
                         return convertToResponse(savedDemande);
 
                 } catch (Exception e) {

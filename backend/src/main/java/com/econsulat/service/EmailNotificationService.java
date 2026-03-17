@@ -2,6 +2,7 @@ package com.econsulat.service;
 
 import com.econsulat.model.Demande;
 import com.econsulat.model.Notification;
+import com.econsulat.model.Payment;
 import com.econsulat.model.User;
 import com.econsulat.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.annotation.PostConstruct;
+import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.util.Locale;
 
@@ -55,6 +57,14 @@ public class EmailNotificationService {
             return new Locale("pt");
         }
         return Locale.FRENCH;
+    }
+
+    /** Récupère le message puis applique MessageFormat pour remplacer {0}, {1}, {2}, ... */
+    private String getFormattedMessage(String code, Object[] args, Locale locale) {
+        String pattern = messageSource.getMessage(code, null, locale);
+        return (args != null && args.length > 0)
+                ? MessageFormat.format(pattern, args)
+                : pattern;
     }
 
     /**
@@ -130,6 +140,129 @@ public class EmailNotificationService {
         String signature = messageSource.getMessage("email.notification.signature", null, locale);
 
         return greeting + "\n\n" + intro + "\n" + newStatusLine + "\n\n" + moreInfo + "\n" + appUrl + "/espace-citoyen\n\n" + signature;
+    }
+
+    /**
+     * Envoie un email de confirmation lorsque une demande a été créée.
+     */
+    @Transactional
+    public void sendDemandCreatedNotification(Demande demande, User user) {
+        ensureMailConfigured();
+        Locale locale = toLocale(user.getPreferredLocale());
+        try {
+            String typeLabel = demande.getDocumentType() != null ? demande.getDocumentType().getLibelle() : "";
+            Object[] demandCreatedArgs = new Object[]{user.getFirstName(), user.getLastName(), demande.getId(), typeLabel};
+            String objet = messageSource.getMessage("email.demand.created.subject", null, locale);
+            String greeting = getFormattedMessage("email.demand.created.greeting", demandCreatedArgs, locale);
+            String intro = getFormattedMessage("email.demand.created.body.intro", demandCreatedArgs, locale);
+            String next = messageSource.getMessage("email.demand.created.body.next", null, locale);
+            String linkLabel = messageSource.getMessage("email.demand.created.body.link", null, locale);
+            String signature = messageSource.getMessage("email.notification.signature", null, locale);
+            String contenu = greeting + "\n\n" + intro + "\n" + next + "\n\n" + linkLabel + "\n" + appUrl + "\n\n" + signature;
+
+            sendAndSaveNotification(user.getEmail(), objet, contenu, demande, user, demande.getStatus().name());
+            log.info("Notification demande créée envoyée à {} pour la demande {}", user.getEmail(), demande.getId());
+        } catch (Exception e) {
+            log.warn("Erreur envoi notification demande créée à {} : {}", user.getEmail(), e.getMessage());
+            saveNotificationFailure(user.getEmail(), demande, user, demande.getStatus().name(), locale, "email.demand.created.subject", e);
+        }
+    }
+
+    /**
+     * Envoie un email de confirmation lorsque le paiement a été reçu.
+     */
+    @Transactional
+    public void sendPaymentSuccessNotification(Payment payment) {
+        ensureMailConfigured();
+        Demande demande = payment.getDemande();
+        User user = demande.getUser();
+        if (user == null) {
+            log.warn("Pas d'utilisateur sur la demande {}, notification paiement non envoyée", demande.getId());
+            return;
+        }
+        Locale locale = toLocale(user.getPreferredLocale());
+        try {
+            String typeLabel = demande.getDocumentType() != null ? demande.getDocumentType().getLibelle() : "";
+            String amountEuros = payment.getAmountCents() != null ? String.format(locale, "%.2f", payment.getAmountCents() / 100.0) : "0.00";
+            Object[] paymentSuccessArgs = new Object[]{user.getFirstName(), user.getLastName(), demande.getId(), amountEuros, typeLabel};
+            String objet = messageSource.getMessage("email.payment.success.subject", null, locale);
+            String greeting = getFormattedMessage("email.payment.success.greeting", paymentSuccessArgs, locale);
+            String intro = getFormattedMessage("email.payment.success.body.intro", paymentSuccessArgs, locale);
+            String amountLine = getFormattedMessage("email.payment.success.body.amount", paymentSuccessArgs, locale);
+            String typeLine = getFormattedMessage("email.payment.success.body.type", paymentSuccessArgs, locale);
+            String linkLabel = messageSource.getMessage("email.payment.success.body.link", null, locale);
+            String signature = messageSource.getMessage("email.notification.signature", null, locale);
+            String contenu = greeting + "\n\n" + intro + "\n" + amountLine + "\n" + typeLine + "\n\n" + linkLabel + "\n" + appUrl + "\n\n" + signature;
+
+            sendAndSaveNotification(user.getEmail(), objet, contenu, demande, user, demande.getStatus().name());
+            log.info("Notification paiement réussi envoyée à {} pour la demande {}", user.getEmail(), demande.getId());
+        } catch (Exception e) {
+            log.warn("Erreur envoi notification paiement réussi à {} : {}", user.getEmail(), e.getMessage());
+            saveNotificationFailure(user.getEmail(), demande, user, demande.getStatus().name(), locale, "email.payment.success.subject", e);
+        }
+    }
+
+    /**
+     * Envoie un email lorsque le document généré est disponible.
+     */
+    @Transactional
+    public void sendDocumentReadyNotification(Demande demande, User user) {
+        ensureMailConfigured();
+        Locale locale = toLocale(user.getPreferredLocale());
+        try {
+            String typeLabel = demande.getDocumentType() != null ? demande.getDocumentType().getLibelle() : "";
+            Object[] documentReadyArgs = new Object[]{user.getFirstName(), user.getLastName(), demande.getId(), typeLabel};
+            String objet = messageSource.getMessage("email.document.ready.subject", null, locale);
+            String greeting = getFormattedMessage("email.document.ready.greeting", documentReadyArgs, locale);
+            String intro = getFormattedMessage("email.document.ready.body.intro", documentReadyArgs, locale);
+            String download = messageSource.getMessage("email.document.ready.body.download", null, locale);
+            String signature = messageSource.getMessage("email.notification.signature", null, locale);
+            String contenu = greeting + "\n\n" + intro + "\n" + download + "\n\n" + signature;
+
+            sendAndSaveNotification(user.getEmail(), objet, contenu, demande, user, demande.getStatus().name());
+            log.info("Notification document prêt envoyée à {} pour la demande {}", user.getEmail(), demande.getId());
+        } catch (Exception e) {
+            log.warn("Erreur envoi notification document prêt à {} : {}", user.getEmail(), e.getMessage());
+            saveNotificationFailure(user.getEmail(), demande, user, demande.getStatus().name(), locale, "email.document.ready.subject", e);
+        }
+    }
+
+    private void sendAndSaveNotification(String toEmail, String objet, String contenu, Demande demande, User user, String newStatusValue) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject(objet);
+        message.setText(contenu);
+        mailSender.send(message);
+
+        Notification notification = new Notification();
+        notification.setDemande(demande);
+        notification.setUtilisateur(user);
+        notification.setEmailDestinataire(toEmail);
+        notification.setObjet(objet);
+        notification.setContenu(contenu);
+        notification.setNewStatus(newStatusValue);
+        notification.setStatut(Notification.Statut.ENVOYE);
+        notification.setDateEnvoi(LocalDateTime.now());
+        notificationRepository.save(notification);
+    }
+
+    private void saveNotificationFailure(String toEmail, Demande demande, User user, String newStatusValue, Locale locale, String subjectKey, Exception e) {
+        try {
+            String objet = messageSource.getMessage(subjectKey, null, locale);
+            Notification notification = new Notification();
+            notification.setDemande(demande);
+            notification.setUtilisateur(user);
+            notification.setEmailDestinataire(toEmail);
+            notification.setObjet(objet);
+            notification.setContenu(e.getMessage() != null ? e.getMessage() : "Erreur envoi");
+            notification.setNewStatus(newStatusValue);
+            notification.setStatut(Notification.Statut.ECHEC);
+            notification.setDateEnvoi(LocalDateTime.now());
+            notificationRepository.save(notification);
+        } catch (Exception ex) {
+            log.error("Erreur sauvegarde échec notification : {}", ex.getMessage());
+        }
     }
 
     /**

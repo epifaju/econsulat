@@ -1,5 +1,6 @@
 package com.econsulat.controller;
 
+import com.econsulat.dto.CitizenHistoryDTO;
 import com.econsulat.dto.DemandeAdminResponse;
 import com.econsulat.dto.DemandeStatusResponse;
 import com.econsulat.dto.UserAdminResponse;
@@ -7,6 +8,7 @@ import com.econsulat.model.Demande;
 import com.econsulat.model.DocumentType;
 import com.econsulat.model.User;
 import com.econsulat.service.AdminService;
+import com.econsulat.service.CitizenHistoryService;
 import com.econsulat.service.JwtService;
 import com.econsulat.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +53,9 @@ class AdminControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @MockBean
+    private CitizenHistoryService citizenHistoryService;
 
     @MockBean
     private JwtService jwtService;
@@ -225,6 +230,33 @@ class AdminControllerTest {
             mvc.perform(get("/api/admin/users/1"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(1));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/admin/users/{id}/history")
+    class GetUserHistory {
+
+        @Test
+        @WithMockUser(roles = "ADMIN")
+        void retourne_200_et_dossier_citoyen() throws Exception {
+            CitizenHistoryDTO history = new CitizenHistoryDTO();
+            history.setUserFirstName("Jean");
+            history.setUserLastName("Dupont");
+            history.setUserEmail("jean@test.com");
+            history.setTotalDemandes(3);
+            history.setTotalPaidCents(7500L);
+            history.setTotalPaidEuros("75.00");
+            history.setDemandes(List.of());
+            when(citizenHistoryService.getHistoryByUserId(1L)).thenReturn(history);
+
+            mvc.perform(get("/api/admin/users/1/history"))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(jsonPath("$.userEmail").value("jean@test.com"))
+                    .andExpect(jsonPath("$.totalDemandes").value(3))
+                    .andExpect(jsonPath("$.totalPaidCents").value(7500))
+                    .andExpect(jsonPath("$.totalPaidEuros").value("75.00"));
         }
     }
 

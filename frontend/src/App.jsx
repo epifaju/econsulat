@@ -22,6 +22,10 @@ import EmailVerification from "./components/EmailVerification";
 import PaymentSuccess from "./components/PaymentSuccess";
 import PaymentCancel from "./components/PaymentCancel";
 import Profile from "./components/Profile";
+import CitizenHistoryPage from "./components/CitizenHistoryPage";
+import NewDemandePage from "./components/NewDemandePage";
+import AidePage from "./components/aide/AidePage";
+import AdminUserHistoryPage from "./components/AdminUserHistoryPage";
 import LandingPage from "./components/LandingPage";
 import LegalMentions from "./components/LegalMentions";
 import PrivacyPolicy from "./components/PrivacyPolicy";
@@ -144,6 +148,7 @@ const AppContent = () => {
           <Route path="/payment/cancel" element={<PaymentCancel />} />
           <Route path="/mentions" element={<LegalMentions />} />
           <Route path="/confidentialite" element={<PrivacyPolicy />} />
+          <Route path="/aide" element={<AidePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </>
@@ -159,6 +164,7 @@ const AppContent = () => {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/cancel" element={<PaymentCancel />} />
+            <Route path="/aide" element={<AidePage />} />
             <Route
               path="/dashboard"
               element={
@@ -196,10 +202,34 @@ const AppContent = () => {
               }
             />
             <Route
+              path="/new-demande"
+              element={
+                <ProtectedRoute>
+                  <NewDemandePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/profile"
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/history"
+              element={
+                <ProtectedRoute>
+                  <CitizenHistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/user-history/:userId"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminUserHistoryPage />
                 </ProtectedRoute>
               }
             />

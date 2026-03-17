@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   EyeIcon,
@@ -10,6 +11,7 @@ import {
   ArrowDownIcon,
   CheckCircleIcon,
   XCircleIcon,
+  FolderIcon,
 } from "@heroicons/react/24/outline";
 import ConfirmationModal from "./ConfirmationModal";
 import API_CONFIG, { buildApiUrl } from "../config/api";
@@ -371,6 +373,13 @@ const AdminUsersList = ({ token, onNotification }) => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
+                    <Link
+                      to={`/admin/user-history/${user.id}`}
+                      className="text-indigo-600 hover:text-indigo-900"
+                      title={t("adminHistory.title")}
+                    >
+                      <FolderIcon className="h-4 w-4" />
+                    </Link>
                     <button
                       onClick={() => openEditModal(user)}
                       className="text-blue-600 hover:text-blue-900"

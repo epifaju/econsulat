@@ -38,6 +38,7 @@ const API_CONFIG = {
     USER_CREATE: "/api/admin/users",
     USER_UPDATE: (id) => `/api/admin/users/${id}`,
     USER_DELETE: (id) => `/api/admin/users/${id}`,
+    USER_HISTORY: (id) => `/api/admin/users/${id}/history`,
 
     // Statistiques
     STATS: "/api/admin/stats",
@@ -66,6 +67,11 @@ const API_CONFIG = {
     DOCUMENT_TYPES: "/api/demandes/document-types",
   },
 
+  // Dossier citoyen / historique des demandes (utilisateur connecté)
+  ME: {
+    HISTORY: "/api/me/history",
+  },
+
   // Endpoints utilisateurs (profil = utilisateur connecté)
   USERS: {
     PROFILE: "/api/users",
@@ -79,6 +85,10 @@ const API_CONFIG = {
     GENERATE: "/api/user/documents/generate",
     DOWNLOAD: (id) => `/api/user/documents/download/${id}`,
   },
+
+  // FAQ et assistant (public, pas d'auth)
+  FAQ: "/api/faq",
+  ASSISTANT_STEPS: "/api/assistant/steps",
 
   // Endpoints citoyens
   CITIZEN: {

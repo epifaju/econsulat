@@ -52,6 +52,12 @@ const LandingNav = ({ navLinks, activeSectionId, scrollToSection, handleNavClick
             <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
               <LanguageSwitcher />
               <Link
+                to="/aide"
+                className={`text-sm font-medium text-gray-700 hover:text-primary-600 hidden sm:inline-flex sm:min-h-[44px] sm:items-center rounded ${focusRing}`}
+              >
+                {t("nav.aide")}
+              </Link>
+              <Link
                 to="/login"
                 className={`text-sm font-medium text-gray-700 hover:text-primary-600 hidden sm:inline-flex sm:min-h-[44px] sm:items-center rounded ${focusRing}`}
               >
@@ -94,6 +100,13 @@ const LandingNav = ({ navLinks, activeSectionId, scrollToSection, handleNavClick
               );
             })}
             <div className="border-t border-gray-200 mt-3 pt-3 space-y-1">
+              <Link
+                to="/aide"
+                onClick={() => setIsMenuOpen(false)}
+                className={`min-h-[44px] flex items-center px-4 py-3 rounded-md text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 ${focusRing}`}
+              >
+                {t("nav.aide")}
+              </Link>
               <Link
                 to="/login"
                 onClick={() => setIsMenuOpen(false)}

@@ -184,6 +184,7 @@
     "resetPasswordNoToken": "Lien de réinitialisation invalide ou manquant."
   },
   "nav": {
+    "aide": "Aide",
     "connectedAs": "Connecté en tant que",
     "myProfile": "Mon profil",
     "logout": "Déconnexion",
@@ -242,7 +243,8 @@
       "downloadDoc": "Télécharger document",
       "viewDetails": "Voir détails",
       "noRequests": "Aucune demande trouvée",
-      "createFirstRequest": "Créer votre première demande"
+      "createFirstRequest": "Créer votre première demande",
+      "backToDashboard": "Retour au tableau de bord"
     },
     "status": {
       "PENDING_PAYMENT": "En attente de paiement",
@@ -264,6 +266,9 @@
     },
     "notifications": {
       "requestSubmitted": "Votre demande a été soumise avec succès",
+      "emailConfirmationSent": "Un email de confirmation vous a été envoyé.",
+      "paymentSuccessTitle": "Paiement réussi",
+      "paymentSuccessMessage": "Votre demande a bien été enregistrée et payée. Elle sera traitée par notre équipe.",
       "dataRefreshed": "Données actualisées",
       "info": "Info",
       "cannotLoadDetails": "Impossible de charger les détails de la demande",
@@ -348,6 +353,54 @@
         }
       }
     }
+  },
+  "history": {
+    "title": "Mon dossier",
+    "subtitle": "Historique complet de vos demandes, paiements et documents.",
+    "backToDashboard": "Retour au tableau de bord",
+    "summary": {
+      "user": "Utilisateur",
+      "totalDemandes": "Nombre de demandes",
+      "totalPaid": "Total payé"
+    },
+    "filters": {
+      "status": "Statut",
+      "documentType": "Type de document",
+      "allStatuses": "Tous les statuts",
+      "allTypes": "Tous les types"
+    },
+    "table": {
+      "id": "N°",
+      "documentType": "Type de document",
+      "createdAt": "Date de création",
+      "status": "Statut",
+      "amountPaid": "Montant payé",
+      "actions": "Actions",
+      "details": "Détails",
+      "downloadDocument": "Télécharger le document"
+    },
+    "detail": {
+      "title": "Détails de la demande",
+      "summary": "Résumé",
+      "payments": "Paiements",
+      "documents": "Documents",
+      "paidAt": "Payé le",
+      "amount": "Montant",
+      "fileName": "Fichier",
+      "noPayments": "Aucun paiement",
+      "noDocuments": "Aucun document généré"
+    },
+    "empty": "Vous n'avez pas encore de demande.",
+    "createFirst": "Créer une demande",
+    "refresh": "Actualiser",
+    "loading": "Chargement du dossier...",
+    "error": "Impossible de charger le dossier.",
+    "back": "Retour"
+  },
+  "adminHistory": {
+    "title": "Dossier citoyen",
+    "subtitle": "Historique des demandes de cet utilisateur.",
+    "backToUsers": "Retour à la liste des utilisateurs"
   },
   "newDemande": {
     "title": "Nouvelle demande",
@@ -682,6 +735,84 @@
     "deleteError": "Impossible de supprimer le type de document",
     "activateSuccess": "Type de document activé avec succès",
     "activateError": "Impossible d'activer le type de document"
+  },
+  "aide": {
+    "title": "Aide et FAQ",
+    "subtitle": "Trouvez le bon document pour votre démarche.",
+    "tabFaq": "Consulter la FAQ",
+    "tabAssistant": "Trouver mon document (assistant)",
+    "faq": {
+      "title": "Questions fréquentes",
+      "searchPlaceholder": "Rechercher dans la FAQ...",
+      "noResults": "Aucun résultat pour cette recherche.",
+      "backToList": "Retour à la liste",
+      "createDemande": "Créer une demande",
+      "category": {
+        "doc_type": "Par type de document",
+        "demarches": "Démarches courantes",
+        "paiement_delais": "Paiement et délais"
+      },
+      "q1": "Quel document pour un mariage au Portugal ?",
+      "a1": "Pour un mariage au Portugal, vous avez généralement besoin soit d'un acte de naissance (intégral ou extrait), soit d'un certificat de mariage si vous êtes déjà marié. Le certificat de mariage est demandé pour prouver votre situation matrimoniale. L'acte de naissance peut être demandé pour constituer le dossier de mariage. Choisissez « Trouver mon document » dans l'assistant pour être guidé selon votre cas.",
+      "q2": "Acte de naissance intégral ou extrait ?",
+      "a2": "L'acte de naissance intégral reproduit l'intégralité des mentions portées sur l'acte (parents, filiation, etc.). L'extrait ne contient que certaines mentions (par ex. identité de la personne). Pour un mariage ou une démarche administrative exigeant la filiation, l'acte intégral est souvent demandé. En cas de doute, privilégiez l'acte intégral ou consultez l'organisme qui vous demande le document.",
+      "q3": "Quelle est la différence entre acte de naissance et certificat de mariage ?",
+      "a3": "L'acte de naissance atteste de la naissance et de l'identité d'une personne (lieu, date, parents). Le certificat de mariage atteste qu'un mariage a été célébré (époux, date, lieu). Selon votre besoin (mariage, succession, démarche administrative), l'un ou l'autre sera demandé. Utilisez l'assistant « Trouver mon document » pour être orienté.",
+      "q4": "Quel est le délai de délivrance ?",
+      "a4": "Les délais varient selon le type de document et le volume de demandes. En règle générale, le traitement est effectué sous quelques jours ouvrés après réception du paiement et des pièces complètes. Vous recevrez un email lorsque votre document sera disponible dans « Mon dossier ».",
+      "q5": "Que faire si ma demande est rejetée ?",
+      "a5": "Si votre demande est rejetée, vous recevez une notification par email. Les motifs possibles sont indiqués (pièces manquantes, informations incorrectes, etc.). Vous pouvez déposer une nouvelle demande en corrigeant les éléments signalés. Pour toute question, contactez le consulat.",
+      "q6": "Paiement par carte : quelles sont les options ?",
+      "a6": "Le paiement s'effectue en ligne par carte bancaire de manière sécurisée. Les frais sont indiqués avant la validation. Après création de votre demande, vous êtes redirigé vers la page de paiement ; une fois le paiement confirmé, votre demande est enregistrée et traitée.",
+      "q7": "Quels sont les frais par type de document ?",
+      "a7": "Les frais sont indiqués pour chaque type de document au moment du choix dans le formulaire de demande. Le montant peut varier selon le document (acte de naissance, certificat de mariage, passeport, etc.). Aucun frais n'est prélevé avant la validation du paiement."
+    },
+    "assistant": {
+      "title": "Quel document pour quel besoin ?",
+      "step": "Étape",
+      "back": "Retour",
+      "restart": "Recommencer",
+      "need": {
+        "question": "Quel est votre besoin principal ?",
+        "marriage": "Me marier / Pacs",
+        "child": "Faire une démarche pour mon enfant",
+        "identity": "Justifier mon identité ou ma résidence",
+        "other": "Autre démarche administrative"
+      },
+      "doc_marriage": {
+        "question": "Quel document souhaitez-vous ?",
+        "certificat": "Certificat de mariage",
+        "acte": "Acte de naissance"
+      },
+      "doc_child": {
+        "question": "Quel document vous faut-il ?",
+        "acte": "Acte de naissance"
+      },
+      "doc_identity": {
+        "question": "Quel document vous faut-il ?",
+        "passeport": "Passeport",
+        "cni": "Carte d'identité",
+        "residence": "Certificat de résidence"
+      },
+      "doc_other": {
+        "question": "Quel document vous faut-il ?",
+        "hebergement": "Certificat d'hébergement",
+        "celibat": "Certificat de célibat",
+        "residence": "Certificat de résidence"
+      },
+      "result": {
+        "title": "Document adapté à votre situation",
+        "createDemande": "Créer une demande – {{docType}}",
+        "seeFaq": "Voir la FAQ sur ce document",
+        "certificat_mariage": "Le certificat de mariage atteste de votre mariage. Il est souvent demandé pour des démarches à l'étranger ou pour un remariage.",
+        "acte_naissance": "L'acte de naissance est le document adapté pour une démarche liée à la naissance ou à la filiation (mariage, enfant, etc.).",
+        "passeport": "Le passeport est le document de voyage officiel pour vous rendre à l'étranger.",
+        "cni": "La carte d'identité nationale permet de justifier de votre identité dans le cadre de nombreuses démarches.",
+        "residence": "Le certificat de résidence atteste de votre lieu de résidence.",
+        "hebergement": "Le certificat d'hébergement atteste qu'une personne héberge une autre à son domicile.",
+        "celibat": "Le certificat de célibat atteste que vous n'êtes pas marié."
+      }
+    }
   },
   "legal": {
     "mentions": {

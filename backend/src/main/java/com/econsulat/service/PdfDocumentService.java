@@ -74,6 +74,9 @@ public class PdfDocumentService {
     @Autowired
     private MessageSource messageSource;
 
+    @Autowired
+    private EmailNotificationService emailNotificationService;
+
     @Value("${app.templates.dir:templates}")
     private String templatesDir;
 
@@ -166,6 +169,15 @@ public class PdfDocumentService {
 
             GeneratedDocument savedDoc = generatedDocumentRepository.save(generatedDocument);
             log.info("Document PDF enregistré - id: {}, fichier: {}", savedDoc.getId(), savedDoc.getFileName());
+
+            User demandUser = demande.getUser();
+            if (demandUser != null) {
+                try {
+                    emailNotificationService.sendDocumentReadyNotification(demande, demandUser);
+                } catch (Exception e) {
+                    log.warn("Notification document prêt non envoyée pour demande {} : {}", demande.getId(), e.getMessage());
+                }
+            }
 
             return savedDoc;
 

@@ -65,6 +65,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/payment/webhook").permitAll()
                                                 .requestMatchers("/api/payment/confirm-session").permitAll()
                                                 .requestMatchers("/api/contact").permitAll()
+                                                .requestMatchers("/api/faq/**").permitAll()
+                                                .requestMatchers("/api/assistant/**").permitAll()
                                                 
                                                 // Endpoints de demandes (authentification requise)
                                                 .requestMatchers("/api/demandes").authenticated()
@@ -74,6 +76,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/demandes/{id}/download-document").authenticated()
                                                 .requestMatchers("/api/payment/create-session").authenticated()
                                                 .requestMatchers("/api/users/me").authenticated()
+                                                .requestMatchers("/api/me/**").authenticated()
                                                 
                                                 // Endpoints admin (rôles spécifiques)
                                                 .requestMatchers("/api/demandes/*/status").hasAnyRole("ADMIN", "AGENT")

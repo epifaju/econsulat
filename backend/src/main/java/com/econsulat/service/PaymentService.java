@@ -39,12 +39,16 @@ public class PaymentService {
     @Value("${app.payment-cancel-url:http://localhost:5173/payment/cancel}")
     private String cancelUrl;
 
+    private final EmailNotificationService emailNotificationService;
+
     public PaymentService(StripeService stripeService,
                           PaymentRepository paymentRepository,
-                          DemandeRepository demandeRepository) {
+                          DemandeRepository demandeRepository,
+                          EmailNotificationService emailNotificationService) {
         this.stripeService = stripeService;
         this.paymentRepository = paymentRepository;
         this.demandeRepository = demandeRepository;
+        this.emailNotificationService = emailNotificationService;
     }
 
     /**
@@ -134,6 +138,12 @@ public class PaymentService {
         Demande demande = payment.getDemande();
         demande.setStatus(Demande.Status.PENDING);
         demandeRepository.save(demande);
+
+        try {
+            emailNotificationService.sendPaymentSuccessNotification(payment);
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(PaymentService.class).warn("Notification paiement non envoyée pour demande {} : {}", demande.getId(), e.getMessage());
+        }
     }
 
     /**
@@ -169,6 +179,11 @@ public class PaymentService {
             Demande demande = payment.getDemande();
             demande.setStatus(Demande.Status.PENDING);
             demandeRepository.save(demande);
+            try {
+                emailNotificationService.sendPaymentSuccessNotification(payment);
+            } catch (Exception notifEx) {
+                org.slf4j.LoggerFactory.getLogger(PaymentService.class).warn("Notification paiement non envoyée pour demande {} : {}", demande.getId(), notifEx.getMessage());
+            }
             return true;
         } catch (StripeException e) {
             return false;

@@ -46,6 +46,12 @@ const Navbar = () => {
           {/* Navigation desktop */}
           <div className="hidden md:flex md:items-center md:space-x-6">
             <LanguageSwitcher />
+            <Link
+              to="/aide"
+              className="text-sm font-medium text-gray-700 hover:text-indigo-600"
+            >
+              {t("nav.aide")}
+            </Link>
             <span className="text-sm text-gray-500">
               {t("nav.connectedAs")}{" "}
               <span className="font-medium text-gray-900">
@@ -133,6 +139,13 @@ const Navbar = () => {
               </div>
             </div>
 
+            <Link
+              to="/aide"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+            >
+              {t("nav.aide")}
+            </Link>
             <Link
               to="/profile"
               onClick={() => setIsMobileMenuOpen(false)}

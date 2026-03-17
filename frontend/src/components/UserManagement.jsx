@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import API_CONFIG, { buildApiUrl } from "../config/api";
 import {
@@ -9,6 +10,7 @@ import {
   TrashIcon,
   ShieldCheckIcon,
   UserIcon,
+  FolderIcon,
 } from "@heroicons/react/24/outline";
 import SearchAndFilters from "./SearchAndFilters";
 import Pagination from "./Pagination";
@@ -388,6 +390,13 @@ const UserManagement = () => {
                     </td>
                     <td className="table-cell">
                       <div className="flex space-x-2">
+                        <Link
+                          to={`/admin/user-history/${user.id}`}
+                          className="btn-secondary btn-sm inline-flex items-center justify-center"
+                          title="Voir le dossier"
+                        >
+                          <FolderIcon className="h-4 w-4" />
+                        </Link>
                         <button
                           className="btn-secondary btn-sm"
                           title="Voir détails"

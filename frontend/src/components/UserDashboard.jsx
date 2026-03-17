@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,6 +13,7 @@ import {
   EyeIcon,
   DocumentArrowDownIcon,
   PlusIcon,
+  FolderIcon,
 } from "@heroicons/react/24/outline";
 import StatsCard from "./StatsCard";
 import SearchAndFilters from "./SearchAndFilters";
@@ -61,7 +63,7 @@ const UserDashboard = () => {
     showNotification(
       "success",
       t("common.success"),
-      t("dashboard.notifications.requestSubmitted")
+      t("dashboard.notifications.requestSubmitted") + " " + t("dashboard.notifications.emailConfirmationSent")
     );
     // Ajouter la nouvelle demande à la liste et rafraîchir
     addDemande(demande);
@@ -297,7 +299,7 @@ const UserDashboard = () => {
     try {
       const response = await axios.post(`/api/demandes/${demandeId}/generate-document`);
       const data = response.data;
-      showNotification("success", t("common.success"), t("dashboard.notifications.documentGenerated"));
+      showNotification("success", t("common.success"), t("dashboard.notifications.documentGenerated") + " " + t("dashboard.notifications.emailConfirmationSent"));
 
       const downloadResponse = await axios.get(`/api/demandes/${demandeId}/download-document`, { responseType: "blob" });
       const blob = downloadResponse.data;
@@ -473,6 +475,14 @@ const UserDashboard = () => {
             <div className="flex items-center justify-between">
               <h2 className="card-title">{t("dashboard.requests.myRequests")}</h2>
               <div className="flex space-x-2">
+                <Link
+                  to="/history"
+                  className="btn-secondary inline-flex items-center"
+                  title={t("history.title")}
+                >
+                  <FolderIcon className="h-4 w-4 mr-2" />
+                  {t("history.title")}
+                </Link>
                 <button
                   className="btn-secondary"
                   onClick={handleRefreshData}

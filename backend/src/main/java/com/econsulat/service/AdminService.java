@@ -34,6 +34,9 @@ public class AdminService {
     @Autowired
     private DocumentTypeRepository documentTypeRepository;
 
+    @Autowired
+    private EmailNotificationService emailNotificationService;
+
     // Gestion des demandes
     public Page<DemandeAdminResponse> getAllDemandes(Pageable pageable) {
         Page<Demande> demandes = demandeRepository.findAll(pageable);
@@ -60,8 +63,18 @@ public class AdminService {
     public Demande updateDemandeStatus(Long id, String status) {
         Demande demande = demandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Demande non trouvée"));
-        demande.setStatus(Demande.Status.valueOf(status.toUpperCase()));
-        return demandeRepository.save(demande);
+        Demande.Status newStatus = Demande.Status.valueOf(status.toUpperCase());
+        demande.setStatus(newStatus);
+        Demande savedDemande = demandeRepository.save(demande);
+        User user = savedDemande.getUser();
+        if (user != null) {
+            try {
+                emailNotificationService.sendStatusChangeNotification(savedDemande, user, newStatus);
+            } catch (Exception e) {
+                org.slf4j.LoggerFactory.getLogger(AdminService.class).warn("Notification changement statut non envoyée pour demande {} : {}", id, e.getMessage());
+            }
+        }
+        return savedDemande;
     }
 
     @Transactional
